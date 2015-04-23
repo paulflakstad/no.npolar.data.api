@@ -1,0 +1,73 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package no.npolar.data.api;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Map;
+import org.opencms.json.JSONArray;
+import org.opencms.json.JSONException;
+
+/**
+ *
+ * @author Paul-Inge Flakstad, Norwegian Polar Institute
+ */
+public interface APIServiceInterface {    
+    /**
+     * Gets the service path, like e.g.: "/publication/", "/project/".
+     * @return The service path.
+     */
+    public String getServicePath();
+    
+    /** 
+     * Gets the base URL (that is, the complete URL, without parameters) to use when accessing the service. 
+     * @return The base URL.
+     */
+    public String getServiceBaseURL();
+    
+    /**
+     * Gets the total number of entries found in the response from the last service request.
+     * @return The total number of entries found in the response from the last service request, or -1 if no request has yet been made.
+     */
+    public int getTotalResults();
+    
+    /**
+     * Gets the number of items per page.
+     * @return The number of items per page.
+     */
+    public int getItemsPerPage();
+    
+    /**
+     * The start index, that is, the index of the first item on the current page.
+     * @return The start index.
+     */
+    public int getStartIndex();
+    
+    /**
+     * Queries the service using the given parameters.
+     * @param param The parameters to use in the query.
+     */
+    public APIServiceInterface doQuery(Map<String, String[]> params)
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException;
+    
+    /**
+     * Returns all (if any) entries retrieved in the last executed query.
+     * @see #doQuery(java.util.Map) 
+     * @return A JSONArray containing all entries retrieved in the last query, or null if there were no entries.
+     */
+    public JSONArray getEntries();
+    
+    /**
+     * Gets the complete set of parameters currently set for this object.
+     * @return The complete set of parameters currently set for this object.
+     */
+    public Map<String, String[]> getParameters();
+    
+    /**
+     * Gets the full URL used in the last service request.
+     * @return The full URL used in the last service request, or null if no request has yet been issued.
+     */
+    public String getLastServiceURL();
+}
