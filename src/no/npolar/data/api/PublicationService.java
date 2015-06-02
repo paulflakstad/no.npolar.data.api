@@ -165,7 +165,7 @@ public class PublicationService extends APIService {
             return p;
         } else {
             // LOG "Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries."
-            //throw new NullPointerException("Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries.");
+            //throw new NullPointerException("Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries. " +this.getLastServiceURL());
             return null;
         }
     }
