@@ -43,6 +43,18 @@ public class TimeSeriesDataUnit {
      * @return The long form.
      */
     public String getLongForm() { return this.longForm; }
+    /**
+     * Flag indicating whether or not this instance has a (non-empty) short form.
+     * 
+     * @return True if this data unit has a (non-empty) short form, false if not.
+     */
+    public boolean hasShortForm() { return this.shortForm != null && !this.shortForm.trim().isEmpty(); }
+    /**
+     * Flag indicating whether or not this instance has a (non-empty) long form.
+     * 
+     * @return True if this data unit has a (non-empty) long form, false if not.
+     */
+    public boolean hasLongForm() { return this.longForm != null && !this.longForm.trim().isEmpty(); }
     
     /**
      * @see Object#hashCode() 

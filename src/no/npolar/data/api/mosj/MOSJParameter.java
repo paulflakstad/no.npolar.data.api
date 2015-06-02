@@ -72,11 +72,19 @@ public class MOSJParameter implements APIEntryInterface {
                 for (int i = 0; i < relatedTimeSeriesArr.length(); i++) {
                     try {
                         String relatedTimeSeriesUrl = relatedTimeSeriesArr.getString(i);
-                        //APIUtil.queryService(relatedTimeSeriesUrl);
-                        TimeSeries ts = new TimeSeries(APIUtil.queryService(relatedTimeSeriesUrl), displayLocale);
-                        this.addTimeSeries(ts);
+                        JSONObject timeSeriesJSON = APIUtil.queryService(relatedTimeSeriesUrl);
+                        if (timeSeriesJSON == null) {
+                            if (LOG.isWarnEnabled()) {
+                                LOG.warn("MOSJ parameter " + id + " includes a problem time series at " + relatedTimeSeriesUrl);
+                            }
+                        } else {
+                            TimeSeries ts = new TimeSeries(timeSeriesJSON, displayLocale);
+                            this.addTimeSeries(ts);
+                        }
                     } catch (Exception ee) {
-                        // ToDo: Log this?
+                        if (LOG.isWarnEnabled()) {
+                            LOG.warn("Error resolving related time series for MOSJ parameter " + id + ".", ee);
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -257,7 +265,77 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Get an html table with all time series data.
+     * Gets an all time series data as CSV content.
+     * 
+     * @return All time series data as CSV content.
+     */
+    public String getAsCSV() {
+        String s = "";
+        try {
+            s += getCSVRows();
+        } catch (Exception e) {
+            //e.printStackTrace();
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Creating CSV content from MOSJ parameter '" + this.getId() + "' failed.", e);
+            }
+        }
+        return s;
+    }
+    
+    
+    /**
+     * Translates the given time series collection to table rows containing the
+     * data.fsda
+     * 
+     * @return Html table rows containing the data in the given time series collection.
+     */
+    protected String getCSVRows() {
+        String s = "";
+        try {
+            TimeSeriesCollection tsc = this.getTimeSeriesCollection();
+            if (tsc == null)
+                tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries);
+            
+            List<TimeSeries> timeSeriesList = tsc.getTimeSeries();
+            if (timeSeriesList != null && !timeSeriesList.isEmpty()) {
+                
+                // heading
+                s += "Series name;Unit;";
+                
+                // The columns, based on timestamps (i.e. years)
+                Iterator<String> iTimeMarkers = tsc.getTimeMarkerIterator();
+                while (iTimeMarkers.hasNext()) {
+                    s += "" + iTimeMarkers.next();
+                    s += iTimeMarkers.hasNext() ? ";" : "\n";
+                }
+                
+                
+                if (!timeSeriesList.isEmpty()) {
+                    Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
+                    while (iTimeSeries.hasNext()) {
+                        TimeSeries ts = iTimeSeries.next();
+                        //s += "<!-- time series: " + ts.getTitle() + " - " + ts.getId() + " -->\n";
+                        s += ts.getDataPointsAsCSVRow(tsc);
+                    }
+                } else {
+                    // No time series data
+                }
+            } else {
+                // No time series data
+            }
+        } catch (Exception e) {
+            //s += "<!-- Error: " + e.getMessage() + " -->\n";
+            //e.printStackTrace();
+            // ToDo: Log this
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error creating html table for time series collection '" + this.getTimeSeriesCollection().getTitle() + "'.", e);
+            }
+        }
+        return s;
+    }
+    
+    /**
+     * Gets an html table with all time series data.
      * 
      * @return An html table with all time series data.
      * @see #getAsTable(java.lang.String) 
@@ -267,7 +345,7 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Get an html table with all time series data.
+     * Gets an html table with all time series data.
      * 
      * @param tableClass A class name to append to the table.
      * @return An html table with all time series data.

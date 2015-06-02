@@ -3,6 +3,8 @@ package no.npolar.data.api.mosj;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.ResourceBundle;
+import no.npolar.data.api.MOSJService;
 import no.npolar.data.api.TimeSeriesDataUnit;
 import no.npolar.data.api.TimeSeries;
 import no.npolar.data.api.TimeSeriesCollection;
@@ -12,6 +14,7 @@ import org.opencms.json.JSONException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.opencms.json.JSONArray;
+import org.opencms.util.CmsStringUtil;
 
 /**
  * Adds support for generating Highcharts {@link http://highcharts.com} charts.
@@ -42,12 +45,40 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_X_AXIS_LABEL_STEP_INT = "step";
     /** Override key: Number of degrees to rotate the x-axis labels. {@link http://api.highcharts.com/highcharts#xAxis.labels.rotation } */
     public static final String OVERRIDE_KEY_X_AXIS_LABEL_ROTATION_INT = "xLabelRotation";
+    /** Override key: X-axis on top flag. {@link http://api.highcharts.com/highcharts#xAxis.reversed } and {@link http://api.highcharts.com/highcharts#xAxis.opposite } */
+    public static final String OVERRIDE_KEY_X_AXIS_ON_TOP = "xAxisOnTop";
     /** Override key: Number of lines to spread labels over (applies to horizontal lines). {@link http://api.highcharts.com/highcharts#xAxis.labels.staggerLines } */
     public static final String OVERRIDE_KEY_MAX_STAGGER_LINES_INT = "maxStaggerLines";
     /** Override key: Hide point markers in the series? {@link http://api.highcharts.com/highcharts#plotOptions.series.marker.enabled } */
     public static final String OVERRIDE_KEY_HIDE_MARKERS_BOOL = "dots";
-    /** The default series type ("line"). */
+    /** Override key: Series stacking setting. {@link http://api.highcharts.com/highcharts#plotOptions.series.stacking } */
+    public static final String OVERRIDE_KEY_STACKING = "stacking";
+    /** Override key: Series error setting. {@link http://highcharts.uservoice.com/forums/55896-highcharts-javascript-api/suggestions/4321475-add-an-ability-to-show-error-bar-in-legend } */
+    public static final String OVERRIDE_KEY_ERROR_TOGGLER = "errorToggler";
+    /** Override key: Series "trend line" flag. */
+    public static final String OVERRIDE_KEY_TREND_LINE = "trendLine";
+    /** Override key: Series order index (a number). */
+    public static final String OVERRIDE_KEY_ORDER_INDEX = "orderIndex";
+    /** Override key: Series "connect nulls" (don't show as discontinuous) flag. {@link http://api.highcharts.com/highcharts#plotOptions.series.connectNulls } */
+    public static final String OVERRIDE_KEY_CONNECT_NULLS = "connectNulls";
+    /** Override key: Series color. {@link http://api.highcharts.com/highcharts#plotOptions.series.color } */
+    public static final String OVERRIDE_KEY_COLOR = "color";
+    /** Override key: Series line thickness. {@link http://api.highcharts.com/highcharts#plotOptions.series.lineWidth } */
+    public static final String OVERRIDE_KEY_LINE_THICKNESS = "lineThickness";
+    /** Override key: Series marker thickness. {@link http://api.highcharts.com/highcharts#plotOptions.series.marker.radius } */
+    public static final String OVERRIDE_KEY_MARKER_THICKNESS = "dotThickness";
+    /** Override key: Y-axis minimum value (a number). {@link http://api.highcharts.com/highcharts#yAxis.min } */
+    public static final String OVERRIDE_KEY_Y_AXIS_MIN = "minValue";
+    /** Override key: Y-axis "allow decimals" flag. {@link http://api.highcharts.com/highcharts#yAxis.allowDecimals } */
+    public static final String OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY = "integerValues";
+    /** Override key: Manual y-axis placement. */
+    //public static final String OVERRIDE_KEY_Y_AXIS = "yAxis";
+    /** The default series type name ("line"). */
     public static final String DEFAULT_SERIES_TYPE = "line";
+    /** The default series stacking setting ("normal"). */
+    public static final String DEFAULT_STACKING = "normal";
+    /** The series type name for box plot charts. */
+    public static final String SERIES_TYPE_BOX_PLOT = "boxplot";
     /** The number formatting pattern to use. */
     public static final String NUMBER_FORMAT = TimeSeriesDataPoint.DEFAULT_NUMBER_FORMAT;
     /** The number formatting locale (English, because we need 3.14, not 3,14). */
@@ -78,6 +109,38 @@ public class HighchartsChart {
     }
     
     /**
+     * Resolves any manually defined ordering of the time series in the given 
+     * time series collection.
+     * <p>
+     * Any manual ordering is defined in the override object.
+     * 
+     * @param timeSeriesCollection The collection to resolve ordering for.
+     * @return The given collection, possibly with an updated time series order.
+     */
+    private TimeSeriesCollection resolveTimeSeriesOrdering(TimeSeriesCollection timeSeriesCollection) {
+        if (overrides == null || overrides.equals(new JSONObject()))
+            return timeSeriesCollection;
+        
+        // some override exist, check for manually defined ordering
+        boolean manuallyOrdered = false;
+        
+        Iterator<TimeSeries> i = timeSeriesCollection.getTimeSeries().iterator();
+        while (i.hasNext()) {
+            TimeSeries ts = i.next();
+            JSONObject tsOverrides = getTimeSeriesOverrides(ts, overrides);
+            if (tsOverrides != null && tsOverrides.has(OVERRIDE_KEY_ORDER_INDEX)) {
+                try { ts.setOrderIndex(tsOverrides.getInt(OVERRIDE_KEY_ORDER_INDEX)); manuallyOrdered = true; } catch (Exception e) {}
+            }
+        }
+        
+        if (manuallyOrdered) {
+            timeSeriesCollection.sortTimeSeries(TimeSeries.ORDER_INDEX_COMPARATOR);
+        }
+        
+        return timeSeriesCollection;
+    }
+    
+    /**
      * Returns the chart configuration string.
      * <p>
      * It should be parseable as a JSON object.
@@ -90,8 +153,13 @@ public class HighchartsChart {
             // Prevent NPE
             if (overrides == null) overrides = new JSONObject(); // Empty json object
             
-            TimeSeriesCollection timeSeriesCollection = mosjParameter.getTimeSeriesCollection();
+            // Get the time series collection via the MOSJ parameter, and make 
+            // sure any custom defined order is applied.
+            TimeSeriesCollection timeSeriesCollection = resolveTimeSeriesOrdering(mosjParameter.getTimeSeriesCollection());
+            
+            
             List<TimeSeriesDataUnit> units = timeSeriesCollection.getUnits();
+            //System.out.println("units: " + units);
             Iterator<TimeSeriesDataUnit> iUnits = units.iterator();
             
             String type = "zoomType: 'x'";
@@ -99,12 +167,18 @@ public class HighchartsChart {
             int maxStaggerLines = -1;
             int xLabelRotation = -1;
             boolean hideMarkers = false;
+            String stacking = null;
+            boolean errorBarsAlwaysOn = false;
+            boolean xAxisOnTop = false;
             
             try { type = "type: '" + overrides.getString(OVERRIDE_KEY_TYPE_STRING) + "'"; } catch(Exception ee) {}
             try { step = Integer.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_LABEL_STEP_INT)); } catch(Exception ee) {}
             try { maxStaggerLines = Integer.valueOf(overrides.getString(OVERRIDE_KEY_MAX_STAGGER_LINES_INT)); } catch(Exception ee) {}
             try { xLabelRotation = Integer.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_LABEL_ROTATION_INT)); } catch(Exception ee) {}
             try { hideMarkers = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
+            try { stacking = overrides.getString(OVERRIDE_KEY_STACKING); } catch (Exception ee) {}
+            try { errorBarsAlwaysOn = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
+            try { xAxisOnTop = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_ON_TOP)); } catch(Exception ee) {}
             
             s += "{ ";
             // Chart type
@@ -112,29 +186,88 @@ public class HighchartsChart {
             s += type;
             s += "}, ";
             
-            s += "\ntitle: { text: '" + mosjParameter.getTitle() + "' }, ";
+            s += "\ntitle: { text: '" + mosjParameter.getTitle().replaceAll("'", "\\\\'") + "' }, ";
+            s += "\nurl: '" + mosjParameter.getURL(new MOSJService(displayLocale, true)) + "', ";
             
-            if (hideMarkers) {
+            //if (hideMarkers || timeSeriesCollection.getTimeSeries().size() == 1 || stacking != null) {
+                String plotOptionsSeries = "";
+                if (hideMarkers) {
+                    plotOptionsSeries += "\nmarker: { enabled: false }";
+                }
+                
+                
+                
+                // If there is only 1 time series, disable "click to hide"
+                //if (timeSeriesCollection.getTimeSeries().size() == 1) {
+                    plotOptionsSeries += plotOptionsSeries.length() > 0 ? "," : "";
+                    //plotOptionsSeries += "\npoint: { ";
+                        plotOptionsSeries += "\nevents: { ";
+                            plotOptionsSeries += "\nlegendItemClick: function(e) { ";
+                                                    
+                                // Make the function that shows/hides the error bars when clicking on the dummy series name in the legend
+                                if (timeSeriesCollection.hasErrorBarSeries()) {
+                                    plotOptionsSeries += "e.preventDefault();";
+                                    plotOptionsSeries += "\nif(this.options.connectTo) { // Error bar series"
+                                                            + "\nvar parentSeries = this.chart.get(this.options.connectTo);"
+                                                            + "\nif (this.chart.get(parentSeries.options.linkedTo).visible) {"
+                                                                + "\nthis.chart.get(this.options.connectTo).setVisible(!this.visible);"
+                                                                + "\nthis.setVisible(!this.visible);"
+                                                            + "\n}"
+                                                        + "\n}"
+                                                        + "\nelse { // Regular series"
+                                                            + "\nvar id = this.options.id;"
+                                                            + "\nthis.setVisible(!this.visible);"
+                                                            + "\nthis.chart.get(id + \"-error\").setVisible(false);"
+                                                            + "\nthis.chart.get(id + \"-error-toggler\").setVisible(false);"
+                                                        + "\n}";
+                                }
+                                // If there is only a single time series AND it's not an error bar series, make in unhideable
+                                else if (timeSeriesCollection.getTimeSeries().size() == 1) {
+                                    plotOptionsSeries += "\nreturn false;";
+                                }
+                                                    
+                            plotOptionsSeries += "\n}";
+                        plotOptionsSeries += "\n}";
+                    //plotOptionsSeries += "\n}";
+                //}
+                
+                
+                if (stacking != null) {
+                    plotOptionsSeries += plotOptionsSeries.length() > 0 ? "," : "";
+                    plotOptionsSeries += "\nstacking: '" + stacking + "'";
+                }
+                    
+                    
+                if (!plotOptionsSeries.isEmpty()) {
+                    //plotOptionsSeries = plotOptionsSeries;
+                    s += "\nplotOptions: { ";
+                        s += "\nseries: { " + plotOptionsSeries + "\n}";
+                    s += "\n}, ";
+                }
+            //}
+            
+            /*if (stacking != null) {
                 s += "\nplotOptions: { ";
                     s += "\nseries: { ";
-                        s += "\nmarker: { enabled: false }";
-                        // If there is only 1 time series, disable "click to hide"
-                        if (timeSeriesCollection.getTimeSeries().size() == 1) {
-                            s += ",\npoint: {";
-                                s += "\nevents: {";
-                                    s += "\nlegendItemClick: function() { return false; }";
-                                s += "\n}";
-                            s += "\n}";
-                        }
+                        s += "\nstacking: '" + stacking + "'";
                     s += "\n}";
                 s += "\n}, ";
-            }
+            }*/
+            
+            // Credits
+            s += "\ncredits: { ";
+                s += "\nenabled: false";
+            s += "\n}, ";
+                    
             
             // The x axis
             s += "\nxAxis: [{ ";
                     // ToDo: Default should be datetime, not categories - .... or SHOULD IT???? http://stackoverflow.com/questions/23816474/highcharts-xaxis-yearly-data
                     s += "\ncategories: [" + makeCategoriesString(timeSeriesCollection) + "], ";
-                    s += "\nlabels: {";
+                    if (xAxisOnTop) {
+                        s += "\nopposite: true,";
+                    }
+                    s += "\nlabels: { ";
                         s += "\nstep: " + step + "";
                         if (maxStaggerLines > 0) {
                             s += ",\nmaxStaggerLines: " + maxStaggerLines;
@@ -146,45 +279,103 @@ public class HighchartsChart {
             s += "\n}], ";
             
             // The y axis / axes
-            s += "\nyAxis: [";
+            s += "\nyAxis: [ ";
                     int i = 0;
-                    while (iUnits.hasNext() && i < 2) {
+                    while (iUnits.hasNext()/* && i < 4*/) {
                         TimeSeriesDataUnit unit = iUnits.next();
+                        
+                        // Resolve some info about the values of this time series: 
+                        boolean integerValuesOnly = true; // Flag: Non-decimal values only? 
+                        boolean positiveValuesOnly = true; // Flag: Non-negative values only?
+                        double largestValue = Double.MAX_VALUE; // The maximum value
+                        
+                        List<TimeSeries> axisSeriesList = timeSeriesCollection.getTimeSeriesWithUnit(unit); // Get the time series for this axis
+                        Iterator<TimeSeries> iAxisSeries = axisSeriesList.iterator();
+                        while (iAxisSeries.hasNext()) {
+                            TimeSeries axisSeries = iAxisSeries.next();
+                            
+                            try {
+                                if (axisSeries.getMaxValue() > largestValue) {
+                                    largestValue = axisSeries.getMaxValue();
+                                }
+                            } catch (Exception whut) {}
+                            
+                            if (!axisSeries.isIntegerValuesOnlySeries()) {
+                                integerValuesOnly = false;
+                            }
+                            if (!axisSeries.isPositiveValuesOnlySeries()) {
+                                positiveValuesOnly = false;
+                            }
+                            if (!integerValuesOnly && !positiveValuesOnly)
+                                break;
+                        }
+                        
+                        // Should we define a minimum value for the y-axis?
+                        Integer min = null; // null = don't set a minimum value for the y-axis (let Highcharts decide)
+                        /*if (positiveValuesOnly && largestValue <= 100) { // 100 because 100 %
+                            min = 0; // 0 = set the minimum value to zero
+                        }*/
+                        
+                        try { 
+                            if (overrides.has(OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY)) {
+                                integerValuesOnly = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY));
+                            }
+                        } catch(Exception ee) {
+                        }
+                        try { 
+                            if (overrides.has(OVERRIDE_KEY_Y_AXIS_MIN)) {
+                                min = Integer.valueOf(overrides.getString(OVERRIDE_KEY_Y_AXIS_MIN)); // set the minimum value accordingly
+                            }
+                        } catch(Exception ee) {
+                        }
+                        
+                        
                         s += "\n{ ";
-                            s += "\nlabels: {"; 
-                                    s += "\nformat: '{value} " + unit.getShortForm() + "', ";
+                            if (integerValuesOnly) {
+                                s += "\nallowDecimals: false,";
+                            }
+                            if (min != null) {
+                                s += "\nmin: " + min + ",";
+                            }
+                            if (xAxisOnTop) {
+                                s += "\nreversed: true,";
+                            }
+                            s += "\nlabels: { "; 
+                                    //s += "\nformat: '{value} " + unit.getShortForm() + "', ";
+                                    s += "\nformat: '{value}', ";
                                     s += "\nstyle: { ";
                                         s += "\ncolor: Highcharts.getOptions().colors[" + i + "] ";
                                     s += "\n}";
                             s += "\n}, ";
-                            s += "\ntitle: {";
-                                    s += "\ntext: '" + unit.getLongForm() + "',";
+                            s += "\ntitle: { ";
+                                    s += "\nuseHTML: true,";
+                                    s += "\ntext: '" + CmsStringUtil.escapeJavaScript(unit.getLongForm() + (unit.hasShortForm() ? "  ( ".concat(unit.getShortForm()).concat(" )") : "")) + "', ";
                                     s += "\nstyle: { ";
                                         s += "color: Highcharts.getOptions().colors[" + i + "] ";
                                     s += "}";
-                            s += "}";
+                            s += "\n}";
                             
-                            if (i == 1) {
+                            if (i >= 1) {
                                 s += ", \nopposite: true";
                             }
                         s += "\n}";
-                        
-                        if (++i < 2 && iUnits.hasNext()) {
+                        i++;
+                        if (/*i < 4 && */iUnits.hasNext()) {
                             s += ",";
                         }
                     }                    
-            s += "], ";
+            s += " ], ";
             
             s += "\ntooltip: { ";
                 s += "shared: true";
-            s += "}, ";
+            s += "\n}, ";
             
             // The actual data
-            s += "\nseries: [";
+            s += "\nseries: [ ";
                 s += getSeriesDetails(timeSeriesCollection, overrides);
-            s += "]";
+            s += " ]";
             
-            s += "}";
+            s += "\n}";
             
             
             /*
@@ -226,6 +417,8 @@ public class HighchartsChart {
     protected String getSeriesDetails(TimeSeriesCollection timeSeriesCollection, JSONObject overrides) {
         try { if (overrides == null) overrides = new JSONObject(); } catch (Exception e) {} // 
         
+        ResourceBundle labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
+        
         String s = "";
         List<TimeSeries> timeSeriesList = timeSeriesCollection.getTimeSeries();
         if (!timeSeriesList.isEmpty()) {
@@ -235,53 +428,174 @@ public class HighchartsChart {
                 TimeSeries timeSeries = iTimeSeries.next();
                 
                 // Defaults
-                String seriesType = DEFAULT_SERIES_TYPE;
+                String seriesType = timeSeries.getValuesPerDataPoint() >= 5 ? SERIES_TYPE_BOX_PLOT : DEFAULT_SERIES_TYPE;
                 String seriesName = timeSeries.getLabel();// timeSeriesCollection.getTitleForTimeSeries(timeSeries);
                 boolean hideMarkers = false;
+                boolean errorBarsAlwaysOn = false;
+                //boolean isTrendLine = false;
+                //boolean connectNulls = false;
+                
                 // Customization
                 JSONObject tsCustomization = getTimeSeriesOverrides(timeSeries, overrides);
                 
                 // Handle case: General overrides (e.g. a general "type" override)
                 if (overrides != null) { 
-                    try { seriesType = overrides.getString(OVERRIDE_KEY_TYPE_STRING); } catch (Exception e) { }
+                    try { seriesType = overrides.getString(OVERRIDE_KEY_TYPE_STRING); timeSeries.setChartSeriesType(seriesType); } catch (Exception e) { }
+                    try { hideMarkers = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
+                    try { errorBarsAlwaysOn = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
+                    if (overrides.has(OVERRIDE_KEY_CONNECT_NULLS)) {
+                        try { 
+                            timeSeries.setChartConnectNulls(Boolean.valueOf(overrides.getString(OVERRIDE_KEY_CONNECT_NULLS)));
+                        } catch(Exception ee) {}
+                    }
                 } 
                 // Handle case: Specific overrides for this individual time series
                 if (tsCustomization != null) {
                 //else {
-                    try { seriesType = tsCustomization.getString(OVERRIDE_KEY_TYPE_STRING); } catch (Exception e) { }
+                    try { seriesType = tsCustomization.getString(OVERRIDE_KEY_TYPE_STRING); timeSeries.setChartSeriesType(seriesType); } catch (Exception e) { }
                     try { seriesName = tsCustomization.getString(OVERRIDE_KEY_NAME_STRING); } catch (Exception e) { }
-                    try { hideMarkers = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
+                    if (tsCustomization.has(OVERRIDE_KEY_HIDE_MARKERS_BOOL)) {
+                        try { hideMarkers = !Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_ERROR_TOGGLER)) { 
+                        try { errorBarsAlwaysOn = Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_ERROR_TOGGLER));} catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_TREND_LINE)) {
+                        try { 
+                            if (Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_TREND_LINE))) {
+                                timeSeries.flagAsTrendLine();
+                            }
+                        } catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_CONNECT_NULLS)) {
+                        try { 
+                            timeSeries.setChartConnectNulls(Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_CONNECT_NULLS)));
+                        } catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_COLOR)) {
+                        try { 
+                            timeSeries.setChartColor(tsCustomization.getString(OVERRIDE_KEY_COLOR));
+                        } catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_LINE_THICKNESS)) {
+                        try {
+                            timeSeries.setChartLineThickness(Integer.valueOf(tsCustomization.getString(OVERRIDE_KEY_LINE_THICKNESS)));
+                        } catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_MARKER_THICKNESS)) {
+                        try {
+                            timeSeries.setChartMarkersThickness(Integer.valueOf(tsCustomization.getString(OVERRIDE_KEY_MARKER_THICKNESS)));
+                        } catch(Exception ee) {}
+                    }
+                    /*if (tsCustomization.has(OVERRIDE_KEY_Y_AXIS_MIN)) {
+                        try {
+                            timeSeries.set(Integer.valueOf(tsCustomization.getString(OVERRIDE_KEY_Y_AXIS_MIN)));
+                        } catch(Exception ee) {}
+                    }
+                    if (tsCustomization.has(OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY)) {
+                        try {
+                            timeSeries.set(Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY)));
+                        } catch(Exception ee) {}
+                    }*/
                 }
                 
                 
-                s += "\n{";
+                s += "\n{ ";
                 try {
                     //int yAxis = units.indexOf( new MOSJDataUnit(timeSeries.getUnit(), timeSeries.getUnitVerbose(displayLocale)) );
                     int yAxis = timeSeriesCollection.getUnits().indexOf(timeSeries.getUnit());
-                            
-                    s += "\nname: '" + seriesName + "',";
-                    s += "\ntype: '" + seriesType + "',";
-                    s += "\nyAxis: " + yAxis + ",";
-                    if (hideMarkers) {
-                        s += "\nmarker: { enabled: false },";
-                    }
-                    s += "\ndata: [" + getValuesForTimeSeries(timeSeriesCollection, timeSeriesIndex, false) + "],";
-                    s += "\ntooltip: {"
-                                + "\npointFormat: '<span style=\"font-weight: bold; color: {series.color}\">{series.name}</span>: <b>{point.y} " 
-                                        + timeSeries.getUnit().getShortForm() + "</b>" + (timeSeries.isErrorBarSeries() ? " " : "<br/>") + "'"
-                            + "\n}";
                     
+                    /*
+                    // Handle case: same unit, but time series is manually placed on separate y-axis
+                    try {
+                        //if (timeSeriesCollection.getUnits().size() == 1 && tsCustomization.has(OVERRIDE_KEY_Y_AXIS)) {
+                        if (tsCustomization.has(OVERRIDE_KEY_Y_AXIS)) {
+                            try { yAxis = Integer.valueOf(tsCustomization.getString(OVERRIDE_KEY_Y_AXIS)); } catch (Exception e) {  }
+                        }
+                    } catch (NullPointerException npe) {
+                        // ignore
+                    }
+                    */
+                            
+                    s += "\nname: '" + CmsStringUtil.escapeJavaScript(seriesName) + "',";
+                    s += "\ntype: '" + seriesType + "',";
+                    s += "\nid: '" + timeSeries.getId() + "',";
+                    s += "\nurl: '" + timeSeries.getURL(new MOSJService(displayLocale, true)) + "',";
+                    s += "\nyAxis: " + yAxis + ",";
+                    if (timeSeries.isTrendLine() || timeSeries.isChartConnectNulls()) {
+                        s += "\nconnectNulls: true,";
+                    }
+                    if (hideMarkers || timeSeries.isTrendLine() || timeSeries.getChartMarkersThickness() != null) {
+                        //s += "\nmarker: { enabled: false },";
+                        s += "\nmarker: { ";
+                        if (hideMarkers || timeSeries.isTrendLine()) {
+                            s += "\nenabled: false" + (timeSeries.getChartMarkersThickness() != null ? "," : "");
+                        }
+                        if (timeSeries.getChartMarkersThickness() != null) {
+                            s += "\nradius: " + timeSeries.getChartMarkersThickness();
+                        }
+                        s += "\n}, ";
+                    }
+                    if (timeSeries.getChartColor() != null) {
+                        s += "\ncolor: '" + timeSeries.getChartColor() + "',";
+                    }
+                    s += "\ndata: [ " + getValuesForTimeSeries(timeSeriesCollection, timeSeriesIndex, false) + " ], ";
+                    if (timeSeries.getChartLineThickness() != null) {
+                        s += "\nlineWidth: " + timeSeries.getChartLineThickness() + ",";
+                    }
+                    if (timeSeries.getValuesPerDataPoint() == 5) {
+                        s += "\ntooltip: { "
+                                + "\npointFormat: '" 
+                                                + labels.getString(Labels.CHART_MAX_0) + ": {point.high} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + labels.getString(Labels.CHART_HIGH_0) + ": {point.q3} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + "<span style=\"font-weight:bold;\">"+ labels.getString(Labels.CHART_MEDIAN_0) + ": {point.median} " + timeSeries.getUnit().getShortForm() + "</span><br/>"
+                                                + labels.getString(Labels.CHART_LOW_0) + ": {point.q1} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + labels.getString(Labels.CHART_LOW_0) + ": {point.low} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + "'"
+                            + "\n}";
+                    } else {
+                        s += "\ntooltip: {"
+                                + "\npointFormat: '<span style=\"font-weight: bold; color: {series.color}\">{series.name}</span>: <b>{point.y} " 
+                                        + timeSeries.getUnit().getShortForm() + "</b>" + (timeSeries.isErrorBarSeries() ? (errorBarsAlwaysOn ? " " : "<br/>") : "<br/>") + "'"
+                            + "\n}";
+                    }
+                    
+                    // is this a time series with error bars?
                     if (timeSeries.isErrorBarSeries()) {
                         s += "},\n{";
+                        
+                        // first we define the actual error bar series.
+                        // its "parent" will be the series directly above here.
+                        String errorBarSeriesName = CmsStringUtil.escapeJavaScript(seriesName) + " " + labels.getString(Labels.CHART_ERROR_0).toLowerCase();
                         //s += "\nname: '" + timeSeriesCollection.getTitleForTimeSeries(timeSeries) + " error',";
-                        s += "\nname: '" + timeSeries.getLabel() + " error',";
+                        s += "\nname: '" + errorBarSeriesName + "',";
+                        s += "\nid: '" + timeSeries.getId() + "-error" + "',";
                         s += "\ntype: '" + "errorbar" + "',";
-                    s += "\nyAxis: " + yAxis + ",";
+                        s += "\nyAxis: " + yAxis + ",";
+                        s += "\nvisible: " + errorBarsAlwaysOn + ",";
+                        s += "\nlinkedTo: '" + timeSeries.getId()  + "',";
+                        //if (!errorBarsAlwaysOn) {
+                        //    s += "\nlinkedTo: null,";
+                        //    s += "\nvisible: false,";
+                        //}
                         s += "\ndata: [" + getValuesForTimeSeries(timeSeriesCollection, timeSeriesIndex, true) + "],";
                         s += "\ntooltip: {"
-                                    + "\npointFormat: '(error range: {point.low}-{point.high} " + timeSeries.getUnit().getShortForm() + ")<br/>'"
+                                    + "\npointFormat: '({point.low}-{point.high} " + timeSeries.getUnit().getShortForm() + ")<br/>'"
                                 + "\n}";
+                        
+                        // second, we define the dummy series that will act as
+                        // the visibility toggler in the chart legend.
+                        if (!errorBarsAlwaysOn) {
+                            s += "},\n{";
+                            s += "\nname: '" + errorBarSeriesName + "',"; // Use the same name
+                            s += "\nid: '" + timeSeries.getId() + "-error-toggler" + "',";
+                            s += "\ntype: '" + "errorbar" + "',";
+                            s += "\nlinkedTo: null,";
+                            s += "\nvisible: " + errorBarsAlwaysOn + ",";
+                            s += "\nconnectTo: '" + timeSeries.getId() + "-error" + "'";
+                        }
                     }
+                    
                 } catch (Exception e) {
                     //e.printStackTrace();
                     if (LOG.isErrorEnabled()) {
@@ -350,7 +664,7 @@ public class HighchartsChart {
      * @param timeSeriesIndex The index identifying the time series. (Corresponds to its placement in {@link TimeSeriesCollection#timeSeriesList}.)
      * @return The values for the single time series, with <code>null</code> values where necessary.
      */
-    private String getValuesForTimeSeries(TimeSeriesCollection timeSeriesCollection, int timeSeriesIndex, boolean highLowValues) {
+    private String getValuesForTimeSeries(TimeSeriesCollection timeSeriesCollection, int timeSeriesIndex, boolean errorBarValues) {
         String s = "";
         // We must loop all time markers to ensure we get proper null values
         // at time markers where the time series is missing a value
@@ -367,8 +681,14 @@ public class HighchartsChart {
                 // Get the data point for the particular time series that we're interested in
                 TimeSeriesDataPoint dataPoint = timeMarkData[timeSeriesIndex];
                 
-                if (!highLowValues) {
-                    s += dataPoint.getVal("#.#####################", NUMBER_FORMAT_LOCALE);
+                
+                    
+                if (!errorBarValues) {
+                    if (dataPoint.getPointCount() == 5) {
+                        s += "[" + dataPoint.getAllValues("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
+                    } else {
+                        s += dataPoint.getVal("#.#####################", NUMBER_FORMAT_LOCALE);
+                    }
                 } 
                 else {
                     String hiLoStr = dataPoint.getHighLow("#.######################", ",", NUMBER_FORMAT_LOCALE);

@@ -13,6 +13,7 @@ import java.util.ResourceBundle;
 import no.npolar.data.api.*;
 import no.npolar.data.api.mosj.*;
 import no.npolar.data.api.util.*;
+import static no.npolar.data.api.util.APIUtil.httpResponseAsString;
 import org.opencms.jsp.CmsJspActionElement;
 import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
@@ -44,8 +45,17 @@ public class Main {
     
     public static void main(String[] args) {
         if (true) {
+            /*
+            try {
+                JSONObject serviceResponseObject = new JSONObject(httpResponseAsString("http://api.npolar.no/indicator/timeseries/0efb37ac-6a3b-487d-b3bf-c9f5f340aa08"));
+            } catch (java.io.FileNotFoundException missingFileException) {
+                pl("No API entry with that ID.");
+            } catch (Exception e) {    
+                e.printStackTrace();
+            }
+            //*/
             
-            //*
+            /*
             //
             // Testing retrieve single publication
             //
@@ -53,7 +63,8 @@ public class Main {
             service.setDefaultParameters(new HashMap<String, String[]>());
             try {
                 //Publication p = service.getPublication("9338632e-a6a1-4242-83a8-35ae17c99c52");
-                Publication p = service.getPublication("8e379f15-25f7-446b-bfe3-2f0796de89ab");
+                //Publication p = service.getPublication("8e379f15-25f7-446b-bfe3-2f0796de89ab");
+                Publication p = service.getPublication("3daebc24-f98e-4aab-96e7-83213104c324");
                 if (p != null)
                     System.out.println(p.toString());
                 else
@@ -63,12 +74,12 @@ public class Main {
             }
             //*/
             
-            /*
+            //*
             //
             // Testing MOSJ API 3
             //
-            Locale loc = new Locale("en");
-            ResourceBundle labels = ResourceBundle.getBundle(Labels.getBundleName(), loc);
+            Locale loc = new Locale("no");
+            ResourceBundle labels = ResourceBundle.getBundle(no.npolar.data.api.Labels.getBundleName(), loc);
 
             //MOSJService service = new MOSJTestService(loc, false);
             MOSJService service = new MOSJService(loc, true);
@@ -83,7 +94,16 @@ public class Main {
                 //String id = "214efdf2-ed37-5df9-b26c-277cb229a2df"; // Lufttemp. og nedbør
                 //String id = "b10e3b9f-83eb-5d6d-be0c-b94f62e05d5f"; // Antall personer gått i land [...]
                 //String id = "752751da-ee9c-5a07-8128-ede08300a9bb";
-                String id = "02f947ce-715b-58c0-a2bb-5a7998516611";
+                //String id = "02f947ce-715b-58c0-a2bb-5a7998516611";
+                //String id = "88c2dd73-3128-50f9-b36f-91d0cc397e14"; // Kondisjon hos voksne isbjørnhanner
+                //String id = "29ac5f80-8dc8-5b1a-8adf-cac862178ba8"; // Cesium-137 i torsk
+                //String id = "84d22a6e-87a2-5c6a-8b6d-ca3a92661c7e"; // PCB i luft
+                //String id = "bf8a48fb-13b2-572e-8ea6-4e39039564b6"; // UV-doser
+                //String id = "e4609ad3-c852-5489-9500-31b90ff4498d"; // Uttak: isbjørn
+                //String id ="fdbafa00-844b-57db-8cc7-dbe27f2d41e0"; // Havisutbredelse i Barentshavet i april
+                String id = "1bfab4ea-109e-5cc4-bf2e-2d133d49b565";
+                
+                pl("Getting MOSJ parameter with ID " + id + " ...");
                 
                 // Get the MOSJ parameter
                 MOSJParameter mp = service.getMOSJParameter(id).setDisplayLocale(loc);
@@ -92,8 +112,20 @@ public class Main {
                 //mp.getTitle()
                 
                 // Create override object
+                //JSONObject overrides = new JSONObject();
+                JSONObject overrides = new JSONObject("{\"series\":[{\"id\":\"c4d6d6d5-fcc3-465e-9151-7116525ddc79\",\"trendLine\":\"true\"},{\"id\":\"bdda8689-820d-4288-a948-e97f09b83964\",\"lineThickness\":\"0\"},{\"id\":\"b093b268-ae43-485a-a49d-3918ba1a8c0d\",\"lineThickness\":\"0\"},{\"id\":\"9e93e67d-e744-4217-9421-1e4181466db1\",\"trendLine\":\"true\",\"color\":\"#eee\"}]}");
+                //JSONObject overrides = new JSONObject("{\"series\":[{\"id\":\"c4d6d6d5-fcc3-465e-9151-7116525ddc79\",\"trendLine\":\"true\"},{\"id\":\"bdda8689-820d-4288-a948-e97f09b83964\",\"lineThickness\":\"0\"},{\"id\":\"b093b268-ae43-485a-a49d-3918ba1a8c0d\",\"lineThickness\":\"0\"},{\"id\":\"9e93e67d-e744-4217-9421-1e4181466db1\",\"trendLine\":\"true\"},{\"id\":\"9e93e67d-e744-4217-9421-1e4181466db1\",\"color\":\"#eee\"}]}");
+                //JSONObject overrides = new JSONObject("{\"series\":[" 
+                //                                        + "{ \"id\":\"9e93e67d-e744-4217-9421-1e4181466db1\", \"trendLine\":\"true\" }" 
+                                                        //+ "{ \"id\":\"9e93e67d-e744-4217-9421-1e4181466db1\", \"trendLine\":\"true\", \"color\":\"#eee\" }" 
+                                                        //+ "{\"id\":\"4bef90cf-2d79-45fb-a9a7-64abda0002e0\", \"dots\":\"false\", \"trendLine\":\"true\"}" 
+                                                        //+ ",{id:'d4487834-31b2-4838-8f76-59b15c81eacb', dots:'false', trendLine:'true'}" 
+                                                        //+ ",{id:'077d780d-19de-4040-b474-9614a592301f', dots:'false', trendLine:'true'}" 
+                                                        //+ ",{id:'b6563b5f-d2d7-49e5-9bfc-f5db8211b4be', dots:'false', trendLine:'true'}"
+                //                                    + "]}");
                 //JSONObject overrides = new JSONObject("{ series: [{id:'a74c550f-25b3-526d-a5c2-92945db572c4', type:'bar'}] }");
-                JSONObject overrides = new JSONObject("{ type: column, series: [{id:'a74c550f-25b3-526d-a5c2-92945db572c4', type:'bar'}] }");
+                //JSONObject overrides = new JSONObject("{ errorToggler: true, type: column, series: [{id:'a74c550f-25b3-526d-a5c2-92945db572c4', type:'bar'}] }");
+                //JSONObject overrides = new JSONObject("{ series: [{id:'94225197-ad05-5c19-9c9d-c1e8bfeaf1f9', type:'column', yAxis:'1'}, {id:'1af3f195-1c25-5130-b1f5-3b9ce1ffcbd2', yAxis:'0'}, {id:'14bf4a87-8966-52a2-a86e-7695bda9deb9', yAxis:'0'}] }");
 
                 pl("Parameter: " + mp.getTitle(loc) + " -- " + mp.getURL(service));
 
@@ -124,6 +156,7 @@ public class Main {
                 //pl("\n############\nTable format:\n" + chart.getHtmlTable());
                 pl("\n############\nTable format:\n" + mp.getAsTable("responsive"));
                 pl("\n############\nStandard format:\n" + chart.getChartConfigurationString());
+                pl("\n############\nCSV format:\n" + mp.getAsCSV());
                 //
                 //pl(mp.getHighchartsConfig(overrides));
 

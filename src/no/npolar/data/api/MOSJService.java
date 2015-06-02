@@ -140,47 +140,27 @@ public class MOSJService extends APIService {
     public MOSJParameter getMOSJParameter(String id) 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
         
-        //List<TimeSeries> relatedTimeSeries = getTimeSeriesForMOSJParameter(id);
-        
-        // This is so not right ... need to tidy up later tho, no time now before deadline
         String queryUri = getServiceBaseURL() + SERVICE_PATH_PARAMETER + id;
         
         MOSJParameter mp = null;
-        JSONObject mosjParameterJson = null;
+        
         try {
-            mosjParameterJson = new JSONObject(httpResponseAsString(queryUri));
+            JSONObject mosjParameterJson = new JSONObject(httpResponseAsString(queryUri));
             mp = new MOSJParameter(mosjParameterJson, displayLocale);
-            //mp.addAllTimeSeries(relatedTimeSeries);
         } catch (Exception e) { 
-            // ToDo: Log this
-            LOG.error("Error creating MOSJ parameter using API URI " + queryUri + ".", e);
-            return null;
-        }
-        // Code below moved to MOSJParameter
-        /*
-        try {
-            mosjParameterJson.has(MOSJParameter.API_KEY_RELATED_TIME_SERIES);
-            ArrayList<TimeSeries> relatedTimeSeriesList = new ArrayList<TimeSeries>();
-            JSONArray relatedTimeSeriesArr = mosjParameterJson.getJSONArray(MOSJParameter.API_KEY_RELATED_TIME_SERIES); // Each array entry is a URLs to a related time series
-            for (int i = 0; i < relatedTimeSeriesArr.length(); i++) {
-                try {
-                    String relatedTimeSeriesUrl = relatedTimeSeriesArr.getString(i);
-                    relatedTimeSeriesList.add(getTimeSeries(relatedTimeSeriesUrl));
-                } catch (Exception ee) {
-                    // Log this?
-                }
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error creating MOSJ parameter using URL " + queryUri + ".", e);
             }
-            mp.addAllTimeSeries(relatedTimeSeriesList);
-        } catch (Exception e) {
-            // Parameter has no related time series
         }
-        */
+        
         return mp;
     }
     
     public TimeSeries getTimeSeries(String timeSeriesId) {        
         if (timeSeriesId == null) 
             return null;
+        
+        
         
         String timeSeriesUrl = null;
         if (!timeSeriesId.startsWith(SERVICE_PROTOCOL)) {

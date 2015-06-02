@@ -31,7 +31,7 @@ public class TimeSeriesDataPoint {
     protected Date dateTime = null;
     protected double max = 0;   // maximum value (?)
     protected double high = 0;    // upper value (?)
-    protected double val = 0;   // value
+    protected Double val = null;   // value
     protected double low = 0;    // lower value (?)
     protected double min = 0;   // minimum value (?)
     protected String dateTimeAccuracy = null;
@@ -144,6 +144,8 @@ public class TimeSeriesDataPoint {
      * @return The number of values contained in this data point.
      */
     public int getPointCount() { 
+        if (this.hasMax && this.hasMin)
+            return 5;
         if (this.hasHighLow())
             return 3;
         else
@@ -167,6 +169,15 @@ public class TimeSeriesDataPoint {
             return df.format(val);
         }
         */
+    }
+    
+    public String getAllValues(String format, Locale locale) {
+        String s = formatNumber(this.min, format, locale) 
+                + ", " + formatNumber(this.low, format, locale)
+                + ", " + formatNumber(this.val, format, locale)
+                + ", " + formatNumber(this.high, format, locale)
+                + ", " + formatNumber(this.max, format, locale);
+        return s;
     }
     
     /**
@@ -240,7 +251,7 @@ public class TimeSeriesDataPoint {
     public String toString() { 
         String s = "";
         if (this.valIsInt()) {
-            s += (int)val;
+            s += val.intValue();
         } else {
             s += val;
         }

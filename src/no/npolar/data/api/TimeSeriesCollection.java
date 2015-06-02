@@ -2,6 +2,8 @@ package no.npolar.data.api;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 //import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
@@ -42,8 +44,13 @@ public class TimeSeriesCollection {
     //public static final String DEFAULT_HC_SERIES_TYPE = "line";
     /** Holds the number of time markers. */
     protected int numTimeMarkers = 0;
+    /** Flag indicating whether this collections contains any error bar series or not. */
+    private boolean hasErrorBarSeries = false;
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(TimeSeriesCollection.class);
+    
+    
+    
             
     /**
      * Creates a new time series collection, which holds the given time series.
@@ -72,6 +79,20 @@ public class TimeSeriesCollection {
         this.title = title;
     }
     
+    /**
+     * Sorts / re-orders the series in this collection.
+     * 
+     * @param comparator The comparator to use in the re-ordering / sorting.
+     */
+    public void sortTimeSeries(Comparator<TimeSeries> comparator) {
+        // Make a copy of the current time series list
+        List<TimeSeries> reOrderedTimeSeriesList = new ArrayList<TimeSeries>();
+        reOrderedTimeSeriesList.addAll(timeSeriesList);
+        // Order the copy based on the order index
+        Collections.sort(reOrderedTimeSeriesList, comparator);
+        // Update the time series list
+        this.setTimeSeries(reOrderedTimeSeriesList);
+    }
     /**
      * Gets the units applicable for the data in this set.
      * 
@@ -136,6 +157,35 @@ public class TimeSeriesCollection {
     }
     
     /**
+     * Gets all time series of the given unit in this collection.
+     * 
+     * @param unit The unit to evaluate against.
+     * @return All time series of the given unit.
+     */
+    public List<TimeSeries> getTimeSeriesWithUnit(TimeSeriesDataUnit unit) { 
+        List<TimeSeries> matchingSeries = new ArrayList<TimeSeries>();
+        
+        Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
+        while (iTimeSeries.hasNext()) {
+            TimeSeries timeSeries = iTimeSeries.next();
+            if (timeSeries.getUnit().equals(unit)) {
+                matchingSeries.add(timeSeries);
+            }
+        }
+        return matchingSeries;
+    }
+    
+    /**
+     * Gets a flag indicating whether or not this collections contains any 
+     * error bar series.
+     * 
+     * @return True if this collections contains one or more error bar series, false if not.
+     */
+    public boolean hasErrorBarSeries() {
+        return this.hasErrorBarSeries;
+    }
+    
+    /**
      * Gets the "raw" data set underlying the time series in this collection.
      * <p>
      * Each key string in the returned map is a time marker (e.g. a year) and 
@@ -188,14 +238,17 @@ public class TimeSeriesCollection {
     /**
      * Sets the time series and makes sure all changes are propagated.
      * <p>
-     * This method is called by the constructor.
+     * This method is called by the constructor and by any method(s) that 
+     * causes any (re)ordering of the time series in this collection.
      * 
      * @param tss The time series to add.
      * @return The updated instance.
-     * @throws JSONException 
      */
-    private TimeSeriesCollection setTimeSeries(List<TimeSeries> tss) throws JSONException {
+    private TimeSeriesCollection setTimeSeries(List<TimeSeries> tss) /*throws JSONException*/ {
         timeSeriesList.clear();
+        units.clear();
+        dataSet.clear();
+        
         timeSeriesList.addAll(tss);
         
         Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
@@ -228,6 +281,10 @@ public class TimeSeriesCollection {
                 } 
                 dataSet.get(dataPointKey)[timeSeriesIndex] = dataPoint;
             }
+            
+            if (timeSeries.isErrorBarSeries())
+                this.hasErrorBarSeries = true;
+            
             timeSeriesIndex++;
         }
         

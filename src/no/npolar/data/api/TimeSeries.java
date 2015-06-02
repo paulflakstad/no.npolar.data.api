@@ -2,6 +2,7 @@ package no.npolar.data.api;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -61,6 +62,26 @@ public class TimeSeries implements APIEntryInterface {
     /** Flag indicating if any data point has a "min" value. */
     protected boolean hasMin = false;
     
+    /** Flag indicating if this time series is a trend line. */
+    protected boolean isTrendLine = false;
+    /** Flag indicating if this time series contains decimal number values. */
+    protected boolean isDecimalValueSeries = false; 
+    /** The lowest value in this time series. Set by {@link #initDataPoints()}. */
+    protected Double minValue = Double.MAX_VALUE;
+    /** The highest value in this time series. Set by {@link #initDataPoints()}. */
+    protected Double maxValue = Double.MIN_VALUE;
+    
+    /** A number indicating this time series' order position in a set of time series. */
+    protected int orderIndex = Integer.MIN_VALUE;
+    
+    protected boolean chartMarkersEnabled = true;
+    protected Integer chartMarkersThickness = null;
+    protected Integer chartLineThickness = null;
+    protected boolean chartConnectNulls = false;
+    protected String chartColor = null;
+    protected String chartSeriesType = null;
+    
+    
     /** The format to use when rendering timestamps. */
     private SimpleDateFormat timestampFormat = null;
     
@@ -92,6 +113,13 @@ public class TimeSeries implements APIEntryInterface {
     public static final String API_KEY_VARIABLES_LABELS = "labels";
     public static final String API_KEY_VARIABLES_LABEL = "label";
     public static final String API_KEY_VARIABLES_UNITS = "units";
+    
+    public static final Comparator<TimeSeries> ORDER_INDEX_COMPARATOR = new Comparator<TimeSeries>() {
+        @Override
+        public int compare(TimeSeries o1, TimeSeries o2) {
+            return Integer.compare(o1.getOrderIndex(), o2.getOrderIndex());
+        }
+    };
     
     
     /** The logger. */
@@ -136,14 +164,20 @@ public class TimeSeries implements APIEntryInterface {
         try {
             String unitShort = "";
             String unitLong = "";
-            try {
-                unitShort = apiStructure.getJSONObject(API_KEY_UNIT).getString(API_KEY_UNIT_SYMBOL);
-                unitLong = getLabelFor(API_KEY_POINT_VAL);
-            } catch (JSONException ee) {
+            
+            // Value unit/symbol (e.g. "mm") should be allowed missing (= indicates absolute number of something)
+            try { unitShort = apiStructure.getJSONObject(API_KEY_UNIT).getString(API_KEY_UNIT_SYMBOL); } catch (Exception e) {}
+            // Value description/label (e.g. "Precipitation") should always be present ...
+            try { unitLong = getLabelFor(API_KEY_POINT_VAL); } catch (Exception e) { }
+            
+            // ... so log a warning if it's missing
+            if (unitLong == null || unitLong.equals(API_KEY_POINT_VAL)) {
+                unitLong = "";
                 if (LOG.isWarnEnabled()) {
-                    LOG.warn("Unit missing on time series " + this.getId() + ".");
+                    LOG.warn("Value label missing on time series " + this.getId() + ".");
                 }
             }
+            
             this.unit = new TimeSeriesDataUnit(unitShort, unitLong);
             
             
@@ -174,6 +208,94 @@ public class TimeSeries implements APIEntryInterface {
         */
     }
     
+    public TimeSeries setChartLineThickness(int lineThickness) {
+        this.chartLineThickness = lineThickness;
+        return this;
+    }
+    public TimeSeries setChartMarkersThickness(int markersThickness) {
+        this.chartMarkersThickness = markersThickness;
+        return this;
+    }
+    
+    public TimeSeries setChartMarkersEnabled(boolean markersEnabled) {
+        this.chartMarkersEnabled = markersEnabled;
+        return this;
+    }
+    public TimeSeries setChartConnectNulls(boolean connectNulls) {
+        this.chartConnectNulls = connectNulls;
+        return this;
+    }
+    public TimeSeries setChartColor(String color) {
+        if (color == null || color.isEmpty() || color.length() < 3) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Attemting to set non-valid chart color '" + color + "' on time series " + this.getId() + " / " + this.getTitle() + ".");
+            }
+            return this;
+        }
+        
+        if (!color.startsWith("#")) {
+            color = "#" + color;
+        }
+        
+        this.chartColor = color;
+        
+        //if (color != null) {
+        if (!this.chartColor.substring(1).matches("[0-9a-fA-F]{3}|[0-9a-fA-F]{6}")) {
+            this.chartColor = null; // Illegal value
+        }
+        //}
+        
+        return this;
+    }
+    /**
+     * Unsets the chart color (if any).
+     * 
+     * @return This time series, updated.
+     */
+    public TimeSeries unsetChartColor() {
+        this.chartColor = null;
+        return this;
+    }
+    public TimeSeries setChartSeriesType(String seriesType) {
+        this.chartSeriesType = seriesType;
+        return this;
+    }
+    public TimeSeries setOrderIndex(int orderIndex) {
+        this.orderIndex = orderIndex;
+        return this;
+    }
+    
+    public Integer getChartLineThickness() { return this.chartLineThickness; }
+    public Integer getChartMarkersThickness() { return this.chartMarkersThickness; }
+    public boolean isChartMarkersEnabled() { return this.chartMarkersEnabled; }
+    public boolean isChartConnectNulls() { return this.chartConnectNulls; }
+    public String getChartColor() { return this.chartColor; }
+    public String getChartSeriesType() { return this.chartSeriesType; }
+    public Integer getOrderIndex() { return this.orderIndex; }
+    
+    /**
+     * Flags this time series as being a trend line.
+     * 
+     * @return The updated time series instance.
+     */
+    public TimeSeries flagAsTrendLine() {
+        this.isTrendLine = true;
+        this.setChartColor("#c00");
+        this.setChartConnectNulls(true);
+        this.setChartMarkersEnabled(false);
+        return this;
+    }
+    
+    /**
+     * Determines whether or not this time series is flagged as being a trend 
+     * line.
+     * 
+     * @return True if this time series is flagged as being a trend line, false if not.
+     */
+    public boolean isTrendLine() {
+        return this.isTrendLine;
+    }
+    
     private JSONObject getVariablesFor(String variableName) {
         if (!apiStructure.has(API_KEY_VARIABLES) || variableName == null)
             return null;
@@ -193,7 +315,7 @@ public class TimeSeries implements APIEntryInterface {
     
     private String getLabelFor(String variableName) {
         if (!apiStructure.has(API_KEY_LABELS) || variableName == null)
-            return null;
+            return variableName;
         try {
             JSONArray labelsArr = apiStructure.getJSONArray(API_KEY_LABELS);
             for (int i = 0; i < labelsArr.length(); i++) {
@@ -206,7 +328,7 @@ public class TimeSeries implements APIEntryInterface {
         } catch (Exception e) {
             // WTF
         }
-        return null;
+        return variableName;
     }
     
     /**
@@ -343,24 +465,24 @@ public class TimeSeries implements APIEntryInterface {
      * @throws JSONException 
      */
     private TimeSeries initDataPoints() throws JSONException {
-        JSONArray dps = apiStructure.getJSONArray(API_KEY_DATA_POINTS);
-        if (dps.length() > 0) {
+        JSONArray dataPointsJSONArr = apiStructure.getJSONArray(API_KEY_DATA_POINTS);
+        if (dataPointsJSONArr.length() > 0) {
             dataPoints = new ArrayList<TimeSeriesDataPoint>();
-            for (int i = 0; i < dps.length(); i++) {
+            for (int i = 0; i < dataPointsJSONArr.length(); i++) {
                 try {
-                    JSONObject dpObj = dps.getJSONObject(i);
+                    JSONObject dataPointJSON = dataPointsJSONArr.getJSONObject(i);
                     Double value = null;
                     //String timestampFormat = null;
                     String timestamp = null;
                     //int year = Integer.MIN_VALUE;
-                    try { value = dpObj.getDouble(API_KEY_POINT_VAL); } catch (Exception ee) {  }
+                    try { value = dataPointJSON.getDouble(API_KEY_POINT_VAL); } catch (Exception ee) {  }
                     // The timestamp is either a full timestamp (string) or just the year (int)
                     try { 
-                        timestamp = dpObj.getString(API_KEY_POINT_TIMESTAMP); 
+                        timestamp = dataPointJSON.getString(API_KEY_POINT_TIMESTAMP); 
                     } catch (Exception ee) {
-                        try { 
+                        try {
                             // Probably temporary
-                            int year = dpObj.getInt(API_KEY_POINT_YEAR); 
+                            int year = dataPointJSON.getInt(API_KEY_POINT_YEAR); 
                             timestamp = "" + year + "-01-01T12:00:00Z";
                             this.dateTimeAccuracy = DATE_FORMAT_UNIX_YEAR;
                             this.setTimestampFormat(); // Because the datetime accuracy changed
@@ -373,6 +495,8 @@ public class TimeSeries implements APIEntryInterface {
                         continue;
                     }
                     
+                    updateExtremeValues(value);
+                    
                     //try { timestampFormat = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
                     TimeSeriesDataPoint dp = new TimeSeriesDataPoint(
                                         value, 
@@ -383,27 +507,31 @@ public class TimeSeries implements APIEntryInterface {
                     
                     // ToDo: This time series should keep track of whether high/low/max/min values exist, not the data point
                     // (is this already handled by the isErrorBarSeries() method???)
-                    if (dpObj.has(API_KEY_POINT_HIGH)) {
-                        dp.setHigh(dpObj.getDouble(API_KEY_POINT_HIGH));
+                    if (dataPointJSON.has(API_KEY_POINT_HIGH)) {
+                        dp.setHigh(dataPointJSON.getDouble(API_KEY_POINT_HIGH));
                         this.hasHigh = true;
+                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_HIGH));
                     } else if (this.hasHigh) {
                         // Log this
                     }
-                    if (dpObj.has(API_KEY_POINT_LOW)) {
-                        dp.setLow(dpObj.getDouble(API_KEY_POINT_LOW));
+                    if (dataPointJSON.has(API_KEY_POINT_LOW)) {
+                        dp.setLow(dataPointJSON.getDouble(API_KEY_POINT_LOW));
                         this.hasLow = true;
+                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_LOW));
                     } else if (this.hasLow) {
                         // Log this
                     }
-                    if (dpObj.has(API_KEY_POINT_MAX)) {
-                        dp.setMax(dpObj.getDouble(API_KEY_POINT_MAX));
+                    if (dataPointJSON.has(API_KEY_POINT_MAX)) {
+                        dp.setMax(dataPointJSON.getDouble(API_KEY_POINT_MAX));
                         this.hasMax = true;
+                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MAX));
                     } else if (this.hasMax) {
                         // Log this
                     }
-                    if (dpObj.has(API_KEY_POINT_MIN)) {
-                        dp.setMin(dpObj.getDouble(API_KEY_POINT_MIN));
+                    if (dataPointJSON.has(API_KEY_POINT_MIN)) {
+                        dp.setMin(dataPointJSON.getDouble(API_KEY_POINT_MIN));
                         this.hasMin = true;
+                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MIN));
                     } else if (this.hasMin) {
                         // Log this
                     }
@@ -416,6 +544,61 @@ public class TimeSeries implements APIEntryInterface {
         }
         return this;
     }
+    /**
+     * Updates the minimum and maximum values of this time series, if the given 
+     * value exceeds the current extreme values.
+     * <p>
+     * Also, updates the "decimal values" and "positive values only" flags.
+     * <p>
+     * Invoked by {@link #initDataPoints()}.
+     * 
+     * @param value The value to compare to the current extreme values.
+     */
+    private void updateExtremeValues(double value) {
+        if (value > this.maxValue) {
+            this.maxValue = value;
+        }
+        if (value < this.minValue) {
+            this.minValue = value;
+        }
+        
+        if (!isDecimalValueSeries) {
+            // If the given value is not an integer, update the flag
+            if (value % 1 != 0) {
+                this.isDecimalValueSeries = true;
+            } 
+        }
+    }
+    /**
+     * Determines whether or not this series contains no negative values.
+     * 
+     * @return True if this series contains no negative values, false if not.
+     */
+    public boolean isPositiveValuesOnlySeries() {
+        return this.minValue >= 0;
+    }
+    /**
+     * Gets the maximum value in this time series.
+     * 
+     * @return The maximum value in this time series.
+     */
+    public double getMaxValue() {
+        return this.maxValue;
+    }
+    /**
+     * Gets the minimum value in this time series.
+     * 
+     * @return The minimum value in this time series.
+     */
+    public double getMinValue() {
+        return this.minValue;
+    }
+    /**
+     * Determines whether or not this series contains only integer values.
+     * 
+     * @return True if this series contains only integer values, false if not.
+     */
+    public boolean isIntegerValuesOnlySeries() { return !this.isDecimalValueSeries; }
     /**
      * @return The list of data points in this time series.
      */
@@ -459,25 +642,37 @@ public class TimeSeries implements APIEntryInterface {
     
     public String getDataPointsAsTableRow(TimeSeriesCollection tsc) {
         String s = "";
+        
+        if (this.isTrendLine())
+            return s;
+        
         try {
             ArrayList<String> rows = new ArrayList<String>();
-            for (int i = 0; i < getDataPointsResolution(); i++) {
+            for (int i = 0; i < getValuesPerDataPoint(); i++) {
                 rows.add("");
             }
+            
+            //s += "<!-- Total rows: " + rows.size() + ", this.getUnit().getShortForm()=" + this.getUnit().getShortForm() + " -->\n";
 
-            Iterator<String> iTimeMarker = tsc.getTimeMarkerIterator();        
+            Iterator<String> iTimeMarker = tsc.getTimeMarkerIterator();
 
             while (iTimeMarker.hasNext()) {
                 String timeMarker = iTimeMarker.next();
+                
+                //s += "<!-- getting data for " + timeMarker + " ... -->\n";
+                
                 TimeSeriesDataPoint dataPoint = getDataPointForTimeMarker(timeMarker);
-                for (int i = 0; i < getDataPointsResolution(); i++) {
+                
+                for (int i = 0; i < getValuesPerDataPoint(); i++) { // Must use getValuesPerDataPoint because dataPoint might be null
                     if (rows.get(i).isEmpty()) {
+                        //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
                         String rowStart = "<tr><th scope=\"row\"><span class=\"tr-time-series-title\">" + this.getLabel(displayLocale) + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "") + "</span></th>";
                         rowStart += "<td><span class=\"tr-time-series-unit\">" + this.getUnit().getShortForm() + "</span></td>";
                         rows.set(i, rowStart);
                     }
                     rows.set(i, rows.get(i) + "<td>" + (dataPoint == null ? "" : dataPoint.get(i, "#.####")) + "</td>" + (iTimeMarker.hasNext() ? "" : "</tr>\n"));
                 }
+                
             }
             if (!rows.isEmpty()) {
                 Iterator<String> iRows = rows.iterator();
@@ -488,7 +683,56 @@ public class TimeSeries implements APIEntryInterface {
                 s += "<!-- No data points in time series " + this.getId() + " -->\n";
             }
         } catch (Exception e) {
-            s += "<!-- Error creating table row(s) for time series: " + e.getMessage() + " -->\n"; 
+            s += "<!-- Error creating table row(s) for time series " + this.getId() + ": " + e.getMessage() + " -->\n"; 
+        }
+        return s;
+    }
+    
+    
+    public String getDataPointsAsCSVRow(TimeSeriesCollection tsc) {
+        String s = "";
+        
+        if (this.isTrendLine())
+            return s;
+        
+        try {
+            ArrayList<String> rows = new ArrayList<String>();
+            for (int i = 0; i < getValuesPerDataPoint(); i++) {
+                rows.add("");
+            }
+            
+            //s += "<!-- Total rows: " + rows.size() + ", this.getUnit().getShortForm()=" + this.getUnit().getShortForm() + " -->\n";
+
+            Iterator<String> iTimeMarker = tsc.getTimeMarkerIterator();
+
+            while (iTimeMarker.hasNext()) {
+                String timeMarker = iTimeMarker.next();
+                
+                //s += "<!-- getting data for " + timeMarker + " ... -->\n";
+                
+                TimeSeriesDataPoint dataPoint = getDataPointForTimeMarker(timeMarker);
+                
+                for (int i = 0; i < getValuesPerDataPoint(); i++) { // Must use getValuesPerDataPoint because dataPoint might be null
+                    if (rows.get(i).isEmpty()) {
+                        //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
+                        String rowStart = APIUtil.escapeCSV(this.getLabel(displayLocale) + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "")) + ";";
+                        rowStart += APIUtil.escapeCSV(this.getUnit().getShortForm()) + ";";
+                        rows.set(i, rowStart);
+                    }
+                    rows.set(i, rows.get(i) + (dataPoint == null ? "" : dataPoint.get(i, "#.####")) + (iTimeMarker.hasNext() ? ";" : "\n"));
+                }
+                
+            }
+            if (!rows.isEmpty()) {
+                Iterator<String> iRows = rows.iterator();
+                while (iRows.hasNext()) {
+                    s += iRows.next();
+                }
+            } else {
+                //s += "<!-- No data points in time series " + this.getId() + " -->\n";
+            }
+        } catch (Exception e) {
+            //s += "<!-- Error creating CSV row(s) for time series " + this.getId() + ": " + e.getMessage() + " -->\n"; 
         }
         return s;
     }
@@ -529,7 +773,7 @@ public class TimeSeries implements APIEntryInterface {
     /**@return The timestamp accuracy level. */
     public String getDateTimeAccuracy() { return dateTimeAccuracy; }
     /**@return Flag indicating whether or not this series has error bars. */
-    public boolean isErrorBarSeries() { return this.hasHigh && this.hasLow; }
+    public boolean isErrorBarSeries() { return this.hasHigh && this.hasLow && (!this.hasMax && !this.hasMin); }
     
     /**
      * Gets the number of values contained in each data point of this series.
@@ -538,8 +782,10 @@ public class TimeSeries implements APIEntryInterface {
      * 
      * @return The number of values contained in this data point.
      */
-    public int getDataPointsResolution() { 
-        if (this.hasHigh && this.hasLow)
+    public int getValuesPerDataPoint() { 
+        if (this.hasMax && this.hasMin)
+            return 5;
+        else if (this.hasHigh && this.hasLow)
             return 3;
         else
             return 1;

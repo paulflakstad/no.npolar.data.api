@@ -60,6 +60,10 @@ public class APIUtil {
         try {
             JSONObject serviceResponseObject = new JSONObject(httpResponseAsString(url));
             return serviceResponseObject;
+        } catch (java.io.FileNotFoundException missingFileException) {
+            if (LOG.isWarnEnabled()) {
+                LOG.warn("The API service says there is no entry at '" + url + "'.");
+            }
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Unable to get a valid JSON object from API service at '" + url + "'.", e); 
@@ -165,6 +169,20 @@ public class APIUtil {
             }
         }
         
+        return s;
+    }
+    
+    /**
+     * CSV-escapes double quotes and semicolon from the given string.
+     * 
+     * @param unescaped The string to escape.
+     * @return The given string, safe to use in CSV.
+     */
+    public static String escapeCSV(String unescaped) {
+        String s = unescaped;
+        if (unescaped != null && (unescaped.contains("\"") || unescaped.contains(";"))) {
+            s = "\"" + unescaped.replaceAll("\"", "\"\"") + "\"";
+        }        
         return s;
     }
     
