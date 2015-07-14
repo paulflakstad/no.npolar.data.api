@@ -233,6 +233,8 @@ public class TimeSeries implements APIEntryInterface {
             return this;
         }
         
+        color = color.trim();
+        
         if (!color.startsWith("#")) {
             color = "#" + color;
         }
@@ -241,6 +243,9 @@ public class TimeSeries implements APIEntryInterface {
         
         //if (color != null) {
         if (!this.chartColor.substring(1).matches("[0-9a-fA-F]{3}|[0-9a-fA-F]{6}")) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Attemting to set non-valid chart color '" + color + "' on time series " + this.getId() + " / " + this.getTitle() + ".");
+            }
             this.chartColor = null; // Illegal value
         }
         //}
