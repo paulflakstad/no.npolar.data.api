@@ -168,7 +168,7 @@ public class HighchartsChart {
             int xLabelRotation = -1;
             boolean hideMarkers = false;
             String stacking = null;
-            boolean errorBarsAlwaysOn = false;
+            //boolean errorBarsAlwaysOn = false;
             boolean xAxisOnTop = false;
             
             try { type = "type: '" + overrides.getString(OVERRIDE_KEY_TYPE_STRING) + "'"; } catch(Exception ee) {}
@@ -177,7 +177,7 @@ public class HighchartsChart {
             try { xLabelRotation = Integer.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_LABEL_ROTATION_INT)); } catch(Exception ee) {}
             try { hideMarkers = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
             try { stacking = overrides.getString(OVERRIDE_KEY_STACKING); } catch (Exception ee) {}
-            try { errorBarsAlwaysOn = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
+            //try { errorBarsAlwaysOn = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
             try { xAxisOnTop = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_ON_TOP)); } catch(Exception ee) {}
             
             s += "{ ";
@@ -437,6 +437,7 @@ public class HighchartsChart {
                 
                 // Customization
                 JSONObject tsCustomization = getTimeSeriesOverrides(timeSeries, overrides);
+                //System.out.println(tsCustomization);
                 
                 // Handle case: General overrides (e.g. a general "type" override)
                 if (overrides != null) { 
