@@ -8,7 +8,7 @@
 # SVN files
 .svn/
 # Non-interesting stuff
-/.gitignore~
+*~
 /src/main/Main.java
 
 # Windows image file caches
