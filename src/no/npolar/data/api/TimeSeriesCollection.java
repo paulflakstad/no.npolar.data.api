@@ -7,6 +7,7 @@ import java.util.Comparator;
 //import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TreeMap;
 //import java.util.Map;
 import no.npolar.data.api.mosj.MOSJParameter;
@@ -197,6 +198,26 @@ public class TimeSeriesCollection {
      */
     public TreeMap<String, TimeSeriesDataPoint[]> getDataSet() {
         return this.dataSet;
+    }
+    
+    /**
+     * Adds data points to this time series collection. 
+     * <p>
+     * Useful in particular on irregular time series, if we want to show time
+     * markers that have no associated data.
+     * 
+     * @param dataPoints
+     * @return This collection, updated.
+     */
+    public TimeSeriesCollection addDataPoints(Map<String, TimeSeriesDataPoint[]> dataPoints) {
+        try {
+            this.dataSet.putAll(dataPoints);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unable to add data points to collection '" + this.getTitle() + "'.", e);
+            }
+        }
+        return this;
     }
     
     /**

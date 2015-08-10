@@ -1,8 +1,10 @@
 package no.npolar.data.api.mosj;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import no.npolar.data.api.MOSJService;
 import no.npolar.data.api.TimeSeriesDataUnit;
@@ -47,6 +49,8 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_X_AXIS_LABEL_ROTATION_INT = "xLabelRotation";
     /** Override key: X-axis on top flag. {@link http://api.highcharts.com/highcharts#xAxis.reversed } and {@link http://api.highcharts.com/highcharts#xAxis.opposite } */
     public static final String OVERRIDE_KEY_X_AXIS_ON_TOP = "xAxisOnTop";
+    /** Override key: X-axis "enforce equal steps" flag. Can be used on irregular time series data, e.g. to show in-between years with no data. */
+    public static final String OVERRIDE_KEY_X_AXIS_ENFORCE_EQUAL_STEPS = "enforceEqualSteps";
     /** Override key: Number of lines to spread labels over (applies to horizontal lines). {@link http://api.highcharts.com/highcharts#xAxis.labels.staggerLines } */
     public static final String OVERRIDE_KEY_MAX_STAGGER_LINES_INT = "maxStaggerLines";
     /** Override key: Hide point markers in the series? {@link http://api.highcharts.com/highcharts#plotOptions.series.marker.enabled } */
@@ -141,6 +145,61 @@ public class HighchartsChart {
     }
     
     /**
+     * Ensures equal steps between all time markers.
+     * <p>
+     * Currently works only for yearly time markers, where "missing" years are 
+     * added. E.g. in a collection that has time markers for 2010, 2012, 2013, 
+     * and 2015, time markers for 2011 and 2014 will be added.
+     * 
+     * @param timeSeriesCollection
+     * @return The given time series collection, updated.
+     */
+    protected TimeSeriesCollection fillTimeMarkerGaps(TimeSeriesCollection timeSeriesCollection) {
+        try {
+            int year = Integer.MIN_VALUE;
+            int prevYear = Integer.MAX_VALUE;
+            
+            // First, find the smallest interval between two points
+            int smallestInterval = Integer.MAX_VALUE;
+            Iterator<String> itr = timeSeriesCollection.getTimeMarkerIterator();
+            while (itr.hasNext()) {
+                year = Integer.valueOf(itr.next());
+                if (prevYear != Integer.MAX_VALUE) {
+                    if (year - prevYear < smallestInterval) {
+                        smallestInterval = year - prevYear;
+                    }
+                }
+                prevYear = year;
+            }
+            
+            year = Integer.MIN_VALUE;
+            prevYear = Integer.MAX_VALUE;
+            Map<String, TimeSeriesDataPoint[]> dataToAdd = new HashMap<String, TimeSeriesDataPoint[]>();
+            
+            itr = timeSeriesCollection.getTimeMarkerIterator();
+            while (itr.hasNext()) {
+                String yearStr = itr.next();
+                System.out.println("Evaluating '" + yearStr + "'");
+                year = Integer.valueOf(yearStr);
+                if (prevYear != Integer.MAX_VALUE) {
+                    while (year - prevYear > smallestInterval) {
+                        prevYear = prevYear + smallestInterval;
+                        System.out.println("Adding missing year: " + prevYear);
+                        dataToAdd.put(String.valueOf(prevYear), null);
+                    }
+                }
+                prevYear = year;
+            }
+            timeSeriesCollection.addDataPoints(dataToAdd);
+        } catch (Exception e) {
+            // Non-yearly time marker format
+            System.out.println("CRASH! Error was: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return timeSeriesCollection;
+    }
+    
+    /**
      * Returns the chart configuration string.
      * <p>
      * It should be parseable as a JSON object.
@@ -162,6 +221,13 @@ public class HighchartsChart {
             //System.out.println("units: " + units);
             Iterator<TimeSeriesDataUnit> iUnits = units.iterator();
             
+            // Enforce equal steps?
+            boolean xAxisEnforceEqualSteps = false;
+            try { xAxisEnforceEqualSteps = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_ENFORCE_EQUAL_STEPS)); } catch(Exception ee) {}
+            if (xAxisEnforceEqualSteps) {
+                timeSeriesCollection = fillTimeMarkerGaps(timeSeriesCollection);
+            }
+            
             String type = "zoomType: 'x'";
             int step = timeSeriesCollection.getTimeMarkersCount() / 8;
             int maxStaggerLines = -1;
@@ -179,6 +245,7 @@ public class HighchartsChart {
             try { stacking = overrides.getString(OVERRIDE_KEY_STACKING); } catch (Exception ee) {}
             //try { errorBarsAlwaysOn = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
             try { xAxisOnTop = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_ON_TOP)); } catch(Exception ee) {}
+            
             
             s += "{ ";
             // Chart type
@@ -682,8 +749,6 @@ public class HighchartsChart {
                 // Get the data point for the particular time series that we're interested in
                 TimeSeriesDataPoint dataPoint = timeMarkData[timeSeriesIndex];
                 
-                
-                    
                 if (!errorBarValues) {
                     if (dataPoint.getPointCount() == 5) {
                         s += "[" + dataPoint.getAllValues("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
@@ -701,7 +766,7 @@ public class HighchartsChart {
                 }
             } catch (Exception e) {
                 // No data for our particular time series at this time marker 
-                s += "[null,null]";
+                s += "null";
             }
             
             if (iTimeMark.hasNext())
