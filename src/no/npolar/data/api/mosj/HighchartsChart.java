@@ -41,6 +41,8 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_SERIES_ID = "series";
     /** Override key: Chart / series type. {@link http://api.highcharts.com/highcharts#series.type } */
     public static final String OVERRIDE_KEY_TYPE_STRING = "type";
+    /** Override key: Chart group inverting. {@link http://jsfiddle.net/dcus5fjs/1/ } */
+    public static final String OVERRIDE_KEY_INVERT_GROUPING_BOOL = "invertGrouping";
     /** Override key: Series name. {@link http://api.highcharts.com/highcharts#series.name } */
     public static final String OVERRIDE_KEY_NAME_STRING = "name";
     /** Override key: Number of steps in-between labels on the x-axis. {@link http://api.highcharts.com/highcharts#xAxis.labels.step } */
@@ -236,6 +238,7 @@ public class HighchartsChart {
             String stacking = null;
             //boolean errorBarsAlwaysOn = false;
             boolean xAxisOnTop = false;
+            boolean invertGrouping = false;
             
             try { type = "type: '" + overrides.getString(OVERRIDE_KEY_TYPE_STRING) + "'"; } catch(Exception ee) {}
             try { step = Integer.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_LABEL_STEP_INT)); } catch(Exception ee) {}
@@ -245,12 +248,22 @@ public class HighchartsChart {
             try { stacking = overrides.getString(OVERRIDE_KEY_STACKING); } catch (Exception ee) {}
             //try { errorBarsAlwaysOn = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
             try { xAxisOnTop = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_ON_TOP)); } catch(Exception ee) {}
+            try { invertGrouping = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_INVERT_GROUPING_BOOL)); } catch(Exception ee) {}
             
             
             s += "{ ";
             // Chart type
             s += "\nchart: { ";
             s += type;
+            // Swap grouping and series names?
+            if (invertGrouping) {
+                s += ",";
+                s += "\nevents: {";
+                    s += "\nload: function() {";
+                        s += "\ntoggleHighChartsGrouping(this);";
+                    s += "\n}";
+                s += "\n}";
+            }
             s += "}, ";
             
             s += "\ntitle: { text: '" + mosjParameter.getTitle().replaceAll("'", "\\\\'") + "' }, ";
