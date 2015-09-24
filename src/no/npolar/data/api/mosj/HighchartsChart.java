@@ -63,6 +63,8 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_ERROR_TOGGLER = "errorToggler";
     /** Override key: Series "trend line" flag. */
     public static final String OVERRIDE_KEY_TREND_LINE = "trendLine";
+    /** Override key: The "dash style" value. {@link http://www.highcharts.com/docs/chart-concepts/series#12} */
+    public static final String OVERRIDE_KEY_DASH_STYLE = "dashStyle";
     /** Override key: Series order index (a number). */
     public static final String OVERRIDE_KEY_ORDER_INDEX = "orderIndex";
     /** Override key: Series "connect nulls" (don't show as discontinuous) flag. {@link http://api.highcharts.com/highcharts#plotOptions.series.connectNulls } */
@@ -85,6 +87,11 @@ public class HighchartsChart {
     public static final String DEFAULT_STACKING = "normal";
     /** The series type name for box plot charts. */
     public static final String SERIES_TYPE_BOX_PLOT = "boxplot";
+    /** The dash style keyword that indicates a short/dotted line. */
+    public static final String DASH_STYLE_SHORT = "shortdot";
+    /** The dash style keyword that indicates a long/dashed line. */
+    public static final String DASH_STYLE_LONG = "longdash";
+    
     /** The number formatting pattern to use. */
     public static final String NUMBER_FORMAT = TimeSeriesDataPoint.DEFAULT_NUMBER_FORMAT;
     /** The number formatting locale (English, because we need 3.14, not 3,14). */
@@ -514,6 +521,7 @@ public class HighchartsChart {
                 boolean errorBarsAlwaysOn = false;
                 //boolean isTrendLine = false;
                 //boolean connectNulls = false;
+                String dashStyle = null;
                 
                 // Customization
                 JSONObject tsCustomization = getTimeSeriesOverrides(timeSeries, overrides);
@@ -541,10 +549,16 @@ public class HighchartsChart {
                     if (tsCustomization.has(OVERRIDE_KEY_ERROR_TOGGLER)) { 
                         try { errorBarsAlwaysOn = Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_ERROR_TOGGLER));} catch(Exception ee) {}
                     }
+                    if (tsCustomization.has(OVERRIDE_KEY_DASH_STYLE)) {
+                        try { dashStyle = tsCustomization.getString(OVERRIDE_KEY_DASH_STYLE); } catch (Exception ee) {}
+                    }
                     if (tsCustomization.has(OVERRIDE_KEY_TREND_LINE)) {
                         try { 
                             if (Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_TREND_LINE))) {
                                 timeSeries.flagAsTrendLine();
+                                if (dashStyle != null) {
+                                    timeSeries.setChartDashStyle(dashStyle);
+                                }
                             }
                         } catch(Exception ee) {}
                     }
@@ -619,6 +633,9 @@ public class HighchartsChart {
                     }
                     if (timeSeries.getChartColor() != null) {
                         s += "\ncolor: '" + timeSeries.getChartColor() + "',";
+                    }
+                    if (timeSeries.getChartDashStyle() != null) {
+                        s += "\ndashStyle: '" + timeSeries.getChartDashStyle() + "',";
                     }
                     s += "\ndata: [ " + getValuesForTimeSeries(timeSeriesCollection, timeSeriesIndex, false) + " ], ";
                     if (timeSeries.getChartLineThickness() != null) {

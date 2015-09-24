@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import no.npolar.data.api.mosj.HighchartsChart;
 import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONArray;
 import org.opencms.json.JSONException;
@@ -36,7 +37,7 @@ public class TimeSeries implements APIEntryInterface {
     public static final String DATE_FORMAT_UNIX_HOUR = "%H";
     public static final String DATE_FORMAT_UNIX_MINUTE = "%M";
     public static final String DATE_FORMAT_UNIX_SECOND = "%S";
-    
+        
     /** Pattern that fits the API timestamps. Used to parse timestamps read from the API. */
     public static final String PATTERN_DATE_API = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 1871-06-01T12:00:00Z
     
@@ -77,6 +78,7 @@ public class TimeSeries implements APIEntryInterface {
     protected boolean chartMarkersEnabled = true;
     protected Integer chartMarkersThickness = null;
     protected Integer chartLineThickness = null;
+    protected String chartDashStyle = null;
     protected boolean chartConnectNulls = false;
     protected String chartColor = null;
     protected String chartSeriesType = null;
@@ -212,6 +214,19 @@ public class TimeSeries implements APIEntryInterface {
         this.chartLineThickness = lineThickness;
         return this;
     }
+    /**
+     * Sets the chart dash style for this series.
+     * 
+     * @param dashStyle The dash style, either "longdash" or "shortdot", or null to unset.
+     * @return The updated time series.
+     * @see {http://www.highcharts.com/docs/chart-concepts/series#12}
+     */
+    public TimeSeries setChartDashStyle(String dashStyle) {
+        if (dashStyle == null || dashStyle.equalsIgnoreCase("null")) // OR statement prevents NPE
+            this.chartDashStyle = null;
+        this.chartDashStyle = dashStyle;
+        return this;
+    }
     public TimeSeries setChartMarkersThickness(int markersThickness) {
         this.chartMarkersThickness = markersThickness;
         return this;
@@ -271,6 +286,7 @@ public class TimeSeries implements APIEntryInterface {
     }
     
     public Integer getChartLineThickness() { return this.chartLineThickness; }
+    public String getChartDashStyle() { return this.chartDashStyle; }
     public Integer getChartMarkersThickness() { return this.chartMarkersThickness; }
     public boolean isChartMarkersEnabled() { return this.chartMarkersEnabled; }
     public boolean isChartConnectNulls() { return this.chartConnectNulls; }
@@ -288,6 +304,7 @@ public class TimeSeries implements APIEntryInterface {
         this.setChartColor("#c00");
         this.setChartConnectNulls(true);
         this.setChartMarkersEnabled(false);
+        this.setChartDashStyle(HighchartsChart.DASH_STYLE_SHORT);
         return this;
     }
     
