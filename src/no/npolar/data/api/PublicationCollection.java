@@ -7,6 +7,7 @@ import java.util.Set;
 
 /**
  * Class for storing Publication objects, grouped by type.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class PublicationCollection {
@@ -42,7 +43,7 @@ public class PublicationCollection {
     /** The pre-defined keyword for identifying other publications. */
     //public static final String OTHER = "other";
     
-    /** Order definition. Dictates in what order Publications are stored and printed. */
+    /** Order definition – dictates in what order Publications are stored and printed. */
     String[] order = { 
         Publication.TYPE_PEER_REVIEWED,
         Publication.TYPE_BOOK,
@@ -90,6 +91,7 @@ public class PublicationCollection {
      * Gets a sub-list of this collection, which will contain only publications 
      * of the given type, or an empty list if no publications of that type are 
      * currently contained in this collection.
+     * 
      * @param pubType The publication type name (see constants of {@link no.npolar.api.Publication} ).
      * @return All publications of the given type currently in this collection, or an empty list if none.
      */
@@ -99,6 +101,7 @@ public class PublicationCollection {
     
     /**
      * Adds a publication to this collection.
+     * 
      * @param p The publication to add.
      */
     public final void add(Publication p) {
@@ -110,6 +113,7 @@ public class PublicationCollection {
     
     /**
      * Indicates whether this collection is empty or not.
+     * 
      * @return True if this collection is empty, false if not.
      */
     public boolean isEmpty() {
@@ -118,6 +122,7 @@ public class PublicationCollection {
     
     /**
      * Gets the publication types contained in this collection.
+     * 
      * @return The publication types contained in this collection.
      */
     public Set<String> getTypesContained() {
@@ -126,6 +131,7 @@ public class PublicationCollection {
     
     /**
      * Gets the total number of publications in this collection.
+     * 
      * @return The total number of publications in this collection.
      */
     public int size() {

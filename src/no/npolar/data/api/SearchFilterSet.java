@@ -34,7 +34,7 @@ public class SearchFilterSet {
     private String title = null;
     private int relevancyWeight = 1;
     
-    
+    /** Comparator to use for sorting search filter sets by title. */
     public static final Comparator<SearchFilterSet> COMPARATOR_TITLE =
             new Comparator<SearchFilterSet>() {
                 @Override
@@ -42,6 +42,7 @@ public class SearchFilterSet {
                     return obj1.getTitle().compareTo(obj2.getTitle());
                 }
             };
+    /** Comparator to use for sorting search filter sets by relevancy. */
     public static final Comparator<SearchFilterSet> COMPARATOR_RELEVANCY =
             new Comparator<SearchFilterSet>() {
                 @Override
@@ -109,8 +110,7 @@ public class SearchFilterSet {
      * @see Labels
      */
     public String labelKeyFor(SearchFilter filter) {
-        String s = null;
-        s = this.getName().concat(".").concat(filter.getTerm());
+        String s = this.getName().concat(".").concat(filter.getTerm());
         try {
             s = Labels.normalizeServiceString(this.getName()).concat(".").concat(Labels.normalizeServiceString(filter.getTerm()));
         } catch (Exception e) {
@@ -120,9 +120,10 @@ public class SearchFilterSet {
     }
     
     /**
-     * Gets the name of this filter set. The name should be identical to the 
-     * facet identifier provided by the API. (E.g.: "topics" or 
-     * "year-published_sort").
+     * Gets the name of this filter set.
+     * <p>
+     * The name should be identical to the facet identifier provided by the API. 
+     * (E.g.: "topics" or "year-published_sort").
      * 
      * @return The filter set's name.
      */
@@ -133,6 +134,7 @@ public class SearchFilterSet {
     
     /**
      * Gets the name of this filter set, "normalized".
+     * 
      * @see SearchFilterSet#getName(boolean) 
      */
     /*public String getName() {
@@ -165,6 +167,7 @@ public class SearchFilterSet {
     /**
      * Gets the title of this filter set, overriding any already set locale.
      * 
+     * @param locale The preferred locale.
      * @return The filter set's title.
      * @see SearchFilterSet#getTitle() 
      */
@@ -191,9 +194,11 @@ public class SearchFilterSet {
         return this.name;
     }
     /**
-     * Gets the title using the set locale. If no locale is set, falls 
-     * back to the locale specified in {@link APIService#DEFAULT_LOCALE_NAME}. For 
-     * details, see {@link SearchFilterSet#getTitle(java.util.Locale)}.
+     * Gets the title using the set locale.
+     * <p>
+     * If no locale is set, falls back to the 
+     * {@link APIService#DEFAULT_LOCALE_NAME default locale}. For details, see 
+     * {@link SearchFilterSet#getTitle(java.util.Locale)}.
      * <p>
      * The returned string is the "translation" of the (facet) name, if such a 
      * translation exists in the {@link Labels} of this package. If not, the 
@@ -206,9 +211,10 @@ public class SearchFilterSet {
     }
     
     /**
-     * Gets the locale this filter set uses for translations. If no locale has
-     * been explicitly set, the filter set will fallback to the locale 
-     * defines in {@link APIService#DEFAULT_LOCALE_NAME}.
+     * Gets the locale this filter set uses for translations.
+     * <p>
+     * If no locale has been explicitly set, the filter set will fallback to the 
+     * {@link APIService#DEFAULT_LOCALE_NAME default locale}.
      * 
      * @return The locale this filter set uses for translations.
      */
@@ -217,8 +223,10 @@ public class SearchFilterSet {
     }
     
     /**
-     * Gets the relevancy weight. The relevancy weight is typically used for
-     * ordering filter sets when dealing with many at a time.
+     * Gets the relevancy weight.
+     * <p>
+     * The relevancy weight is typically used for ordering filter sets when 
+     * dealing with many at a time.
      * <p>
      * If not modified, the filter set has relevancy weight = 1 (default).
      * 
@@ -229,8 +237,9 @@ public class SearchFilterSet {
     }
     
     /**
-     * Sets the relevancy weight. The relevancy weight is typically used for 
-     * ordering filter sets when dealing with many at a time.
+     * Sets the relevancy weight.
+     * <p>The relevancy weight is typically used for ordering filter sets when 
+     * dealing with many at a time.
      * <p>
      * If not modified, the filter set has relevancy weight = 1 (default).
      * 
@@ -244,6 +253,8 @@ public class SearchFilterSet {
     
     /**
      * Adds a filter to this set.
+     * 
+     * @param filter The filter to add.
      * @return The filter set, updated.
      * @see List#add(java.lang.Object) 
      */
@@ -253,7 +264,10 @@ public class SearchFilterSet {
     }
     
     /**
-     * Adds a filter to this set, at the given index. 
+     * Adds a filter to this set, at the given index.
+     * 
+     * @param index The index at which to add the given filter.
+     * @param filter The filter to add.
      * @return The filter set, updated.
      * @see List#add(int, java.lang.Object)
      */
@@ -264,6 +278,8 @@ public class SearchFilterSet {
     
     /**
      * Gets an iterator for the filters in this filter set.
+     * 
+     * @return an iterator for the filters in this filter set.
      * @see List#iterator() 
      */
     public Iterator<SearchFilter> iterator() {
@@ -272,6 +288,8 @@ public class SearchFilterSet {
     
     /**
      * Gets the number of filters in this filter set.
+     * 
+     * @return the number of filters in this filter set.
      * @see List#size() 
      */
     public int size() {
@@ -280,6 +298,8 @@ public class SearchFilterSet {
     
     /**
      * Adds all the given filters to this set.
+     * 
+     * @param filters The filters to add.
      * @return The filter set, updated.
      * @see List#addAll(java.util.Collection)  
      */
@@ -290,6 +310,8 @@ public class SearchFilterSet {
     
     /**
      * Removes the given filter from this filter set.
+     * 
+     * @param filter The filter to remove.
      * @return The filter set, updated.
      * @see List#remove(java.lang.Object) 
      */
@@ -300,6 +322,8 @@ public class SearchFilterSet {
     
     /**
      * Removes all the given filters from this filter set.
+     * 
+     * @param filters The filters to remove.
      * @return The filter set, updated.
      * @see List#removeAll(java.util.Collection) 
      */
@@ -338,6 +362,7 @@ public class SearchFilterSet {
     
     /**
      * Clears this filter set.
+     * 
      * @return The filter set, updated.
      * @see List#clear() 
      */
@@ -348,6 +373,9 @@ public class SearchFilterSet {
     
     /**
      * Gets the filter at the given index of this filter set.
+     * 
+     * @param index The index to lookup.
+     * @return the filter at the given index of this filter set.
      * @see List#get(int) 
      */
     public SearchFilter get(int index) {
@@ -355,7 +383,12 @@ public class SearchFilterSet {
     }
     
     /**
-     * Gets a filter set that contains a sub-list of the filters in this filter set.
+     * Gets a filter set that contains a sub-list of the filters in this filter 
+     * set.
+     * 
+     * @param startIndex The start index.
+     * @param endIndex The end index.
+     * @return a filter set that contains a sub-list of the filters in this filter set.
      * @see List#subList(int, int) 
      */
     public SearchFilterSet subSet(int startIndex, int endIndex) {
@@ -365,7 +398,9 @@ public class SearchFilterSet {
     }
     
     /**
-     * Gets the filters in this filter set as an array.
+     * Gets the filters in this filter set, as an array.
+     * 
+     * @return the filters in this filter set, as an array.
      * @see List#toArray() 
      */
     public SearchFilter[] toArray() {

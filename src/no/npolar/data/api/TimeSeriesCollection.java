@@ -21,7 +21,7 @@ import org.apache.commons.logging.LogFactory;
  * A time series collection is basically a container for one or more time 
  * series.
  * <p>
- * It also maps data to time markers, and keeps track of 
+ * It also maps data to time markers, and keeps track of units.
  * <p>
  * When a {@link MOSJParameter} comprises multiple time series, we typically 
  * need these time series to be "aware" of each other, due to the fact that they
@@ -41,7 +41,7 @@ public class TimeSeriesCollection {
     private String title = null;
     /** Holds all various units used in the data set within this time series collection. */
     private List<TimeSeriesDataUnit> units = null;
-    /** Default Highcharts chart type. @ToDo: Move all HIghcharts-specific stuff to separate class. */
+    // Default Highcharts chart type. @ToDo: Move all Highcharts-specific stuff to separate class.
     //public static final String DEFAULT_HC_SERIES_TYPE = "line";
     /** Holds the number of time markers. */
     protected int numTimeMarkers = 0;

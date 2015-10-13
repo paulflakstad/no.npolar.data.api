@@ -11,19 +11,22 @@ import org.opencms.json.JSONArray;
 import org.opencms.json.JSONException;
 
 /**
+ * Provides an interface to read projects from the Norwegian Polar Institute 
+ * Data Centre.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class ProjectService extends APIService {
     
-    /** The path to use when accessing the service. */
-    protected static final String SERVICE_PATH = "/project/";
+    /** The URL path to use when accessing the service. */
+    protected static final String SERVICE_PATH = "project/";
     /** The base URL (that is, the complete URL before adding parameters) to use when accessing the service. */
-    protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + SERVICE_DOMAIN_NAME + ":" + SERVICE_PORT + SERVICE_PATH;
+    protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + SERVICE_DOMAIN_NAME + ":" + SERVICE_PORT + "/" + SERVICE_PATH;
     
     /**
-     * Creates a new service instance.
-     * @param loc The locale to use when generating strings for screen view. If null, the default locale (English) is used.
+     * Creates a new project service instance.
+     * 
+     * @param loc The locale to use when generating strings for screen view. If null, the {@link APIService#DEFAULT_LOCALE_NAME default locale} is used.
      */
     public ProjectService(Locale loc) {
         this.displayLocale = loc;
@@ -32,12 +35,35 @@ public class ProjectService extends APIService {
     }
     
     /**
+     * Creates a new project, based on the given ID.
+     * <p>
+     * The ID is used to construct the URL that is uniquely identifies the entry 
+     * within the Data Centre.
+     * 
+     * @param id The project ID.
+     * @return the project object, or null if no such project could be created.
+     */
+    public Project getProject(String id) {
+        try {
+            return new Project(this.doRead(id), displayLocale);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    /**
      * Queries the service using the given parameters and returns all (if any)
      * projects, generated from the service response.
-     * @param param The parameters to use in the service request.
+     * 
+     * @param params The parameters to use in the service request.
      * @return A list of all projects, generated from the service response, or an empty list if no projects matched.
      * @see APIService#doQuery(java.util.Map) 
      * @see APIService#getEntries() 
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException
      */
     public GroupedCollection<Project> getProjects(Map<String, String[]> params) 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
@@ -54,12 +80,12 @@ public class ProjectService extends APIService {
         gc.setOrder(order);
         
         doQuery(params);
-        JSONArray publicationObjects = getEntries();
+        JSONArray entries = getEntries();
         
-        if (publicationObjects != null) {
-            for (int i = 0; i < publicationObjects.length(); i++) {
+        if (entries != null) {
+            for (int i = 0; i < entries.length(); i++) {
                 try {
-                    gc.add(new Project(publicationObjects.getJSONObject(i), displayLocale));
+                    gc.add(new Project(entries.getJSONObject(i), displayLocale));
                 } catch (Exception e) {
                     throw new InstantiationException("Error when trying to create projects list: " + e.getMessage());
                 }
@@ -71,6 +97,7 @@ public class ProjectService extends APIService {
     /**
      * Queries the service using the given parameters and returns all (if any)
      * projects, generated from the service response.
+     * 
      * @param params The parameters to use in the service request.
      * @return A list of all projects, generated from the service response, or an empty list if no projects matched.
      * @throws java.io.UnsupportedEncodingException
@@ -99,11 +126,15 @@ public class ProjectService extends APIService {
     }
     
     /**
-     * Gets the default parameters (if any). If no default parameters have been 
-     * manually defined using {@link APIService#setDefaultParameters(java.util.Map)} or 
-     * {@link APIService#addDefaultParameter(java.lang.String, java.lang.String[]) }, a 
-     * pre-defined list of default parameters are used.
+     * Gets the default parameters (if any).
+     * <p>
+     * If no default parameters have been manually defined using 
+     * {@link APIService#setDefaultParameters(java.util.Map)} or 
+     * {@link APIService#addDefaultParameter(java.lang.String, java.lang.String[]) }, 
+     * a pre-defined list of default parameters are used.
+     * 
      * @see APIService#getDefaultParameters()
+     * @return the default parameters (if any).
      */
     @Override
     public Map<String, String[]> getDefaultParameters() {
@@ -118,8 +149,10 @@ public class ProjectService extends APIService {
     }
     
     /**
-     * Gets a list of unmodifiable parameters. These are always used when 
-     * accessing the service, and they cannot be overridden.
+     * Gets a list of unmodifiable parameters.
+     * <p>
+     * These are always used when accessing the service, and cannot be overridden.
+     * 
      * @return A list of unmodifiable parameters, or an empty list if none. 
      */
     @Override

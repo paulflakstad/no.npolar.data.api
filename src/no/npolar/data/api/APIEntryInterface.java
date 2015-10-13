@@ -1,5 +1,7 @@
 package no.npolar.data.api;
 
+import org.opencms.json.JSONObject;
+
 /**
  * Common interface for all entries read via the API.
  * <p>
@@ -57,4 +59,12 @@ public interface APIEntryInterface {
      * @return The entry's ID.
      */
     public String getId();
+    
+    /**
+     * Gets the backing JSON object that forms the basis of this entry, as read 
+     * from the Data Centre.
+     * 
+     * @return The JSON object forming the basis of this entry.
+     */
+    public JSONObject getJSON();
 }

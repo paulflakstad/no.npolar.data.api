@@ -21,6 +21,8 @@ import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
 
 /**
+ * Norwegian Polar Institute Data Centre API utilities.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class APIUtil {
@@ -75,8 +77,10 @@ public class APIUtil {
     /**
      * Converts a JSON array to a String array, swapping DB values with "nice" 
      * values if a mapper is supplied.
+     * 
      * @param a The JSON array to convert.
      * @param m A mapper for replacing strings in the JSON array. If null, no replacements are performed.
+     * @return The given JSON array, converted to a string array.
      */
     public static String[] jsonArrayToStringArray(JSONArray a, Mapper m) {
         if (m == null)
@@ -89,9 +93,11 @@ public class APIUtil {
     }
 
     /**
-     * Converts a list to a comma-separated string. If needed, a mapper can be 
-     * supplied, in which case the strings in the given list are attempted 
-     * replaced by the mapped value.
+     * Converts a list to a comma-separated string.
+     * <p>
+     * If needed, a mapper can be supplied, in which case the strings in the 
+     * given list are attempted replaced by the mapped value.
+     * 
      * @param list The list to convert to a comma-separated string.
      * @param m A mapper for replacing the strings in the list. If null, no replacements are performed.
      * @return The given list, converted to a string.
@@ -102,8 +108,11 @@ public class APIUtil {
 
     /**
      * Converts a list to a string, where each item in the list separated by the 
-     * given separator. If needed, a mapper can be supplied, in which case the
-     * strings in the given list are attempted replaced by the mapped value.
+     * given separator.
+     * <p>
+     * If needed, a mapper can be supplied, in which case the strings in the 
+     * given list are attempted replaced by the mapped value.
+     * 
      * @param list The list to convert to a comma-separated string.
      * @param m A mapper for replacing the strings in the list. If null, no replacements are performed.
      * @param separator The string to use for separating each item.
@@ -122,6 +131,7 @@ public class APIUtil {
     
     /**
      * Capitalizes the first letter of the given string.
+     * 
      * @param s The string to capitalize.
      * @return The given string, with the first letter capitalized.
      */
@@ -136,8 +146,10 @@ public class APIUtil {
     }
     
     /**
-     * Converts the given name to initials. (E.g. "John Clayton M.", will convert
-     * to "J.C.M.".
+     * Converts the given name to initials.
+     * <p>
+     * E.g.: "John Clayton M.", will convert to "J.C.M.".
+     * 
      * @param name The name (any form) to convert to initials.
      * @return The initials of the given name.
      */
@@ -189,9 +201,11 @@ public class APIUtil {
     /**
      * Gets the displayable name of the given language, ready for display in the
      * other given language. 
+     * <p>
      * This method exists because of a shortcoming in 
-     * java.util.Locale#getDisplayLanguage(java.util.Locale), which cannot display
-     * all relevant languages correctly.
+     * java.util.Locale#getDisplayLanguage(java.util.Locale), which cannot 
+     * display all relevant languages correctly.
+     * 
      * @param lang The language to get the name for.
      * @param inLang The language to display in.
      * @return The lang language name, ready for display in the inLang language.
@@ -224,8 +238,11 @@ public class APIUtil {
     }
     
     /**
-     * Pulls parameters from the given URI string and returns them neatly in a map.
+     * Pulls parameters from the given URI string and returns them neatly in a 
+     * map.
+     * <p>
      * If no parameters were present, an empty map is returned.
+     * 
      * @param uri The URI string to pull parameters from
      * @return The parameters pulled from the given URI string, or an empty map if none.
      */
@@ -267,7 +284,17 @@ public class APIUtil {
         
         return m;
     }
-    
+    /**
+     * Converts the given map of parameter names and values to a string.
+     * <p>
+     * Any map key should be the parameter name, and its associated list should 
+     * hold any and all parameter value(s).
+     * <p>
+     * Multiple parameter values will be comma-separated in the returned string.
+     * 
+     * @param m The parameter map.
+     * @return A string representation of the the given parameter map.
+     */
     public static String getParameterString(Map<String, List<String>> m) {
         String s = "";
         Iterator<String> iKeys = m.keySet().iterator();
@@ -289,9 +316,11 @@ public class APIUtil {
     }
     
     /**
-     * Translates the given markdown-formatted string to HTML format. If no 
-     * markdown is found, the given string is returned unmodified. By default, 
-     * the returned string will be wrapped in a paragraph tag.
+     * Translates the given markdown-formatted string to HTML format.
+     * <p>
+     * If no markdown is found, the given string is returned unmodified. By 
+     * default, the returned string will be wrapped in a paragraph tag.
+     * 
      * @param s The (possibly) markdown-formatted string.
      * @param pWrapper Flag indicating if the return string should be wrapped in a paragraph.
      * @return The given string with markdown translated to HTML.
@@ -315,9 +344,11 @@ public class APIUtil {
     }
     
     /**
-     * Translates the given markdown-formatted string to HTML format. If no 
-     * markdown is found, the given string is returned unmodified. The returned 
-     * string will be wrapped in a paragraph tag.
+     * Translates the given markdown-formatted string to HTML format.
+     * <p>
+     * If no markdown is found, the given string is returned unmodified. The 
+     * returned string will be wrapped in a paragraph tag.
+     * 
      * @see #markdownToHtml(java.lang.String, boolean) 
      */
     public static String markdownToHtml(String s) {
@@ -335,10 +366,11 @@ public class APIUtil {
     }*/
     
     /**
-     * Tests if the given language string matches the language of the given locale.
+     * Tests if the given language string matches the language of the given 
+     * locale.
      * 
-     * @param s The language string to test (e.g. "no")
-     * @param locale The language it must match to evaluate to true
+     * @param s The language string to test (e.g. "no").
+     * @param matchLocale The language it must match to evaluate to true.
      * @return True if the given language string matches the language of the given locale, false if not.
      */
     public static boolean matchLanguage(String s, Locale matchLocale) {
@@ -358,11 +390,14 @@ public class APIUtil {
      * Simplified filter for returning the property identified by the given
      * name, as read from the first object in the given array that also has a 
      * matching "lang" property.
+     * <p>
+     * The array is processed in incremental steps of 1, starting at index 0.
      * 
-     * @param jarr
-     * @param name
-     * @param lang
-     * @return 
+     * @param jarr The array that contains the objects to evaluate.
+     * @param name The object property to evaluate.
+     * @param locale Identifies the language to match against.
+     * @return The named property of the first encountered object that matched the given language.
+     * @throws JSONException In case anything goes wrong in the JSON parsing.
      */
     public static String getStringByLocale(JSONArray jarr, String name, Locale locale) throws JSONException {
         if (jarr == null || jarr.length() < 1)

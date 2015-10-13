@@ -21,9 +21,12 @@ import org.opencms.util.CmsStringUtil;
 /**
  * Adds support for generating Highcharts {@link http://highcharts.com} charts.
  * <p>
- * The chart is generated from a MOSJ parameter (which has related time series), 
- * possibly with override settings. Overrides may be global or specific to 
- * individual time series.
+ * The chart is generated from a {@link MOSJParameter MOSJ parameter} (which has 
+ * related time series), possibly with custom settings that may be global or 
+ * specific to individual time series.
+ * <p>
+ * For more info, please refer to the general  
+ * {@link http://api.highcharts.com/highcharts Highcharts documentation}.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */

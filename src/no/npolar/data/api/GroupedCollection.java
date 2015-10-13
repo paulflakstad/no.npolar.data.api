@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Class for storing various objects, grouped by type.
+ * Class for storing various types of Data Centre entries, grouped by type.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class GroupedCollection<T extends APIEntryInterface> {
@@ -26,8 +27,10 @@ public class GroupedCollection<T extends APIEntryInterface> {
     
     /**
      * Merges any and all (grouped) objects in this collection in a single list.
+     * <p>
      * No ordering is applied, objects will appear firstly in the order of group 
      * and secondly in the in-group order.
+     * 
      * @return A list containing all objects in this collection.
      * @see #merge(java.util.Comparator) 
      */
@@ -38,6 +41,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     /**
      * Merges any and all (grouped) objects in this collection in a single list,
      * ordered as defined by the given comparator.
+     * 
      * @param c The comparator to use when ordering the list.
      * @return A list containing all objects in this collection, ordered by the given comparator.
      */
@@ -64,8 +68,10 @@ public class GroupedCollection<T extends APIEntryInterface> {
     }
     
     /**
-     * Sets the group order, as defined by the order in the given array. Each  
-     * array value should be a valid group name.
+     * Sets the group order, as defined by the order in the given array.
+     * <p> 
+     * Each array value should be a valid group name.
+     * 
      * @param order The group order.
      * @see APIObjectInterface#getGroupName() 
      */
@@ -79,6 +85,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
      * Gets a sub-list of this collection, which will contain only objects 
      * assigned the group with the given name, or an empty list if no objects are 
      * currently assigned that group.
+     * 
      * @param type The object group name (see {@link APIObjectInterface#getGroupName()} and "TYPE_" prefixed constants of implementing classes).
      * @return All objects assigned the group with the given name, or an empty list if none.
      */
@@ -88,6 +95,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     
     /**
      * Adds an object to this collection.
+     * 
      * @param o The object to add.
      */
     public final void add(T t) {
@@ -99,6 +107,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     
     /**
      * Indicates whether this collection is empty or not.
+     * 
      * @return True if this collection is empty, false if not.
      */
     public boolean isEmpty() {
@@ -107,6 +116,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     
     /**
      * Gets the object types contained in this collection.
+     * 
      * @return The object types contained in this collection.
      */
     public Set<String> getTypesContained() {
@@ -115,6 +125,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     
     /**
      * Gets the total number of objects in this collection.
+     * 
      * @return The total number of objects in this collection.
      */
     public int size() {

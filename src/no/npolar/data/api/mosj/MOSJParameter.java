@@ -17,7 +17,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Represents a MOSJ parameter, and is basically a wrapper for time series data.
+ * Represents a MOSJ parameter, which is basically a wrapper for time series 
+ * data.
  * <p>
  * This is the main class for interacting with the MOSJ API.
  * 
@@ -38,7 +39,7 @@ public class MOSJParameter implements APIEntryInterface {
     public static final String DEFAULT_LOCALE = "en";
     
     
-    // API keywords
+    // Data Centre keywords
     public static final String API_KEY_TITLES = "titles";
     //public static final String API_KEY_TITLE = "text";
     public static final String API_KEY_TITLE = "title";
@@ -50,7 +51,7 @@ public class MOSJParameter implements APIEntryInterface {
     
     /**
      * Constructs a new parameter instance, based on the given JSON object, which
-     * is typically read from the API.
+     * is typically read from the Data Centre API.
      * 
      * @param o The JSON object to base this parameter instance on.
      * @param displayLocale The preferred language.
@@ -95,9 +96,9 @@ public class MOSJParameter implements APIEntryInterface {
     
     /**
      * Constructs a new parameter instance, based on the given JSON object, 
-     * which is typically read from the API.
+     * which is typically read from the Data Centre API.
      * <p>
-     * The preferred language for the new parameter is set to 
+     * The preferred language for the new parameter will be set to 
      * {@link #DEFAULT_LOCALE}.
      * 
      * @see #MOSJParameter(org.opencms.json.JSONObject, java.util.Locale) 
@@ -109,7 +110,7 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Sets the localization preference for this parameter.
+     * Sets the preferred locale.
      * 
      * @param displayLocale The preferred locale to use when fetching language-specific data.
      * @return The updated parameter instance.
@@ -154,9 +155,9 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Gets the title for this time series, in the preferred language
+     * Gets the title for this time series, in the preferred language.
      * 
-     * @return The title for this time series, in the preferred language
+     * @return The title for this time series, in the preferred language.
      */
     @Override
     public String getTitle() {
@@ -164,8 +165,11 @@ public class MOSJParameter implements APIEntryInterface {
     }
     /**
      * Gets the group name.
-     * <p>For MOSJ parameters, this is 
-     * <p><strong>ToDo: Should return name/ID of parent indicator.</strong>
+     * <p>
+     * For MOSJ parameters, there is no natural group name currently available, 
+     * so this method will just return null.
+     * <p>
+     * <strong>ToDo</strong>: Return name/ID of parent indicator.
      * 
      * @see TimeSeriesDataUnit#getShortForm()
      * @return The group name.
@@ -181,7 +185,8 @@ public class MOSJParameter implements APIEntryInterface {
      * Gets the URL for this MOSJ parameter, within the context of the given 
      * service.
      * <p>
-     * The service must be of type {@link MOSJService}
+     * The service must be of type {@link MOSJService}.
+     * 
      * @param service The API service. Must be of type {@link MOSJService}.
      * @return The URL for this MOSJ parameter, or: where it resides within the given service.
      */
@@ -229,10 +234,10 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Checks if the time series in this parameter are "accuracy compatible", 
-     * that is, if they use the same timestamp format.
+     * Checks if all the time series related to this parameter are "accuracy 
+     * compatible", that is, if they use the same timestamp format.
      * 
-     * @return True if the time series in this parameter are "accuracy compatible" (use the same timestamp format), false if not.
+     * @return True if all the time series related to this parameter are "accuracy compatible" (use the same timestamp format), false if not.
      */
     public boolean hasAccuracyCompatibleTimeSeries() {
         if (this.relatedTimeSeries == null)
@@ -256,8 +261,11 @@ public class MOSJParameter implements APIEntryInterface {
     
     /**
      * Gets the chart instance.
+     * <p>
+     * Custom settings may be passed via a JSON object. Such settings will add 
+     * to or override the default chart settings.
      * 
-     * @param overrides Override object, as passed from the client controller (i.e. the JSP).
+     * @param overrides Overrides object, as passed from the client controller (i.e. the JSP).
      * @return The chart instance.
      */
     public HighchartsChart getChart(JSONObject overrides) {
@@ -265,8 +273,6 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Gets an all time series data as CSV content.
-     * 
      * @return All time series data as CSV content.
      */
     public String getAsCSV() {
@@ -284,10 +290,10 @@ public class MOSJParameter implements APIEntryInterface {
     
     
     /**
-     * Translates the given time series collection to table rows containing the
-     * data.fsda
+     * Translates the given time series collection to CSV rows containing the
+     * data.
      * 
-     * @return Html table rows containing the data in the given time series collection.
+     * @return CSV rows containing the data in the given time series collection.
      */
     protected String getCSVRows() {
         String s = "";
@@ -335,9 +341,9 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Gets an html table with all time series data.
+     * Gets an HTML table with all time series data.
      * 
-     * @return An html table with all time series data.
+     * @return An HTML table with all time series data.
      * @see #getAsTable(java.lang.String) 
      */
     public String getAsTable() {
@@ -345,10 +351,10 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Gets an html table with all time series data.
+     * Gets an HTML table with all time series data.
      * 
      * @param tableClass A class name to append to the table.
-     * @return An html table with all time series data.
+     * @return An HTML table with all time series data.
      */
     public String getAsTable(String tableClass) {
         String s = "";
@@ -377,7 +383,7 @@ public class MOSJParameter implements APIEntryInterface {
      * Translates the given time series collection to table rows containing the
      * data.
      * 
-     * @return Html table rows containing the data in the given time series collection.
+     * @return HTML table rows containing the data in the given time series collection.
      */
     protected String getTableRows() {
         String s = "";
@@ -395,7 +401,8 @@ public class MOSJParameter implements APIEntryInterface {
                 // The columns, based on timestamps (i.e. years)
                 Iterator<String> iTimeMarkers = tsc.getTimeMarkerIterator();
                 while (iTimeMarkers.hasNext()) {
-                    s += "<th scope=\"col\"><span class=\"hs-time-marker\">" + iTimeMarkers.next() + "</span></th>"; // The span is vital for Highslide (but the class name is arbitrary)
+                    // The span is vital for Highcharts (but the class name is arbitrary), if the chart is to be generated based on the table
+                    s += "<th scope=\"col\"><span class=\"hs-time-marker\">" + iTimeMarkers.next() + "</span></th>";
                 }
                 s += "</tr>\n</thead>\n";
                 
@@ -560,6 +567,9 @@ public class MOSJParameter implements APIEntryInterface {
         return s;
     }*/
     
+    /**
+     * @return The collection of time series related to this parameter.
+     */
     public TimeSeriesCollection getTimeSeriesCollection() {
         try {
             TimeSeriesCollection tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries, this.getTitle());
@@ -583,19 +593,18 @@ public class MOSJParameter implements APIEntryInterface {
     }
     
     /**
-     * Gets the ID, as read from the API.
-     * 
      * @return The ID, as read from the API.
      */
     @Override
     public String getId() { return this.id; }
     
     /**
-     * Gets a JSON object that holds this entire parameter, as read from the API.
-     * 
-     * @return A JSON object that holds this entire parameter, as read from the API. 
+     * @see APIEntryInterface#getJSON() 
      */
-    public JSONObject getApiStructure() { return apiStructure; }
+    public JSONObject getJSON() { return apiStructure; }
     
+    /**
+     * @return The configured preferred locale to use when getting language-specific data.
+     */
     public Locale getDisplayLocale() { return this.displayLocale; }
 }

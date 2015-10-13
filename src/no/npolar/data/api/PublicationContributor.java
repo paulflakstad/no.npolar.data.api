@@ -10,7 +10,9 @@ import org.opencms.json.JSONArray;
 import org.opencms.json.JSONObject;
 
 /**
- *
+ * Represents a single contributor (author, editor, translator ...) to a 
+ * publication. 
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class PublicationContributor {
@@ -23,11 +25,13 @@ public class PublicationContributor {
 
     protected ResourceBundle labels = null;
     protected Locale displayLocale = null;
+    
     /**
      * Constructs a new instance, based on the given JSON object.
-     * @param person The JSON object to use when constructing this instance.
+     * 
+     * @param contributor The JSON object to use when constructing this instance.
      */
-    public PublicationContributor(JSONObject person, final Locale loc) {
+    public PublicationContributor(JSONObject contributor, final Locale loc) {
         this.displayLocale = loc;
         if (displayLocale == null)
             displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
@@ -35,15 +39,15 @@ public class PublicationContributor {
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
         try {
-            try { id = person.getString(Publication.JSON_KEY_ID); } catch (Exception e) { }
-            try { organisation = person.getString(Publication.JSON_KEY_ORG); } catch (Exception e) { }
-            try { fName = person.getString(Publication.JSON_KEY_FNAME); } catch (Exception e) { fName = ""; }
-            try { lName = person.getString(Publication.JSON_KEY_LNAME); } catch (Exception e) { lName = ""; }
+            try { id = contributor.getString(Publication.JSON_KEY_ID); } catch (Exception e) { }
+            try { organisation = contributor.getString(Publication.JSON_KEY_ORG); } catch (Exception e) { }
+            try { fName = contributor.getString(Publication.JSON_KEY_FNAME); } catch (Exception e) { fName = ""; }
+            try { lName = contributor.getString(Publication.JSON_KEY_LNAME); } catch (Exception e) { lName = ""; }
 
             // Evaluate the person's role(s)
             JSONArray rolesArr = null;
             try {
-                rolesArr = person.getJSONArray(Publication.JSON_KEY_ROLES);
+                rolesArr = contributor.getJSONArray(Publication.JSON_KEY_ROLES);
             } catch (Exception e) {
                 // No role defined, assume role=author
                 addRole(Publication.JSON_VAL_ROLE_AUTHOR);
@@ -56,59 +60,69 @@ public class PublicationContributor {
             }
 
             // NPI affiliate?
-            try { if (person.getString(Publication.JSON_KEY_ORG).equalsIgnoreCase(Publication.JSON_VAL_ORG_NPI)) isNPIContributor = true; } catch (Exception e) {}
+            try { if (contributor.getString(Publication.JSON_KEY_ORG).equalsIgnoreCase(Publication.JSON_VAL_ORG_NPI)) isNPIContributor = true; } catch (Exception e) {}
         } catch (Exception e) { }
     }
 
     /**
-     * Gets the ID for this person.
-     * @return The ID for this person.
+     * Gets the ID for this contributor.
+     * 
+     * @return The ID for this contributor.
      */
     public String getID() { return id; }
 
     /**
-     * Gets the first name for this person.
-     * @return The first name for this person.
+     * Gets the first name for this contributor.
+     * 
+     * @return The first name for this contributor.
      */
     public String getFirstName() { return fName; }
 
     /**
-     * Gets the last name for this person.
-     * @return The last name for this person.
+     * Gets the last name for this contributor.
+     * 
+     * @return The last name for this contributor.
      */
     public String getLastName() { return lName; }
 
     /**
-     * Determines whether or not this person contributed on behalf of the NPI.
-     * @return True if the person contributed on behalf of the NPI, false if not.
+     * Determines whether or not this contribution was made on behalf of the NPI.
+     * 
+     * @return True if the contribution was made on behalf of the NPI, false if not.
      */
     public boolean isNPIContributor() {
         return isNPIContributor;
     }
 
     /**
-     * Checks if this person is assigned the given role.
+     * Checks if this contributor is assigned the given role.
+     * 
      * @param role The role to check for.
-     * @return True if this person is assigned the given role, false if not.
+     * @return True if this contributor is assigned the given role, false if not.
      */
     public boolean hasRole(String role) {
         return roles.contains(role);
     }
 
     /**
-     * Checks if this person is assigned only the given role, and no other role.
+     * Checks if this contributor is assigned only the given role, and no other 
+     * role.
+     * 
      * @param role The role to check for.
-     * @return True if this person is assigned only the given role, false if not.
+     * @return True if this contributor is assigned only the given role, false if not.
      */
     public boolean hasRoleOnly(String role) {
         return roles.size() == 1 && roles.contains(role);
     }
 
     /**
-     * Adds the given role for this person. Every role is assigned only once. 
-     * If the person was already assigned the given role, no change is made.
+     * Adds the given role for this contributor.
+     * <p>
+     * Every role is assigned only once. If the contributor was already assigned 
+     * the given role, no change is made.
+     * 
      * @param role The role to add.
-     * @return The list of roles for this person, including the given role.
+     * @return The list of roles for this contributor, including the given role.
      */
     protected final List<String> addRole(String role) {
         if (roles == null)
@@ -119,10 +133,11 @@ public class PublicationContributor {
     }
 
     /**
-     * Adds the given roles for this person.
+     * Adds the given roles for this contributor.
+     * 
      * @see #addRole(String)
      * @param roles A list containing all roles to add.
-     * @return The list of roles for this person, after this method has finished modifying it.
+     * @return The list of roles for this contributor, after this method has finished modifying it.
      */
     public List<String> addRoles(List<String> roles) {
         Iterator<String> i = roles.iterator();
@@ -132,14 +147,16 @@ public class PublicationContributor {
     }
 
     /**
-     * Gets all roles for this person.
-     * @return The list of roles for this person.
+     * Gets all roles for this contributor.
+     * 
+     * @return The list of roles for this contributor.
      */
     public List<String> getRoles() { return roles; }
 
     /**
-     * Gets a string representation of this person.
-     * @return The string representation of this person.
+     * Gets a string representation of this contributor.
+     * 
+     * @return The string representation of this contributor.
      */
     @Override
     public String toString() {
@@ -147,7 +164,8 @@ public class PublicationContributor {
     }
 
     /**
-     * Gets an HTML representation of this person.
+     * Gets an HTML representation of this contributor.
+     * 
      * @param specifyEditorRole Whether or not to specify editors with " (ed.)" after the name.
      * @param fullName Whether or not to get the full name (John Clayton Mayer) or the short form (Mayer, J.C.).
      * @return The string representation of this contributor.
@@ -182,8 +200,9 @@ public class PublicationContributor {
     }
 
     /**
-     * Gets an HTML representation of this person.
-     * @return The string representation of this person.
+     * Gets an HTML representation of this contributor.
+     * 
+     * @return The string representation of this contributor.
      */
     public String toHtml() {
         return toHtml(true, false);

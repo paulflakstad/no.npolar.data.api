@@ -3,10 +3,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Represents a single data unit. Can be e.g. "Number of polar bears" or 
+ * Represents a single data unit, for example "Number of polar bears" or 
  * "Degrees Celcius". 
- * 
- * A data unit may have two separate forms, one long and one short, e.g. 
+ * <p>
+ * A data unit may have 2 separate forms, one long and one short, e.g. 
  * "Degrees Celcius" (long) and "°C" (short).
  * 
  * @deprecated Use {@link no.npolar.data.api.TimeSeriesDataUnit} instead.

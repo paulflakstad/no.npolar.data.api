@@ -7,14 +7,15 @@ import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONObject;
 
 /**
- * Client representation of a facet filter.
+ * Represents a facet filter.
  * <p>
  * This implementation's counterpart can be found in the "facets" field in 
- * service API responses. A search filter is basically a term, a URI and a 
- * hit counter, with some additional features, like:
+ * service's JSON responses. A search filter is basically a 
+ * <strong>term</strong>, a <strong>URI</strong> and a 
+ * <strong>hit counter</strong>, with some additional features, like:
  * <ul>
  * <li>Methods to evaluate if a filter is currently active or not</li>
- * <li></li>
+ * <li>...</li>
  * </ul>
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
@@ -27,14 +28,19 @@ public class SearchFilter {
     protected boolean isActive = false;
     protected String serviceUri = null;
     
+    /** JSON key: Term. */
     public final String JSON_KEY_TERM = "term";
+    /** JSON key: Count. */
     public final String JSON_KEY_COUNT = "count";
+    /** JSON key: URI. */
     public final String JSON_KEY_URI = "uri";
     
+    /** The prefix used on names of parameters that are used for filtering. */
     public static final String PARAM_NAME_PREFIX = "filter-";
     
     /**
      * Creates a new filter for the given field, based on the given details.
+     * 
      * @param filterField The field this filter is filtering on (e.g. "category") - normally the facet name.
      * @param term The term for this filter.
      * @param count The number of matches for this filter.
@@ -54,6 +60,7 @@ public class SearchFilter {
     
     /**
      * Creates a new filter for the given field, based on the given filter object.
+     * 
      * @param filterField The field this filter is filtering on (e.g. "category") - normally the facet name.
      * @param filterObject A JSON representation of the filter.
      */
@@ -76,6 +83,7 @@ public class SearchFilter {
     /**
      * Creates a new filter for the given field, based on the given filter object
      * and with a state evaluated against the given service URI.
+     * 
      * @param filterField The field this filter is filtering on (e.g. "category") - normally the facet name.
      * @param filterObject A JSON representation of the filter.
      * @param serviceUri The URI to the service API that corresponds to the currently displayed client page.
@@ -127,9 +135,10 @@ public class SearchFilter {
     }
     
     /**
-     * Removes a parameter from the filter's URI.     * 
-     * @param paramName
-     * @return 
+     * Removes a given parameter from the filter's URI.
+     * 
+     * @param paramName The parameter name.
+     * @return The filter URI, with the parameter identified by the given name removed.
      */
     public SearchFilter removeParam(String paramName) {
         String[] uriAndParams = uri.split("\\?");
@@ -141,6 +150,7 @@ public class SearchFilter {
     
     /**
      * Sets the base URL for this filter.
+     * 
      * @param baseUrl The new base URL.
      * @return This filter, after modification.
      */
@@ -149,23 +159,30 @@ public class SearchFilter {
         uri = baseUrl + "?" + uriAndParams[1];
         return this;
     }
-    
+    /**
+     * Gets the URL for this filter.
+     * 
+     * @return The URL for this filter.
+     */
     public String getUrl() { return uri; }
     /**
-     * Gets the parameter string from the filter's URI. (That is, everything
-     * after the first ? in the URI.)     * 
+     * Gets the parameter string from the filter's URI, that is, everything
+     * after the first ? in the URI.
+     * 
      * @return The parameter string from this filter's URI.
      */
     public String getUrlPartParameters() { return uri.split("\\?")[1]; }
     /**
-     * Gets the base part of the filter's URI. (That is, everything before the
-     * first ? in the URI.)     * 
+     * Gets the base part of the filter's URI, that is, everything before the
+     * first ? in the URI.
+     * 
      * @return The base part of the filter's URI.
      */
     public String getUrlPartBase() { return uri.split("\\?")[0]; }
     
     /**
      * Gets the filter term.
+     * 
      * @return The filter term.
      */
     public String getTerm() { return term; }
@@ -178,12 +195,14 @@ public class SearchFilter {
     
     /**
      * Gets a flag indicating whether or not this filter is active.
+     * 
      * @return True if this filter is active, false if not.
      */
     public boolean isActive() { return this.isActive; }
     
     /**
      * Gets an HTML representation of this filter.
+     * 
      * @return An HTML representation of this filter.
      */
     public String toHtml() {

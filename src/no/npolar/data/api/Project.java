@@ -21,7 +21,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Class for representing an NPI project.
+ * Represents a single project entry, as read from the Norwegian Polar 
+ * Institute Data Centre.
+ * <p>
+ * Projects are typically created by a {@link ProjectService} instance 
+ * acting as an interface to the Data Centre.
+ * 
+ * @see https://github.com/npolar/api.npolar.no/blob/master/schema/project.json
+ * @see https://data.npolar.no/projects/
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class Project implements APIEntryInterface {
@@ -90,10 +98,6 @@ public class Project implements APIEntryInterface {
     
     /** The date format used in the JSON. */
     public static final String DATE_FORMAT_PATTERN_JSON = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    /** The date format used when generating strings meant for viewing (English) */
-    //public static final String DATE_FORMAT_PATTERN_NO   = "d. MMM yyyy";
-    /** The date format used when generating strings meant for viewing (Norwegian). */
-    //public static final String DATE_FORMAT_PATTERN_EN   = "d MMM yyyy";
     /** The base URL for publication links. */
     public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
     /** The default title, used if title is missing. */
@@ -101,19 +105,29 @@ public class Project implements APIEntryInterface {
     /** The default locale to use when generating strings meant for viewing. */
     public static final String DEFAULT_LOCALE_NAME      = "en";
     
+    /** Project state: Undefined. */
     public static final int STATE_UNDEFINED = -1;
+    /** Project state: Planned. */
     public static final int STATE_PLANNED = 0;
+    /** Project state: Active. */
     public static final int STATE_ACTIVE = 1;
+    /** Project state: Completed. */
     public static final int STATE_COMPLETED = 2;
     
+    /** Project state name: Undefined. */
     public static final String STATE_NAME_UNDEFINED = "project_state_undefined";
+    /** Project state name: Planned. */
     public static final String STATE_NAME_PLANNED = "project_state_planned";
+    /** Project state name: Active. */
     public static final String STATE_NAME_ACTIVE = "project_state_active";
+    /** Project state name: Completed. */
     public static final String STATE_NAME_COMPLETED = "project_state_completed";
     
+    /** The backing JSON that describes the project. */
     private JSONObject o = null;
     /** The locale to use when generating strings meant for viewing. (Important especially for date formats etc.) */
     private Locale displayLocale = null;
+    /** Mapper for string translations. */
     private Mapper mappings = null;
     
     // Class members
@@ -163,16 +177,21 @@ public class Project implements APIEntryInterface {
     private List<OptLink> placenames = new ArrayList<OptLink>();
     private List<OptLink> partners  = new ArrayList<OptLink>();
     
+    /** Keeps track of generated symbols. */
     private HashMap<String, String> symbolMappings = new HashMap<String, String>();
+    
+    /** Keeps track of the number of generated symbols. */
     private int symbolsGenerated = 0;
     
+    /** Labels / translations. */
     protected ResourceBundle labels = null;
     
     /**
      * Creates a new instance from the given JSONObject and using the given 
      * CmsAgent to create valid links and determine localization.
-     * @param projectObject The JSONObject to create this instance from.
-     * @param loc The locale to use. If null, the default locale (English) is used.
+     * 
+     * @param projectObject The JSON to create this instance from.
+     * @param loc The locale to use. If null, the {@link APIService#DEFAULT_LOCALE_NAME default locale} is used.
      */
     public Project(JSONObject projectObject, Locale loc) {
         this.o = projectObject;
@@ -402,6 +421,7 @@ public class Project implements APIEntryInterface {
     
     /**
      * Gets the current symbol (used in affiliation lists).
+     * 
      * @return The current symbol.
      */
     private String getCurrentOrgSymbol() {
@@ -423,6 +443,7 @@ public class Project implements APIEntryInterface {
 
     /**
      * Gets the next symbol (used in affiliation lists).
+     * 
      * @return The next symbol.
      */
     private String getNextOrgSymbol() {
@@ -444,8 +465,10 @@ public class Project implements APIEntryInterface {
     
     /**
      * Gets the project's state, which is determined by investigating the start 
-     * and possibly end date. If no start date is set, {@link #STATE_UNDEFINED) 
-     * is returned.
+     * and possibly end date.
+     * <p>
+     * If no start date is set, {@link #STATE_UNDEFINED) is returned.
+     * 
      * @return The project's state.
      * @see #STATE_UNDEFINED
      * @see #STATE_ACTIVE
@@ -467,7 +490,8 @@ public class Project implements APIEntryInterface {
     
     /**
      * Gets the duration as a localized string, either as HTML or plain text.
-     * @param html True will generate HTML output, false plain text.
+     * 
+     * @param html Provide true to get as HTML, or false to get as plain text.
      * @return The duration as a localized string, either as HTML or plain text.
      */
     public String getDuration(boolean html) {
@@ -480,7 +504,8 @@ public class Project implements APIEntryInterface {
     }
     
     /**
-     * Gets the state name (the state in human readable text) for this project.
+     * Gets the state "name" (the state in human readable text) for this project.
+     * 
      * @return This project's state name.
      */
     public String getStateName() {
@@ -493,15 +518,31 @@ public class Project implements APIEntryInterface {
         
         return STATE_NAME_UNDEFINED;
     }
-    
+    /**
+     * Gets the project participant(s) as a string.
+     * 
+     * @param html Provide true to get as HTML, or false to get as plain text.
+     * @return The project participant(s) as a string.
+     */
     public String getParticipantsStr(boolean html) {
         return participantListToString(participants, html);
     }
-    
+    /**
+     * Gets the project leader(s) as a string.
+     * 
+     * @param html Provide true to get as HTML, or false to get as plain text.
+     * @return The project leader(s) as a string.
+     */
     public String getLeadersStr(boolean html) {
         return participantListToString(leaders, html);
     }
-    
+    /**
+     * Translates the given list of project participants to a string.
+     * 
+     * @param participants The project participants.
+     * @param html Provide true to get as HTML, or false to get as plain text.
+     * @return The project participants, as a string.
+     */
     protected String participantListToString(List<ProjectParticipant> participants, boolean html) {
         String s = "";
         if (!participants.isEmpty()) {
@@ -519,13 +560,16 @@ public class Project implements APIEntryInterface {
         return s;
     }
     
+    /**
+     * @see APIEntryInterface#getGroupName()
+     */
     @Override
     public String getGroupName() {
         return getStateName();
     }
     
     /**
-     * @return the title
+     * @return the title.
      */
     @Override
     public String getTitle() {
@@ -540,7 +584,7 @@ public class Project implements APIEntryInterface {
     }
 
     /**
-     * @return the project ID
+     * @return the project ID.
      */
     @Override
     public String getId() {
@@ -548,70 +592,70 @@ public class Project implements APIEntryInterface {
     }
 
     /**
-     * @return the NPI project ID
+     * @return the NPI project ID.
      */
     public String getNpiId() {
         return npiId;
     }
 
     /**
-     * @return the RIS project ID
+     * @return the RIS project ID.
      */
     public String getRisId() {
         return risId;
     }
 
     /**
-     * @return the start date
+     * @return the start date.
      */
     public Date getDateStart() {
         return dateStart;
     }
 
     /**
-     * @return the end date
+     * @return the end date.
      */
     public Date getDateEnd() {
         return dateEnd;
     }
 
     /**
-     * @return true if the project is featured, false if not
+     * @return true if the project is featured, false if not.
      */
     public boolean isFeatured() {
         return featured;
     }
 
     /**
-     * @return the keywords
+     * @return the keywords.
      */
     public String getKeywords() {
         return keywords;
     }
 
     /**
-     * @return the description
+     * @return the description.
      */
     public String getDescription() {
         return description;
     }
 
     /**
-     * @return the abstract
+     * @return the abstract.
      */
     public String getAbstr() {
         return abstr;
     }
 
     /**
-     * @return the type
+     * @return the type.
      */
     public String getType() {
         return type;
     }
 
     /**
-     * @return the topics
+     * @return the topics.
      */
     /*public String getTopics() {
         return topics;
@@ -620,8 +664,9 @@ public class Project implements APIEntryInterface {
     
     
     /**
-     * Gets the topics for this publication, if any.
-     * @return The topics for this publication, or an empty list if none;
+     * Gets the topics for this project, if any.
+     * 
+     * @return The topics for this project, or an empty list if none.
      */
     public List<Topic> getTopics() { 
         List<Topic> t = new ArrayList<Topic>();
@@ -638,9 +683,12 @@ public class Project implements APIEntryInterface {
     }
     
     /**
-     * Gets the topics for this publication, if any, as HTML code.
+     * Gets the topics for this project, if any, as HTML code.
+     * 
+     * @param filterUrl The current URL, which (perhaps) includes filtering parameter(s).
      * @param separator The character to use for separate the topics. Use null for none.
-     * @return The topics for this publication, or an empty string if none;
+     * @param locale The preferred language.
+     * @return The topics for this project, or an empty string if none.
      */
     public String getTopicsHtml(String filterUrl, String separator, Locale locale) {
         String s = "";
@@ -655,44 +703,45 @@ public class Project implements APIEntryInterface {
     }
 
     /**
-     * @return the leaders
+     * @return the leaders.
      */
     public List<ProjectParticipant> getLeaders() {
         return leaders;
     }
 
     /**
-     * @return the participants
+     * @return the participants.
      */
     public List<ProjectParticipant> getParticipants() {
         return participants;
     }
 
     /**
-     * @return the programmes
+     * @return the programmes.
      */
     public List<OptLink> getProgrammes() {
         return programmes;
     }
 
     /**
-     * @return the placenames
+     * @return the placenames.
      */
     public List<OptLink> getPlacenames() {
         return placenames;
     }
 
     /**
-     * @return the partners
+     * @return the partners.
      */
     public List<OptLink> getPartners() {
         return partners;
     }
     
     /**
-     * Gets a crude string representation of this instance, consisting of the
+     * Gets a crude string representation of this project, consisting of the
      * title, abbreviation (if any) and abstract (if any).
-     * @return a string string representation of this instance.
+     * 
+     * @return a crude string representation of this project.
      */
     @Override
     public String toString() {
@@ -716,4 +765,10 @@ public class Project implements APIEntryInterface {
         }
         return service.getServiceBaseURL() + this.getId();
     }
+    
+    /**
+     * @see APIEntryInterface#getJSON()
+     */
+    @Override
+    public JSONObject getJSON() { return this.o; }
 }

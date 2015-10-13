@@ -22,7 +22,8 @@ import org.apache.commons.logging.LogFactory;
  * When a {@link MOSJParameter} comprises multiple time series, we typically 
  * need these time series to be "aware" of each other, due to the fact that they
  * will be visualized in a single chart.
- * <p>This is especially true if the basis for the chart should be a table.
+ * <p>
+ * This is especially true if the basis for the chart should be a table.
  * 
  * @deprecated Use {@link no.npolar.data.api.TimeSeriesCollection} instead.
  * @author Paul-Inge Flakstad, Norwegian Polar Institute

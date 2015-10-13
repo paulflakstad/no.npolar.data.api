@@ -19,7 +19,7 @@ import org.opencms.json.JSONObject;
 
 
 /**
- * Base class for providing access to the NPI's web services (API).
+ * Base class for accessing the Norwegian Polar Institute Data Centre web services.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
@@ -84,7 +84,7 @@ public abstract class APIService implements APIServiceInterface {
     protected String pageUriPrev = null;
     /** The first page no, as provided by the service. */
     protected int indexNoFirstPageItem = -1;
-    /** The last page, as provided by the service. */
+    /** The last page no, as provided by the service. */
     protected int indexNoLastPageItem = -1;
     /** The number of items per page, as provided by the service. */
     protected int itemsPerPage = -1;
@@ -95,23 +95,22 @@ public abstract class APIService implements APIServiceInterface {
     
     /** The (last) query, as provided by the service. */
     protected String query = null;
-    /** The (last) query's search time, as provided by the service. */
+    /** The (last) query search time, as provided by the service. */
     protected int querySearchTime = -1;
     
-    /** Container for JSON entries. */
+    /** Container for entries. */
     protected JSONArray entries = null;
     
     /** Flag indicating whether or not any user-activated filters are applied. */
     protected boolean isUserFiltered = false;
     
-    
-    /** The locale to use when generating strings meant for viewing. */
+    /** The locale to use when generating language-specific content. */
     protected Locale displayLocale = null;
     
-    /** The default locale to use when generating strings meant for viewing. */
+    /** The default locale to use when generating language-specific content. */
     public static final String DEFAULT_LOCALE_NAME = "en";
     
-    /** The prefix for filters. */
+    /** The (parameter) prefix for filters. */
     public static final String FILTER_PREFIX = "filter-";
     
     /** Container for filter sets. */
@@ -126,7 +125,7 @@ public abstract class APIService implements APIServiceInterface {
         
         // Make sure default parameters are set (like "format=json")
         //params = addDefaultParameters(params);
-        serviceUrl = getServiceBaseURL() + "?" + setParameters(params);
+        serviceUrl = getServiceBaseURL().concat("?").concat(setParameters(params));
         // We're expecting a response in JSON format
         String jsonFeed = httpResponseAsString(serviceUrl);
         JSONObject json = new JSONObject(jsonFeed).getJSONObject(API_KEY_FEED);
@@ -232,6 +231,24 @@ public abstract class APIService implements APIServiceInterface {
         } catch (Exception e) { }
         //*/
         return this;
+    }
+    
+    /**
+     * @see APIServiceInterface#doRead(java.lang.String) 
+     */
+    @Override
+    public JSONObject doRead(String id) 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        
+        serviceUrl = getServiceBaseURL().concat(id);
+        // We're expecting a response in JSON format
+        String jsonFeed = httpResponseAsString(serviceUrl);
+        try {
+            return new JSONObject(jsonFeed);
+        } catch (Exception e) {
+            // No such ID?
+            return null;
+        }
     }
     
     /**

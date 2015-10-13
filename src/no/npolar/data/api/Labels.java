@@ -7,7 +7,9 @@ import java.util.ResourceBundle;
 
 /**
  * Provides access to human-readable, localized translations of service identifier
- * string. Also, provides access to localized date formats, various labels, etc.
+ * string.
+ * <p>
+ * Also, provides access to localized date formats, various labels, etc.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  * @see Labels.properties
@@ -222,7 +224,9 @@ public class Labels {
     /** The key for (project) type "mapping". */
     public static final String TYPE_MAPPING_0 = TYPE_PREFIX_0 + "mapping";
     
+    /**  */
     public static final String DATA_COUNTRIES_0 = "DATA_COUNTRIES_0";
+    /**  */
     public static final String DATA_DB_VALUES_0 = "DATA_DB_VALUES_0";
     
     public static final String LABEL_DEFAULT_PROCEEDINGS_JOURNAL_0 = "LABEL_DEFAULT_PROCEEDINGS_JOURNAL_0";

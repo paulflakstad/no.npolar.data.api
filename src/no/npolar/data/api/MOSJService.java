@@ -20,41 +20,38 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- *
+ * Provides an interface to read MOSJ-specific data from the Norwegian Polar 
+ * Institute Data Centre.
+ * 
  * ToDo: In addition to this MOSJ-specific service, there should be an agnostic, 
- *          generic class TimeSeriesService / MonitoringService. This class could 
- *          then probably extend that one.
+ *  generic class TimeSeriesService / MonitoringService. This class could then 
+ *  probably extend that one.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class MOSJService extends APIService {
     
     /** The URL path to use when accessing the service. */
     public static final String SERVICE_PATH = "indicator/";
-    //protected static final String SERVICE_PATH = "/monitoring/parameter/";
     
-    /** The base URL (that is, the complete URL before adding parameters) to use when accessing the service. */
-    //protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + SERVICE_DOMAIN_NAME + "/" + SERVICE_PATH;
-    //protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + "apptest.data.npolar.no" + ":" + 9000 + SERVICE_PATH;
-    //protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + SERVICE_DOMAIN_NAME + ":" + SERVICE_PORT + SERVICE_PATH;
-    
+    /** The URL path addon for time series entries. */
     public static final String SERVICE_PATH_TIMESERIES = "timeseries/";
-    //protected static final String SERVICE_PATH_TIMESERIES = "http://apptest.data.npolar.no:9000/monitoring/timeseries/";
     
-    // DidDo: Remove TEMPORARY path "XXX_AS_QUERY" with real one below  ...
-    //protected static final String SERVICE_PATH_PARAMETER_AS_QUERY = "http://localhost:9393/monitoring/parameter/";
+    /** The URL path addon for time series entries. */
     public static final String SERVICE_PATH_PARAMETER = "parameter/";
-    //protected static final String SERVICE_PATH_PARAMETER = "http://apptest.data.npolar.no:9000/monitoring/parameter/";
     
     /** Translations. */
     protected ResourceBundle labels = null;
+    
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(MOSJService.class);
     
+    /** The configured protocol used by this service (http / https). */
     protected String serviceProtocol = null;
-    //protected String serviceBaseUrl = null;
     
     /**
      * Creates a new service instance, configured with the given locale.
+     * 
      * @param loc The locale to use when generating strings for screen view. If null, the default locale is used.
      * @param secure Set to true to use https, false to use http. 
      */
@@ -76,6 +73,8 @@ public class MOSJService extends APIService {
     /**
      * Queries the service using the given parameters and returns all (if any)
      * MOSJ parameters.
+     * <p>
+     * This method is not used anymore by this library.
      * 
      * @param params The query parameters to use in the service request.
      * @return A list of all MOSJ parameters, generated from the service response, or an empty list (= no matches).
@@ -131,12 +130,64 @@ public class MOSJService extends APIService {
         return unmodParams;
     }
     
+    /**
+     * @see APIServiceInterface#getServiceBaseURL() 
+     */
+    @Override
+    public String getServiceBaseURL() { return getServiceProtocol() + "://" + SERVICE_DOMAIN_NAME + "/" + SERVICE_PATH; }
+    
+    /**
+     * @see APIServiceInterface#getServicePath() 
+     */
+    @Override
+    public String getServicePath() { return SERVICE_PATH; }
+    
+    /**
+     * Gets the configured protocol used by this service instance.
+     * 
+     * @return The service protocol (e.g. "http" or "https").
+     */
+    public String getServiceProtocol() { return this.serviceProtocol; }
+    
+    /**
+     * Gets the URL path addon for time series entries.
+     * 
+     * @return The URL path addon for time series entries.
+     */
+    public String getTimeSeriesServicePath() { return SERVICE_PATH_TIMESERIES; }
+    
+    /**
+     * Gets the URL path addon for parameter entries.
+     * 
+     * @return The URL path addon for parameter entries.
+     */
+    public String getParameterServicePath() { return SERVICE_PATH_PARAMETER; }
+    
+    /**
+     * Gets the base URL for MOSJ time series entries.
+     * <p>
+     * Append an ID to get the URL of a single time series entry.
+     * 
+     * @return The base URL for MOSJ time series entries.
+     */
+    public String getTimeSeriesBaseURL() { return getServiceBaseURL() + SERVICE_PATH_TIMESERIES; }
+    
+    /**
+     * Gets the base URL for MOSJ parameter entries.
+     * <p>
+     * Append an ID to get the URL of a single parameter entry.
+     * 
+     * @return The base URL for MOSJ parameter entries.
+     */
+    public String getParameterBaseURL() { return getServiceBaseURL() + SERVICE_PATH_PARAMETER; }
+    
     //##########################################################################
     //
     //                  Horrible stuff below, must fix later!!!
+    //      (Commented out everything and hoping none of these are in use :)
     //
     //##########################################################################
-    
+    /*
     public MOSJParameter getMOSJParameter(String id) 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
         
@@ -155,8 +206,9 @@ public class MOSJService extends APIService {
         
         return mp;
     }
-    
-    public TimeSeries getTimeSeries(String timeSeriesId) {        
+    //*/
+    /*
+    public TimeSeries getTimeSeries(String timeSeriesId) {      
         if (timeSeriesId == null) 
             return null;
         
@@ -184,6 +236,7 @@ public class MOSJService extends APIService {
             return null;
         }
     }
+    //*/
     
     /**
     public List<TimeSeries> getTimeSeriesForMOSJParameter(String mosjParameterId) {
@@ -225,22 +278,4 @@ public class MOSJService extends APIService {
         }
         return relatedTimeseries;
     }//*/
-    
-    /**
-     * @see APIServiceInterface#getServiceBaseURL() 
-     */
-    @Override
-    public String getServiceBaseURL() { return getServiceProtocol() + "://" + SERVICE_DOMAIN_NAME + "/" + SERVICE_PATH; }
-    
-    /**
-     * @see APIServiceInterface#getServicePath() 
-     */
-    @Override
-    public String getServicePath() { return SERVICE_PATH; }
-    
-    public String getServiceProtocol() { return this.serviceProtocol; }
-    public String getTimeSeriesServicePath() { return SERVICE_PATH_TIMESERIES; }
-    public String getParameterServicePath() { return SERVICE_PATH_PARAMETER; }
-    public String getTimeSeriesBaseURL() { return getServiceBaseURL() + SERVICE_PATH_TIMESERIES; }
-    public String getParameterBaseURL() { return getServiceBaseURL() + SERVICE_PATH_PARAMETER; }
 }

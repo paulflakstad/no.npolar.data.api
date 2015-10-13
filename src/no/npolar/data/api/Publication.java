@@ -22,197 +22,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- *
+ * Represents a single publication entry, as read from the Norwegian Polar 
+ * Institute Data Centre.
+ * <p>
+ * Publications are typically created by a {@link PublicationService} instance 
+ * acting as an interface to the Data Centre.
+ * 
+ * @see https://github.com/npolar/api.npolar.no/blob/master/schema/publication.json
+ * @see https://data.npolar.no/publications/
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class Publication implements APIEntryInterface {
-    /** 
-     * Helper class for people.
-     */
-    
-    
-    /**
-     * Helper class.
-     */
-    protected class PersonCollection {
-        /** List containing all people currently in this collection. */
-        private List<PublicationContributor> people = null;
-        
-        /**
-         * Creates a new, empty collection.
-         */
-        public PersonCollection() {
-            people = new ArrayList<PublicationContributor>(0);
-        }
-        
-        /**
-         * Creates a new collection from the given JSON array.
-         * @param persons A JSON array containing JSON objects, where each object describes a person.
-         */
-        public PersonCollection(JSONArray persons) {
-            people = new ArrayList<PublicationContributor>(0);
-            for (int i = 0; i < persons.length(); i++) {
-                try {
-                    JSONObject person = persons.getJSONObject(i);
-                    add(person);
-                } catch (Exception e) {
-                    continue;
-                }
-            }
-        }
-        
-        /**
-         * Adds a person to this collection.
-         * @param person The JSON object that describes the person object.
-         * @return The list of people in this collection, after the given person has been added.
-         */
-        public final List<PublicationContributor> add(JSONObject person) {
-            PublicationContributor p = new PublicationContributor(person, displayLocale);
-            List<String> roles = p.getRoles();
-            PublicationContributor existing = getByName(p.getFirstName(), p.getLastName());
-            if (existing != null) {
-                existing.addRoles(roles);
-            } else {
-                people.add(p);
-            }
-            return people;
-        }
-        
-        public boolean remove(PublicationContributor person) {
-            return people.remove(person);
-        }
-        
-        public boolean removeAll(List<PublicationContributor> peopleToRemove) {
-            return people.removeAll(peopleToRemove);
-        }
-        
-        public boolean removeAll(PersonCollection collectionToRemove) {
-            return removeAll(collectionToRemove.get());
-        }
-        
-        public boolean contains(PublicationContributor person) {
-            return people.contains(person);
-        }
-        
-        /**
-         * Gets all people with the given role currently in this collection.
-         * @param role The role to match against.
-         * @return All people with the given role currently in this collection, or an empty list if none.
-         */
-        public List<PublicationContributor> getByRole(String role) {
-            List<PublicationContributor> temp = new ArrayList<PublicationContributor>(0);
-            Iterator<PublicationContributor> i = people.iterator();
-            while (i.hasNext()) {
-                PublicationContributor p = i.next();
-                if (p.hasRole(role))
-                    temp.add(p);
-            }
-            return temp;
-        }
-        
-        /**
-         * Gets all people with only the given role currently in this collection.
-         * @param role The role to match against.
-         * @return All people with only the given role currently in this collection, or an empty list if none.
-         */
-        public List<PublicationContributor> getByRoleOnly(String role) {
-            List<PublicationContributor> temp = new ArrayList<PublicationContributor>(0);
-            Iterator<PublicationContributor> i = people.iterator();
-            while (i.hasNext()) {
-                PublicationContributor p = i.next();
-                if (p.hasRoleOnly(role))
-                    temp.add(p);
-            }
-            return temp;
-        }
-        
-        /**
-         * Gets a person identified by the given name from this collection, if any.
-         * @param fName The first name (given name) of the person to get.
-         * @param lName The last name (family name) of the person to get.
-         * @return The person identified by the given name, or null if none.
-         */
-        public PublicationContributor getByName(String fName, String lName) {
-            if (fName == null || lName == null || fName.isEmpty() || lName.isEmpty())
-                return null;
-            
-            Iterator<PublicationContributor> i = people.iterator();
-            while (i.hasNext()) {
-                PublicationContributor p = i.next();
-                if (p.getFirstName().equals(fName) && p.getLastName().equals(lName))
-                    return p;
-            }
-            return null;
-        }
-        
-        /**
-         * Gets a person identified by the given ID from this collection, if any.
-         * @param id The ID used to identify the person to get.
-         * @return The person identified by the given ID, or null if none.
-         */
-        public PublicationContributor getByID(String id) {
-            if (id == null || id.isEmpty())
-                return null;
-            
-            Iterator<PublicationContributor> i = people.iterator();
-            while (i.hasNext()) {
-                PublicationContributor p = i.next();
-                if (p.getID().equals(id))
-                    return p;
-            }
-            return null;
-        }
-        
-        /**
-         * Gets the list people currently in this collection.
-         * @return The list people currently in this collection.
-         */
-        public List<PublicationContributor> get() { return people; }
-        
-        /**
-         * Checks if all the people in this collection are editors (and editors only).
-         * @return True if all the people in this collection are editors, false if not.
-         * @see #containsRoleOnly(java.lang.String)
-         */
-        public boolean containsEditorsOnly() {
-            /*Iterator<PublicationContributor> i = people.iterator();
-            while (i.hasNext()) {
-                PublicationContributor p = i.next();
-                if (!p.hasRoleOnly(JSON_VAL_ROLE_EDITOR))
-                    return false;
-            }
-            return true;*/
-            return containsRoleOnly(JSON_VAL_ROLE_EDITOR);
-        }
-        
-        /**
-         * Checks if all the people in this collection are translators (and 
-         * translators only).
-         * @return True if all the people in this collection are translators, false if not.
-         * @see #containsRoleOnly(java.lang.String)
-         */
-        public boolean containsTranslatorsOnly() {
-            return containsRoleOnly(JSON_VAL_ROLE_TRANSLATOR);
-        }
-        
-        /**
-         * Checks if all the people in this collection are assigned only the 
-         * given role, and no other role.
-         * @param role The role to check for.
-         * @return True if all contributors are assigned only the given role, false if not.
-         * @see #JSON_VAL_ROLE_EDITOR and alike.
-         */
-        public boolean containsRoleOnly(String role) {
-            Iterator<PublicationContributor> i = people.iterator();
-            while (i.hasNext()) {
-                PublicationContributor p = i.next();
-                if (!p.hasRoleOnly(role))
-                    return false;
-            }
-            return true;
-        }
-    }
-    
 
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(Publication.class);
@@ -324,10 +144,6 @@ public class Publication implements APIEntryInterface {
     
     /** The date format used in the JSON. */
     public static final String DATE_FORMAT_JSON         = "yyyy-MM-dd";
-    /** The date format used when generating strings meant for viewing (English) */
-    //public static final String DATE_FORMAT_SCREEN_NO    = "d. MMM yyyy";
-    /** The date format used when generating strings meant for viewing (Norwegian). */
-    //public static final String DATE_FORMAT_SCREEN_EN    = "d MMM yyyy";
     /** The base URL for publication links. */
     public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
     /** The base URL for DOI links. */
@@ -374,8 +190,11 @@ public class Publication implements APIEntryInterface {
     /** The pre-defined keyword for identifying other publications. */
     public static final String TYPE_OTHER = "other";
     
+    /** Identifier constant for reference string partial: author(s). */
     public static final int CITE_PART_AUTHORS = 0;
+    /** Identifier constant for reference string partial: editor(s). */
     public static final int CITE_PART_EDITORS = 1;
+    /** Identifier constant for reference string partial: translator(s). */
     public static final int CITE_PART_TRANSLATORS = 2;
     
     // Class members
@@ -429,7 +248,7 @@ public class Publication implements APIEntryInterface {
     /** Localization resource bundle. */
     protected ResourceBundle labels = null;
     
-    /** Comparator that can be used to order publications (e.g. in a list) by publish date descending, that is, newest first. */
+    /** Comparator that can be used to order publications in a collection by publish date descending (newest first). */
     public static final Comparator<Publication> COMPARATOR_PUBLISHED_NEWEST_FIRST = 
             new Comparator<Publication>() {
                 @Override
@@ -437,7 +256,7 @@ public class Publication implements APIEntryInterface {
                     return o1.getPubYear().compareTo(o2.getPubYear());
                 }
             };
-    /** Comparator that can be used to order publications (e.g. in a list) alphabetically by the cite string. */
+    /** Comparator that can be used to order publications in a collection alphabetically (using the cite string). */
     public static final Comparator<Publication> COMPARATOR_CITESTRING =
             new Comparator<Publication>() {
                 @Override
@@ -451,7 +270,8 @@ public class Publication implements APIEntryInterface {
             };
     
     /**
-     * Creates a new instance from the given JSON object.
+     * Creates a new publication instance from the given JSON object.
+     * 
      * @param pubObject The JSON object to use when constructing this instance.
      * @param loc The locale to use when generating strings for screen view. If null, the default locale (English) is used.
      */
@@ -464,7 +284,7 @@ public class Publication implements APIEntryInterface {
     }
     
     /**
-     * Builds this instance by interpreting the JSON source.
+     * Builds this publication instance by interpreting the JSON source.
      */
     protected final void init() {
         // Initialize the bundle (for localized labels)
@@ -558,7 +378,7 @@ public class Publication implements APIEntryInterface {
         if (o.has(JSON_KEY_PEOPLE)) {
             try {
                 JSONArray persons = o.getJSONArray(JSON_KEY_PEOPLE);
-                authorsAndEditors = new PersonCollection(persons);
+                authorsAndEditors = new PersonCollection(persons, displayLocale);
                 // The list above may now contain translators and/or co-authors. 
                 // If so, split those out into separate lists:
                 translators = authorsAndEditors.getByRoleOnly(JSON_VAL_ROLE_TRANSLATOR);
@@ -734,8 +554,12 @@ public class Publication implements APIEntryInterface {
     }
     
     /**
-     * Extracts the DOI (e.g. 10.1111/conl.12009) from the given full DOI URL 
-     * (e.g. http://dx.doi.org/10.1111/conl.12009).
+     * Extracts the DOI from the given full DOI URL.
+     * <p>
+     * E.g. extracts "10.1111/conl.12009" from "http://dx.doi.org/10.1111/conl.12009".
+     * <p>
+     * This is a String modifier. The given URL must be on the doi.org domain.
+     * 
      * @param doiUrl The full DOI URL.
      * @return The DOI.
      */
@@ -748,6 +572,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the title for this publication.
+     * 
      * @return The title for this publication.
      */
     @Override
@@ -757,7 +582,8 @@ public class Publication implements APIEntryInterface {
      * Gets the URL for this publication, within the context of the given 
      * service.
      * <p>
-     * The service should be of type {@link PublicationService}
+     * The service should be of type {@link PublicationService}.
+     * 
      * @param service The API service. Should be of type {@link PublicationService}.
      * @return The URL for this publication, or: where it resides within the given service.
      */
@@ -773,48 +599,70 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the publisher for this publication.
+     * 
      * @return The publisher for this publication, or an empty string if none.
      */
     public String getPublisher() { return publisher; }
     
     /**
      * Gets the publish year for this publication.
+     * 
      * @return The publish year for this publication, or an empty string if none.
      */
     public String getPubYear() { return pubYear; }
     
+    /**
+     * Gets the publish timestamp for this publication.
+     * <p>
+     * The formatting is based on the accuracy level of the publish time. See 
+     * the {@link #init()} method.
+     * 
+     * @return The publish timestamp for this publication, formatted based on the accuracy level of the publish time.
+     */
     public String getPubTime() { return publishTimeFormat.format(publishTime); }
     
     /**
      * Gets the publish date for this publication.
+     * 
      * @return The publish date for this publication, or an empty string if none.
      */
     public String getPubDate() { try { return new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_0), displayLocale).format(pubDate); } catch (Exception e) { return ""; } }
     
+    /**
+     * Gets the year of the the publish date for this publication.
+     * 
+     * @return The year of the publish date for this publication, or an empty string if none.
+     */
     public String getPubDateAsYear() { try { return new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEARONLY_0), displayLocale).format(pubDate); } catch (Exception e) { return ""; } }
     
     /**
-     * Gets the ID for this publication.
-     * @return The ID for this publication, or an empty string if none.
+     * Gets the unique ID for this publication.
+     * 
+     * @return The unique ID for this publication, or an empty string if none.
      */
     @Override
     public String getId() { return id; }
     
     /**
      * Gets the type for this publication.
+     * 
      * @return The type for this publication, or an empty string if none.
      */
     public String getType() { return type; }
     
     /**
      * Gets the state for this publication.
+     * 
      * @return The state for this publication, or an empty string if none.
      */
     public String getState() { return state; }
     
     /**
-     * Gets the group name for this publication. For publications, this is the 
-     * type, so this method is identical to #getType().
+     * Gets the group name for this publication.
+     * <p>
+     * For publications, this is the type, so this method is identical to 
+     * {@link #getType()}.
+     * 
      * @return The group name (the type), or an empty string if none.
      * @see #getType() 
      */
@@ -823,24 +671,28 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the volume for this publication, if any.
+     * 
      * @return The volume for this publication, or an empty string if none.
      */
     public String getVolume() { return volume; }
     
     /**
      * Gets the issue for this publication, if any.
+     * 
      * @return The issue for this publication, or an empty string if none.
      */
     public String getIssue() { return issue; }
     
     /**
      * Gets the links for this publication, if any.
+     * 
      * @return The links for this publication, or null if none.
      */
     public JSONArray getLinks() { return links; }
     
     /**
      * Gets the topics for this publication, if any.
+     * 
      * @return The topics for this publication, or an empty list if none;
      */
     public List<Topic> getTopics() { 
@@ -859,6 +711,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the topics for this publication, if any, as HTML code.
+     * 
      * @param separator The character to use for separate the topics. Use null for none.
      * @return The topics for this publication, or an empty string if none;
      */
@@ -884,24 +737,28 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the journal name for this publication.
+     * 
      * @return The journal name for this publication, or an empty string if none.
      */
     public String getJournalName() { return journalName; }
     
     /**
      * Gets the series for this publication.
+     * 
      * @return The series for this publication, or an empty string if none.
      */
     public String getJournalSeries() { return journalSeries; }
     
     /**
-     * Gets the series no. for this publication.
-     * @return The series no. for this publication, or an empty string if none.
+     * Gets the series no for this publication.
+     * 
+     * @return The series no for this publication, or an empty string if none.
      */
     public String getJournalSeriesNo() { return journalSeriesNo; }
     
     /**
      * Gets the complete journal string for this publication.
+     * 
      * @return The complete journal string for this publication, or an empty string if none.
      */
     public String getJournal() {
@@ -920,14 +777,19 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets a flag indicating whether or not this publication is of the given type. 
+     * <p>
      * The type match is not case sensitive.
+     * 
      * @return True if this publication is of the given type, false if not.
      */
     public boolean isType(String type) { return !this.type.isEmpty() && this.type.equalsIgnoreCase(type); }
     
     /**
      * Gets a flag indicating whether or not this publication's state matches the 
-     * given state. The match is not case sensitive.
+     * given state.
+     * <p>
+     * The match is not case sensitive.
+     * 
      * @return True if this publication's state matches the given state, false if not.
      */
     public boolean isState(String state) { return !this.state.isEmpty() && this.state.equalsIgnoreCase(state); }
@@ -935,28 +797,32 @@ public class Publication implements APIEntryInterface {
     /**
      * Gets a flag indicating whether or not this publication starts and ends on
      * the same page, thereby making it a one-pager.
+     * 
      * @return True if this publication is a one-pager, false if not.
-     * @return 
      */
     public boolean isOnePage() { try { return this.pageStart.equals(this.pageEnd); } catch (Exception e) { return false; } }
     
     /**
      * Gets a flag indicating whether or not this publication is related to a conference.
+     * 
      * @return True if this publication is related to a conference, false if not.
      */
     public boolean isConferenceRelated() { return !confName.isEmpty(); }
     
     /**
      * Gets a flag indicating whether or not this publication is part of a series.
+     * 
      * @return True if this publication is part of a series, false if not.
      */
     public boolean isInSeries() { return !journalSeries.isEmpty(); }
     
     /**
      * Gets a flag indicating whether or not this publication is a 
-     * part-contribution to another publication. In practice, if this method
-     * method returns "true", that means this publication is a report in a 
-     * report series or a chapter in a book.
+     * part-contribution to another publication.
+     * <p>
+     * In practice, if this method method returns "true", that means this 
+     * publication is a report in a report series or a chapter in a book.
+     * 
      * @return True if this publication is a part-contribution to another publication, false if not.
      */
     public boolean isPartContribution() {
@@ -978,36 +844,44 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets a flag indicating whether or not this publication has a series number.
+     * 
      * @return True if this publication has a series number, false if not.
      */
     public boolean hasSeriesNo() { return !journalSeriesNo.isEmpty(); }
     
     /**
      * Gets a flag indicating whether or not this publication has editors only.
+     * 
      * @return True if this publication has editors only, false if not.
      */
     public boolean hasEditorsOnly() { return authorsAndEditors == null ? false : authorsAndEditors.containsEditorsOnly(); }
     
     /**
      * Gets a flag indicating whether or not this publication has a parent publication.
+     * 
      * @return True if this publication has a parent publication, false if not.
      */
     public boolean hasParent() { return parent != null; }
 
     /**
      * Gets the start page number for this publication.
+     * 
      * @return The start page number for this publication, or an empty string if none.
      */
     public String getPageStart() { return pageStart; }
     
     /**
      * Gets the end page number for this publication.
+     * 
      * @return The end page number for this publication, or an empty string if none.
      */
     public String getPageEnd() { return pageEnd; }
     
     /**
-     * Gets the page number(s) string for this publication, e.g. "18-21" or "18".
+     * Gets the page number(s) string for this publication
+     * <p>
+     * E.g.: "18-21" or "18".
+     * 
      * @return The page number(s) string for this publication, or an empty string if none.
      */
     public String getPages() {
@@ -1019,7 +893,10 @@ public class Publication implements APIEntryInterface {
     }
     
     /**
-     * Gets the complete page(s) string, with label, e.g. "Pp. 18-21" or "P. 18".
+     * Gets the complete page(s) string, with label.
+     * <p>
+     * E.g.: "Pp. 18-21" or "P. 18".
+     * 
      * @return The complete page(s) string, with label, or an empty string if none.
      */
     public String getPagesWithLabel() {
@@ -1037,6 +914,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the page count (total number of pages) for this publication.
+     * 
      * @return The page count (total number of pages) for this publication, or an empty string if none.
      */
     public String getPageCount() {
@@ -1045,24 +923,28 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the DOI for this publication.
+     * 
      * @return The DOI for this publication, or an empty string if none.
      */
     public String getDOI() { return doi; }
     
     /**
      * Gets the URL for this publication's parent.
+     * 
      * @return The URL for this publication's parent, or an empty string if none.
      */
     public String getParentUrl() { return parentUrl; }
     
     /**
      * Gets the ID for this publication's parent.
+     * 
      * @return The ID for this publication's parent, or an empty string if none.
      */
     public String getParentId() { return parentId; }
     
     /**
      * Gets the complete authors string for this publication.
+     * 
      * @return The complete authors string for this publication, or an empty string if none.
      * @see #getPeopleStringByRole(java.lang.String) 
      */
@@ -1072,6 +954,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete editors string for this publication.
+     * 
      * @return The complete editors string for this publication, or an empty string if none.
      * @see #getPeopleStringByRole(java.lang.String) 
      */
@@ -1081,6 +964,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete names (authors and editors) string for this publication.
+     * 
      * @return The complete names (authors and editors) string for this publication, or an empty string if none.
      */
     public String getNames() {
@@ -1100,6 +984,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete translator name(s) string for this publication.
+     * 
      * @return The complete translator name(s) string for this publication, or an empty string if none.
      */
     public String getNamesOfTranslators() {
@@ -1118,6 +1003,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete co-author name(s) string for this publication.
+     * 
      * @return The complete co-author name(s) string for this publication, or an empty string if none.
      */
     public String getNamesOfCoAuthors() {
@@ -1126,6 +1012,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete name(s) string for the contributors in the given list.
+     * 
      * @param list The list containing the contributors.
      * @return The complete name(s) string for the given list.
      */
@@ -1144,8 +1031,8 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete names string for all contributors to this publication that
-     * are assigned the given role. (E.g. #JSON_VAL_ROLE_AUTHOR.)
-     * @param role The role to match against, for example #JSON_VAL_ROLE_AUTHOR.
+     * are assigned the given role.
+     * @param role The role to match against, for example {@link #JSON_VAL_ROLE_AUTHOR}.
      * @return The complete names string for all contributors to this publication that are assigned the given role, or an empty string if none.
      */
     public String getPeopleStringByRole(String role) {
@@ -1164,8 +1051,9 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete list of contributors to this publication that are 
-     * assigned the given role. (E.g. #JSON_VAL_ROLE_AUTHOR.)
-     * @param role The role to match against, for example #JSON_VAL_ROLE_AUTHOR.
+     * assigned the given role.
+     * 
+     * @param role The role to match against, for example {@link #JSON_VAL_ROLE_AUTHOR}.
      * @return The complete list of contributors to this publication that are assigned the given role, or an empty list if none.
      */
     public List<PublicationContributor> getPeopleByRole(String role) {
@@ -1176,6 +1064,12 @@ public class Publication implements APIEntryInterface {
         return list;
     }
     
+    /**
+     * Gets an identified part of the reference string - for example, the authors.
+     * 
+     * @param elementId The identification for which part to get. See this class' CITE_PART_XXXX constants.
+     * @return The identified part of the reference string, or an empty string if that part does not exist for this publication.
+     */
     public String getReferenceElement(int elementId) {
         String s = "";
         if (elementId == CITE_PART_EDITORS) {
@@ -1195,6 +1089,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete conference string for this publication.
+     * 
      * @return The complete conference string for this publication, or an empty string if none.
      */
     public String getConference() {
@@ -1213,6 +1108,7 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the complete list of people who have contributed to this publication.
+     * 
      * @return The complete list of people who have contributed to this publication, or an empty list if none.
      */
     public List<PublicationContributor> getPeople() {
@@ -1221,8 +1117,11 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Checks if the given string ends with a "stop character", that is, a 
-     * character that ends a sentence. (Currently ? . or !) Used to determine 
-     * whether or not to add e.g. a punctuation mark at the end of a title or not.
+     * character that ends a sentence (currently: "?", "." or "!").
+     * <p>
+     * Used to determine whether or not to add e.g. a punctuation mark at the 
+     * end of a title or not.
+     * 
      * @param s The string to check.
      * @return True if the given string ends with a "stop character", false if not.
      */
@@ -1240,7 +1139,20 @@ public class Publication implements APIEntryInterface {
     }
     
     /**
+     * Gets the cite string / reference for this publication.
+     * <p>
+     * Equivalent to calling {@link #toString()}.
+     * 
+     * @return the cite string / reference for this publication.
+     * @see #toString() 
+     */
+    public String cite() {
+        return this.toString();
+    }
+    
+    /**
      * Gets the string representation for this publication.
+     * 
      * @return The string representation for this publication.
      */
     @Override
@@ -1630,4 +1542,10 @@ public class Publication implements APIEntryInterface {
         return s;
     }
     //*/
+    
+    /**
+     * @see APIEntryInterface#getJSON()
+     */
+    @Override
+    public JSONObject getJSON() { return this.o; }
 }

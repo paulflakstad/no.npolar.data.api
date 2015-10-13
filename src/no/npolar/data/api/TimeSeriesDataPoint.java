@@ -9,19 +9,25 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Represents a single data point. Data points are used mainly as the essential 
- * part of a time series.
+ * Represents a single data point.
  * <p>
- * Any data point consists mainly of a timestamp and 1–5 values. * 
+ * Data points are the essential part of a time series. Any data point consists 
+ * mainly of a <strong>timestamp</strong> and <strong>1–5 values</strong>. * 
  *
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class TimeSeriesDataPoint {
+    /** Value identifier: Main value. */
     public static final int VALUE_MAIN = 0;
+    /** Value identifier: Low value. */
     public static final int VALUE_LOW = 1;
+    /** Value identifier: High value. */
     public static final int VALUE_HIGH = 2;
+    /** Value identifier: Minimum value. */
     public static final int VALUE_MIN = 3;
+    /** Value identifier: Maximum value. */
     public static final int VALUE_MAX = 4;
+    
     /* high/low and max/min stuff should be in time series */
     protected boolean hasHigh = false;
     protected boolean hasLow = false;
@@ -70,6 +76,12 @@ public class TimeSeriesDataPoint {
         this.timestampFormat = timestampFormat;
     }
     
+    /**
+     * Gets the value identified by the given value key.
+     * 
+     * @param valueKey The value key, for example {@link #VALUE_MAIN}.
+     * @return The value identified by the given value key, or fallback to the main value.
+     */
     public double get(int valueKey) {
         switch (valueKey) {
             case VALUE_MAIN:
@@ -87,6 +99,15 @@ public class TimeSeriesDataPoint {
         }
     }
     
+    /**
+     * Gets the value identified by the given value key, formatted according to 
+     * the given format.
+     * 
+     * @param valueKey The value key, for example {@link #VALUE_MAIN}.
+     * @param format The format pattern.
+     * @return The value identified by the given value key, or fallback to the main value.
+     * @see #formatNumber(double, java.lang.String, java.util.Locale) 
+     */
     public String get(int valueKey, String format) {
         switch (valueKey) {
             case VALUE_MAIN:
@@ -155,7 +176,7 @@ public class TimeSeriesDataPoint {
     /**
      * Gets the value, formatted according to the given format and locale. 
      * 
-     * @see TimeSeriesDataPoint#formatNumber(double, java.lang.String, java.util.Locale) 
+     * @see #formatNumber(double, java.lang.String, java.util.Locale) 
      */
     public String getVal(String format, Locale locale) {
         return formatNumber(getVal(), format, locale);
@@ -171,6 +192,13 @@ public class TimeSeriesDataPoint {
         */
     }
     
+    /**
+     * Gets all the values, formatted according to the given format and locale.
+     * <p>
+     * Separate values are comma-separated in the returned string.
+     * 
+     * @see #formatNumber(double, java.lang.String, java.util.Locale) 
+     */
     public String getAllValues(String format, Locale locale) {
         String s = formatNumber(this.min, format, locale) 
                 + ", " + formatNumber(this.low, format, locale)
@@ -210,7 +238,15 @@ public class TimeSeriesDataPoint {
         df.applyPattern(format);
         return df.format(number);
     }
-    
+    /**
+     * Gets the high and low values, separated, formatted and localized 
+     * according to the given format pattern and locale.
+     * 
+     * @param format The format pattern.
+     * @param separator The separator. If null, the default (comma) is be used.
+     * @param locale The locale.
+     * @return the high and low values.
+     */
     public String getHighLow(String format, String separator, Locale locale) {
         if (this.hasHighLow()) {
             if (separator == null)
@@ -246,7 +282,12 @@ public class TimeSeriesDataPoint {
     public String getTimestampFormatted() {
             return getTimestamp(this.timestampFormat);
     }
-    
+    /**
+     * Gets a string representation of this instance, consisting of the main 
+     * value and the timestamp.
+     * 
+     * @return 
+     */
     @Override
     public String toString() { 
         String s = "";
@@ -260,8 +301,6 @@ public class TimeSeriesDataPoint {
         return s;
     }
     
-    
-    
     /**
      * Gets the timestamp, formatted according to the given format.
      * 
@@ -270,28 +309,52 @@ public class TimeSeriesDataPoint {
     public String getTimestamp(SimpleDateFormat df) {
         return df.format(dateTime);
     }
-    
+    /**
+     * Sets the high value.
+     * 
+     * @param val The new high value.
+     * @return This instance, updated.
+     */
     public TimeSeriesDataPoint setHigh(double val) {
         this.high = val;
         this.hasHigh = true;
         return this;
     }
+    /**
+     * Sets the low value.
+     * 
+     * @param val The new low value.
+     * @return This instance, updated.
+     */
     public TimeSeriesDataPoint setLow(double val) {
         this.low = val;
         this.hasLow = true;
         return this;
     }
+    /**
+     * Sets the max value.
+     * 
+     * @param val The new max value.
+     * @return This instance, updated.
+     */
     public TimeSeriesDataPoint setMax(double val) {
         this.max = val;
         this.hasMax = true;
         return this;
     }
+    /**
+     * Sets the min value.
+     * 
+     * @param val The new min value.
+     * @return This instance, updated.
+     */
     public TimeSeriesDataPoint setMin(double val) {
         this.min = val;
         this.hasMin = true;
         return this;
     }
     
+    /** @return True if this instance has both high and low, false if not. */
     public boolean hasHighLow() { return hasHigh && hasLow; } /* Should be in TimeSeries */
     
     /*

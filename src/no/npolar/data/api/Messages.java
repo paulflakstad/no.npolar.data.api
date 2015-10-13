@@ -28,7 +28,7 @@ public class Messages extends A_CmsMessageBundle {
     /**
      * Returns an instance of this localized message accessor.<p>
      * 
-     * @return an instance of this localized message accessor
+     * @return an instance of this localized message accessor.
      */
     public static I_CmsMessageBundle get() {
         return INSTANCE;

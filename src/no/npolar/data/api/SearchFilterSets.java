@@ -14,8 +14,9 @@ import java.util.Iterator;
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class SearchFilterSets extends ArrayList<SearchFilterSet> {
-    
+    /** Sort order: By title. */
     public static final int SORT_ORDER_TITLE = 1;
+    /** Sort order: By relevancy. */
     public static final int SORT_ORDER_RELEVANCY = 2;
     
     /**
@@ -83,8 +84,9 @@ public class SearchFilterSets extends ArrayList<SearchFilterSet> {
     
     /**
      * Orders this list of filter sets according to the given array which 
-     * describes the order. The (facet) name at index 0 in the array is given
-     * the highest relevancy, the name at index 1 the second highest, and so on.
+     * describes the order.
+     * <p>The (facet) name at index 0 in the array is given the highest 
+     * relevancy, the name at index 1 the second highest, and so on.
      * <p>
      * Any names not mentioned in the given array will retain their existing 
      * relevancy.
@@ -113,6 +115,7 @@ public class SearchFilterSets extends ArrayList<SearchFilterSet> {
      * should be one of the SORT_ORDER_XXX constants of this class.
      * 
      * @param sortOrder The sort order.
+     * @return This instance, updated.
      */
     public SearchFilterSets sort(int sortOrder) {
         if (sortOrder == SORT_ORDER_RELEVANCY) {
@@ -125,6 +128,7 @@ public class SearchFilterSets extends ArrayList<SearchFilterSet> {
     
     /**
      * Sorts the list of filter sets using the given comparator.
+     * 
      * @param comp The comparator to use in the sort operation.
      */
     public void sort(Comparator comp) {

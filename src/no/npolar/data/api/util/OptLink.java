@@ -4,6 +4,7 @@ import org.opencms.jsp.CmsJspActionElement;
 
 /**
  * An OptLink (optional link) instance is either just plain text, or a link.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class OptLink {
@@ -17,6 +18,7 @@ public class OptLink {
     
     /**
      * Constructs a new instance, consisting of the given text (no link).
+     * 
      * @param text The text.
      */
     public OptLink(String text) {
@@ -26,6 +28,7 @@ public class OptLink {
     /**
      * Constructs a new instance, consisting of the given text as a link to the
      * given URI.
+     * 
      * @param text The link text.
      * @param uri The link target URI.
      */
@@ -36,23 +39,28 @@ public class OptLink {
 
     /**
      * Sets the link target URI.
+     * 
      * @param uri The link target URI.
      */
     public void setUri(String uri) { this.uri = uri; }
     /**
      * Gets the link target URI.
+     * 
      * @return The link target URI.
      */
     public String getUri() { return uri; }
     /**
      * Gets the (link) text.
+     * 
      * @return The (link) text.
      */
     public String getText() { return text; }
     /**
-     * Gets a string representation suitable for HTML output. Should be used 
-     * only when the link URI is in fact an absolute URL (i.e. not an internal 
-     * URI).
+     * Gets a string representation suitable for HTML output.
+     * <p>
+     * Should be used only when the link URI is in fact an absolute URL 
+     * (i.e. not an internal URI).
+     * 
      * @return A string representation suitable for HTML output.
      * @see #toString(no.npolar.util.CmsAgent) 
      */
@@ -64,8 +72,11 @@ public class OptLink {
         return s;
     }
     /**
-     * Gets a string representation suitable for HTML output. Should be used 
-     * if this instance has a link is internal (i.e. not an absolute URL).
+     * Gets a string representation suitable for HTML output.
+     * <p>
+     * Should be used if this instance has a link is internal (i.e. not an 
+     * absolute URL).
+     * 
      * @param cms Needed to produce valid internal links.
      * @return A string representation suitable for HTML output.
      * @see #toString() 

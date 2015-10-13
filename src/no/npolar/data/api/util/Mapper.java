@@ -8,6 +8,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * The Mapper is intended populated with string-to-string mappings, and is 
+ * typically used to translate the pre-defined strings used by the service into 
+ * other, more "desirable" strings.
+ * <p>
+ * Such translations are necessary both for localization purposes and in order 
+ * to avoid sub-optimal (or in some cases illegal) use of abbreviation and alike.
+ * <p>
+ * For more info on the global mappings, see {@link Labels the Labels} and its 
+ * associated .properties files.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class Mapper {
@@ -23,8 +33,10 @@ public class Mapper {
     
     /**
      * Adds all key-value mappings in the given string to this mapper.
+     * <p>
      * All keys should be unique, and the format should be (e.g. for mapping country codes to country names):
      * SE:Sweden|NO:Norway|DK:Denmark|SF:Finland|US:United States of America
+     * 
      * @param pipeSeparatedKeyValuePairs The mappings to add, as pipe-separated key-value pairs
      */
     public void addAllPipeSeparated(String pipeSeparatedKeyValuePairs) {
@@ -46,7 +58,8 @@ public class Mapper {
     }
 
     /**
-     * Adds a mapping.
+     * Adds a singe mapping.
+     * 
      * @param key The mapping key.
      * @param val The mapping value.
      */
@@ -56,6 +69,7 @@ public class Mapper {
 
     /**
      * Gets the mapping identified by the given key.
+     * 
      * @param key The mapping key.
      * @return The value mapped to the given key. If no such value exists, the given key is returned.
      */
@@ -68,18 +82,21 @@ public class Mapper {
 
     /**
      * Gets the map containing all mappings.
+     * 
      * @return The map containing all mappings.
      */
     public Map<String, String> get() { return m; }
 
     /**
      * Gets the size of this mapper.
+     * 
      * @return The size of this mapper.
      */
     public int size() { return m.size(); }
 
     /**
      * Flags whether or not this mapper has a value mapped to the given key.
+     * 
      * @param key The key to check for.
      * @return True if this mapper has a value mapped to the given key, false if not.
      */

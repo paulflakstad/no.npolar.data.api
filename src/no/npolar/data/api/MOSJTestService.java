@@ -8,13 +8,11 @@ import java.util.Locale;
  * 
  * @author Paul-Inge Flakstad
  */
-public class MOSJTestService extends MOSJService {
-    /** The base URL (that is, the complete URL before adding parameters) to use when accessing the service. */
-    //protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + "apptest.data.npolar.no:9000/" + SERVICE_PATH;
-    
+public class MOSJTestService extends MOSJService {    
     /**
      * Creates a new MOSJ test service instance, localized according to the 
      * given locale.
+     * 
      * @param loc The preferred language.
      */
     public MOSJTestService(Locale loc, boolean secure) {
@@ -22,7 +20,7 @@ public class MOSJTestService extends MOSJService {
     }
 
     /**
-     * @see APIService#getServiceBaseURL() 
+     * @see APIService#getServiceBaseURL()
      */
     @Override
     public String getServiceBaseURL() {

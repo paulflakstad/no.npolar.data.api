@@ -13,20 +13,23 @@ import org.opencms.json.JSONArray;
 import org.opencms.json.JSONException;
 
 /**
- *
+ * Provides an interface to read publications from the Norwegian Polar Institute 
+ * Data Centre.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class PublicationService extends APIService {
     
     /** The URL path to use when accessing the service. */
-    protected static final String SERVICE_PATH = "/publication/";
+    protected static final String SERVICE_PATH = "publication/";
     /** The base URL (that is, the complete URL before adding parameters) to use when accessing the service. */
-    protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + SERVICE_DOMAIN_NAME + ":" + SERVICE_PORT + SERVICE_PATH;
+    protected static final String SERVICE_BASE_URL = SERVICE_PROTOCOL + "://" + SERVICE_DOMAIN_NAME + ":" + SERVICE_PORT + "/" + SERVICE_PATH;
     /** Translations. */
     protected ResourceBundle labels = null;
     
     /**
      * Creates a new service instance, configured with the given locale.
+     * 
      * @param loc The locale to use when generating strings for screen view. If null, the default locale is used.
      */
     public PublicationService(Locale loc) {
@@ -39,6 +42,7 @@ public class PublicationService extends APIService {
     /**
      * Queries the service using the given parameters and returns all (if any)
      * publications, generated from the service response.
+     * 
      * @param params The parameters to use in the service request.
      * @return A list of all publications, generated from the service response, or an empty list if no publications matched.
      * @see APIService#doQuery(java.util.Map) 
@@ -96,6 +100,7 @@ public class PublicationService extends APIService {
     /**
      * Queries the service using the given parameters and returns all (if any)
      * publications, generated from the service response.
+     * 
      * @param params The parameters to use in the service request.
      * @return A list of all publications, generated from the service response, or an empty list if no publications matched.
      * @throws java.io.UnsupportedEncodingException
@@ -132,17 +137,16 @@ public class PublicationService extends APIService {
     }
     
     /**
-     * Creates a new publication object based on the given ID.
+     * Creates a new publication object, based on the given ID.
+     * <p>
+     * The ID is used to construct the URL that is uniquely identifies the entry 
+     * within the Data Centre.
+     * 
      * @param id The publication ID.
-     * @return The publication object, or null if no such publication could be created.
-     * @throws java.io.UnsupportedEncodingException
-     * @throws MalformedURLException
-     * @throws IOException
-     * @throws JSONException
-     * @throws InstantiationException 
+     * @return the publication object, or null if no such publication could be created.
      */
-    public Publication getPublication(String id)
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+    public Publication getPublication(String id) {
+        /*    throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
         
         HashMap<String, String[]> params = new HashMap<String, String[]>();
         
@@ -167,6 +171,21 @@ public class PublicationService extends APIService {
             // LOG "Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries."
             //throw new NullPointerException("Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries. " +this.getLastServiceURL());
             return null;
+        }*/
+        try {
+            
+            Publication p = new Publication(this.doRead(id), displayLocale);
+            // Set specific sub-type if possible
+            if (p.isType(Publication.TYPE_BOOK) && !(p.hasParent() || p.isPartContribution())) {
+                p = new Book(p.getJSON(), displayLocale);
+            } else if (p.isPartContribution()) {
+                p = new Chapter(p.getJSON(), displayLocale);
+            }
+            return p;
+        } catch (Exception e) {
+            // LOG "Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries."
+            //throw new NullPointerException("Cannot create Publication instance: Querying service with ID " + id + " returned " + publicationObjects.length() + " entries. " +this.getLastServiceURL());
+            return null;
         }
     }
     
@@ -182,6 +201,7 @@ public class PublicationService extends APIService {
      * <li>facets : topics, category, publication_type</li>
      * <li>sort : -published-sort</li>
      * </ul>
+     * 
      * @see APIService#getDefaultParameters()
      */
     @Override
@@ -196,6 +216,29 @@ public class PublicationService extends APIService {
         }
         defaultParams.putAll(getUnmodifiableParameters());
         return defaultParams;
+    }
+    
+    /**
+     * Adjust setting for whether or not to include publications flagged as 
+     * drafts.
+     * <p>
+     * This setting will apply appropriate adjustment on to the current set of 
+     * default parameters. Any later overriding of the default parameters may
+     * overwrite the setting done here.
+     * 
+     * @param allow Provide true to allow drafts, false to disallow.
+     * @return this service instance, updated with the new value.
+     */
+    public PublicationService setAllowDrafts(boolean allow) {
+        getDefaultParameters(); // Make sure we have defaults
+        Object currentSetting = defaultParams.get("not-draft");
+        if (!allow) {
+                defaultParams.put("not-draft", new String[] { "yes" });
+        } else {
+            if (currentSetting != null)
+                defaultParams.remove("not-draft");
+        }
+        return this;
     }
     
     /**

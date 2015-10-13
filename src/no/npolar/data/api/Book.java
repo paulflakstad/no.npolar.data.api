@@ -5,13 +5,22 @@ import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONObject;
 
 /**
+ * Custom implementation for books and any book-like publications, due to 
+ * special cite string requirements.
+ * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class Book extends Publication {
+    /**
+     * @see Publication#Publication(org.opencms.json.JSONObject, java.util.Locale) 
+     */
     public Book(JSONObject pubObject, Locale loc) {
         super(pubObject, loc);
     }
 
+    /**
+     * @see Publication#toString() 
+     */
     @Override
     public String toString() {
         String s = "";

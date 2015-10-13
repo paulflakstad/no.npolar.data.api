@@ -22,7 +22,7 @@ import org.apache.commons.logging.LogFactory;
  * Data points are stored internally as {@link TimeSeriesDataPoint} instances. 
  * <p>
  * The time series also contains a <strong>title</strong>, <strong>datetime 
- * accuracy</strong> (for the data points) and various other meta data.
+ * accuracy</strong> (for the data points), and various other meta data.
  * <p>
  * Example time series (randomly chosen): 
  * http://apptest.data.npolar.no:9000/monitoring/timeseries/e5b14b14-2143-539a-a03d-cd5c10fb80a3
@@ -30,7 +30,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class TimeSeries implements APIEntryInterface {
-    
+    // Date format parts
     public static final String DATE_FORMAT_UNIX_YEAR = "%Y";
     public static final String DATE_FORMAT_UNIX_MONTH = "%m";
     public static final String DATE_FORMAT_UNIX_DATE = "%d";
@@ -74,13 +74,20 @@ public class TimeSeries implements APIEntryInterface {
     
     /** A number indicating this time series' order position in a set of time series. */
     protected int orderIndex = Integer.MIN_VALUE;
-    
+
+    /** Chart setting: Enabled/disabled markers. */
     protected boolean chartMarkersEnabled = true;
+    /** Chart setting: Markers thickness. */
     protected Integer chartMarkersThickness = null;
+    /** Chart setting: Line thickness. */
     protected Integer chartLineThickness = null;
+    /** Chart setting: Dash style. */
     protected String chartDashStyle = null;
+    /** Chart setting: Connect nulls or not? */
     protected boolean chartConnectNulls = false;
+    /** Chart setting: Markers enabled? */
     protected String chartColor = null;
+    /** Chart setting: Series type. */
     protected String chartSeriesType = null;
     
     
@@ -116,13 +123,13 @@ public class TimeSeries implements APIEntryInterface {
     public static final String API_KEY_VARIABLES_LABEL = "label";
     public static final String API_KEY_VARIABLES_UNITS = "units";
     
+    /** Comparator used to sort time series in a collection by their order index. */
     public static final Comparator<TimeSeries> ORDER_INDEX_COMPARATOR = new Comparator<TimeSeries>() {
         @Override
         public int compare(TimeSeries o1, TimeSeries o2) {
             return Integer.compare(o1.getOrderIndex(), o2.getOrderIndex());
         }
     };
-    
     
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(TimeSeries.class);
@@ -160,7 +167,7 @@ public class TimeSeries implements APIEntryInterface {
      * The unit should always be set explicitly, but if that's not the case then
      * an empty string is used as unit.
      * 
-     * @return This time series, after having set the unit.
+     * @return This time series, updated.
      */
     private TimeSeries setUnit() {
         try {
@@ -210,15 +217,25 @@ public class TimeSeries implements APIEntryInterface {
         */
     }
     
+    /**
+     * Sets the chart line thickness.
+     * 
+     * @param lineThickness The line thickness, in pixels. 0 (zero) indicates "no line".
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_LINE_THICKNESS
+     * @see {http://api.highcharts.com/highcharts#plotOptions.series.lineWidth}
+     */
     public TimeSeries setChartLineThickness(int lineThickness) {
         this.chartLineThickness = lineThickness;
         return this;
     }
+    
     /**
      * Sets the chart dash style for this series.
      * 
      * @param dashStyle The dash style, either "longdash" or "shortdot", or null to unset.
-     * @return The updated time series.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_DASH_STYLE
      * @see {http://www.highcharts.com/docs/chart-concepts/series#12}
      */
     public TimeSeries setChartDashStyle(String dashStyle) {
@@ -227,19 +244,52 @@ public class TimeSeries implements APIEntryInterface {
         this.chartDashStyle = dashStyle;
         return this;
     }
+    /**
+     * Sets the chart marker thickness for this series.
+     * 
+     * @param markersThickness The marker thickness, in pixels.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_MARKER_THICKNESS
+     * @see {http://api.highcharts.com/highcharts#plotOptions.series.marker.radius}
+     */
     public TimeSeries setChartMarkersThickness(int markersThickness) {
         this.chartMarkersThickness = markersThickness;
         return this;
     }
-    
+    /**
+     * Enables or disables chart markers for this series.
+     * 
+     * @param markersEnabled Provide true to enable markers, or false to disable.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_HIDE_MARKERS_BOOL
+     * @see {http://api.highcharts.com/highcharts#plotOptions.series.marker.enabled}
+     */
     public TimeSeries setChartMarkersEnabled(boolean markersEnabled) {
         this.chartMarkersEnabled = markersEnabled;
         return this;
     }
+    /**
+     * Enables or disables "connected null values" - that is, sets whether or 
+     * not to draw series with null values as continuous (connected) or 
+     * discontinuous (non-connected).
+     * 
+     * @param connectNulls Provide true to connect nulls, or false not to.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_CONNECT_NULLS
+     * @see {http://api.highcharts.com/highcharts#plotOptions.series.connectNulls}
+     */
     public TimeSeries setChartConnectNulls(boolean connectNulls) {
         this.chartConnectNulls = connectNulls;
         return this;
     }
+    /**    
+     * Sets the color for this time series.
+     * 
+     * @param color The color, as a CSS-style hex value, with or without a leading '#'.
+     * @return the updated time series.
+     * @see HighchartsChart#OVERRIDE_KEY_COLOR
+     * @see {http://api.highcharts.com/highcharts#plotOptions.series.color}
+     */
     public TimeSeries setChartColor(String color) {
         if (color == null || color.isEmpty() || color.length() < 3) {
             if (LOG.isErrorEnabled()) {
@@ -276,22 +326,60 @@ public class TimeSeries implements APIEntryInterface {
         this.chartColor = null;
         return this;
     }
+    /**
+     * Sets the chart series type for this time series.
+     * 
+     * @param seriesType The series type.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_TYPE_STRING
+     * @see {http://api.highcharts.com/highcharts#series.type}
+     */
     public TimeSeries setChartSeriesType(String seriesType) {
         this.chartSeriesType = seriesType;
         return this;
     }
+    /**
+     * Sets the order index for this time series.
+     * 
+     * @param orderIndex The desired order index.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_ORDER_INDEX
+     */
     public TimeSeries setOrderIndex(int orderIndex) {
         this.orderIndex = orderIndex;
         return this;
     }
-    
+    /**
+     * @return the chart line thickness for this time series.
+     */
     public Integer getChartLineThickness() { return this.chartLineThickness; }
+    /**
+     * @return the chart dash style for this time series.
+     */
     public String getChartDashStyle() { return this.chartDashStyle; }
+    /**
+     * @return the chart markers thickness for this time series.
+     */
     public Integer getChartMarkersThickness() { return this.chartMarkersThickness; }
+    /**
+     * @return the "show markers" chart setting for this time series.
+     */
     public boolean isChartMarkersEnabled() { return this.chartMarkersEnabled; }
+    /**
+     * @return the "connect nulls" chart setting for this time series.
+     */
     public boolean isChartConnectNulls() { return this.chartConnectNulls; }
+    /**
+     * @return the chart series color for this time series.
+     */
     public String getChartColor() { return this.chartColor; }
+    /**
+     * @return the chart series type for this time series.
+     */
     public String getChartSeriesType() { return this.chartSeriesType; }
+    /**
+     * @return the order index for this time series in the chart.
+     */
     public Integer getOrderIndex() { return this.orderIndex; }
     
     /**
@@ -318,7 +406,7 @@ public class TimeSeries implements APIEntryInterface {
         return this.isTrendLine;
     }
     
-    private JSONObject getVariablesFor(String variableName) {
+    /*private JSONObject getVariablesFor(String variableName) {
         if (!apiStructure.has(API_KEY_VARIABLES) || variableName == null)
             return null;
         try {
@@ -333,8 +421,16 @@ public class TimeSeries implements APIEntryInterface {
             // WTF
         }
         return null;
-    }
-    
+    }*/
+    /**
+     * Gets a localized label for a given variable.
+     * <p>
+     * All relevant labels are defined in the data centre, and included in the 
+     * JSON feed for this time series.
+     * 
+     * @param variableName The name of the variable to get the label for.
+     * @return the label for the given variable, or itself, if no label could be resolved.
+     */
     private String getLabelFor(String variableName) {
         if (!apiStructure.has(API_KEY_LABELS) || variableName == null)
             return variableName;
@@ -358,7 +454,7 @@ public class TimeSeries implements APIEntryInterface {
      * locale.
      * 
      * @param loc Should identify the preferred language.
-     * @return The title for this time series, preferably in the language identified by the given locale
+     * @return The title for this time series, preferably in the language identified by the given locale.
      */
     public String getTitle(Locale loc) {
         
@@ -396,18 +492,14 @@ public class TimeSeries implements APIEntryInterface {
         }
     }
     /**
-     * Gets the label for this time series, in the preferred language.
-     * 
-     * @see #getLabel(java.util.Locale) 
      * @return The label for this time series, in the preferred language.
+     * @see #getLabel(java.util.Locale) 
      */
     public String getLabel() {
         return getLabel(this.displayLocale);
     }
     
     /**
-     * Gets the title for this time series, in the preferred language.
-     * 
      * @return The title for this time series, in the preferred language
      */
     @Override
@@ -423,7 +515,8 @@ public class TimeSeries implements APIEntryInterface {
     }
     /**
      * Gets the group name.
-     * <p>For time series, this is the standardized unit. (Because that's what 
+     * <p>
+     * For time series, this is the standardized unit. (Because that's what 
      * time series are typically "grouped" by - think a chart with two y-axes.)
      * 
      * @see TimeSeriesDataUnit#getShortForm()
@@ -438,7 +531,8 @@ public class TimeSeries implements APIEntryInterface {
      * Gets the URL for this time series, within the context of the given 
      * service.
      * <p>
-     * The service must be of type {@link MOSJService}
+     * The service must be of type {@link MOSJService}.
+     * 
      * @param service The API service. Must be of type {@link MOSJService}.
      * @return The URL for this time series, or: where it resides within the given service.
      */
@@ -446,7 +540,7 @@ public class TimeSeries implements APIEntryInterface {
     public String getURL(APIServiceInterface service) {
         if (!(service instanceof MOSJService)) {
             if (LOG.isErrorEnabled()) {
-                LOG.error("Cannot retrieve MOSJ parameter URL using a service not of type " + MOSJService.class.getName() + ".");
+                LOG.error("Cannot retrieve MOSJ time series URL using a service not of type " + MOSJService.class.getName() + ".");
             }
         }
         
@@ -454,7 +548,7 @@ public class TimeSeries implements APIEntryInterface {
     }
     
     /**
-     * @return The unit used in this time series.
+     * @return the unit used in this time series.
      */
     public TimeSeriesDataUnit getUnit() {
         return this.unit;
@@ -600,16 +694,12 @@ public class TimeSeries implements APIEntryInterface {
         return this.minValue >= 0;
     }
     /**
-     * Gets the maximum value in this time series.
-     * 
      * @return The maximum value in this time series.
      */
     public double getMaxValue() {
         return this.maxValue;
     }
     /**
-     * Gets the minimum value in this time series.
-     * 
      * @return The minimum value in this time series.
      */
     public double getMinValue() {
@@ -645,6 +735,15 @@ public class TimeSeries implements APIEntryInterface {
         return null;
     }
     
+    /**
+     * Gets the API key for a value field, based on the given value identifier.
+     * <p>
+     * If there is no specific match for the value identifier, the default 
+     * {@link #API_KEY_POINT_VAL} is returned.
+     * 
+     * @param valueIdentifier The value identifier, one of the VALUE_XXX constants.
+     * @return The API key that corresponds to the given value identifier.
+     */
     public String getValueAPIKey(int valueIdentifier) {
         switch (valueIdentifier) {
             case TimeSeriesDataPoint.VALUE_MAIN:
@@ -661,7 +760,15 @@ public class TimeSeries implements APIEntryInterface {
                 return API_KEY_POINT_VAL;
         }
     }
-    
+    /**
+     * Gets the data points in this time series as an HTML table row string.
+     * <p>
+     * The time series collection is required to know which time markers are 
+     * used in the table.
+     * 
+     * @param tsc The time series collection comprised in the table.
+     * @return This time series, as an HTML table row string.
+     */
     public String getDataPointsAsTableRow(TimeSeriesCollection tsc) {
         String s = "";
         
@@ -710,7 +817,15 @@ public class TimeSeries implements APIEntryInterface {
         return s;
     }
     
-    
+    /**
+     * Gets the data points in this time series as a CSV row string.
+     * <p>
+     * The time series collection is required to know which time markers are 
+     * used in the table.
+     * 
+     * @param tsc The time series collection comprised in the table.
+     * @return This time series, as a CSV row string.
+     */
     public String getDataPointsAsCSVRow(TimeSeriesCollection tsc) {
         String s = "";
         
@@ -787,14 +902,22 @@ public class TimeSeries implements APIEntryInterface {
         return s;
     }
     */
-    /**@return The ID of this time series. */
+    /**
+     * @return The ID of this time series. 
+     */
     @Override
     public String getId() { return id; }
-    /**@return The JSON object that reflects how this time series is represented by the service. */
+    /**
+     * @return The JSON object that reflects how this time series is represented by the service. 
+     */
     public JSONObject getAPIStructure() { return apiStructure; }
-    /**@return The timestamp accuracy level. */
+    /**
+     * @return The timestamp accuracy level. 
+     */
     public String getDateTimeAccuracy() { return dateTimeAccuracy; }
-    /**@return Flag indicating whether or not this series has error bars. */
+    /**
+     * @return A flag indicating whether or not this series has error bars. 
+     */
     public boolean isErrorBarSeries() { return this.hasHigh && this.hasLow && (!this.hasMax && !this.hasMin); }
     
     /**
@@ -826,7 +949,7 @@ public class TimeSeries implements APIEntryInterface {
      * Sets the timestamp format for this time series, according to its own
      * defined accuracy level.
      * 
-     * @return The updated instance.
+     * @return This time series, updated.
      */
     private TimeSeries setTimestampFormat() {
         String f = null;
@@ -851,4 +974,10 @@ public class TimeSeries implements APIEntryInterface {
         this.timestampFormat = new SimpleDateFormat(f, displayLocale);
         return this;
     }
+    
+    /**
+     * @see APIEntryInterface#getJSON()
+     */
+    @Override
+    public JSONObject getJSON() { return this.apiStructure; }
 }
