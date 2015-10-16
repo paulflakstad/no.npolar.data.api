@@ -107,6 +107,21 @@ public class MOSJService extends APIService {
     }
     
     /**
+     * Gets a single MOSJ parameter, identified by the given ID.
+     * @param id The ID.
+     * @return The MOSJ parameter identified by the given ID.
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
+     */
+    public MOSJParameter getMOSJParameter(String id) 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        return new MOSJParameter( this.doRead(id) );
+    }
+    
+    /**
      * @see APIService#getDefaultParameters()
      */
     @Override
