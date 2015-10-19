@@ -252,6 +252,36 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
+     * Reads a single entry from the service using the given ID and base URL.
+     * <p>
+     * This allows a service to read any kind of entry, not just entries that 
+     * "reside" on the service's own base URL. This is sometimes necessary, 
+     * e.g. the MOSJ service needs to read both time series and parameter 
+     * entries.
+     * 
+     * @param id The ID that uniquely identifies the single entry.
+     * @param baseUrl The base URL at which the entry "resides" (the part that combines with the ID to create the entry's absolute URL).
+     * @return The JSON object describing the single entry, or null if no such entry could be found.
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
+     * @see APIServiceInterface#doRead(java.lang.String) 
+     */
+    public JSONObject doRead(String id, String baseUrl)
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        serviceUrl = baseUrl.concat(id);
+        String jsonFeed = httpResponseAsString(serviceUrl);
+        try {
+            return new JSONObject(jsonFeed);
+        } catch (Exception e) {
+            // No such ID?
+            return null;
+        }
+    }
+    
+    /**
      * Gets all currently available filter sets.
      * 
      * @return The currently available filter sets for the current entry set.

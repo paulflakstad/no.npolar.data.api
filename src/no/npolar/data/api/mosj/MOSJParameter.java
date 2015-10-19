@@ -11,7 +11,6 @@ import no.npolar.data.api.TimeSeries;
 import no.npolar.data.api.TimeSeriesCollection;
 import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONArray;
-import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -67,6 +66,38 @@ public class MOSJParameter implements APIEntryInterface {
             throw new InstantiationException("Error attempting to create MOSJ parameter instance from JSON object: " + e.getMessage());
         }
         
+        resolveTimeSeries();
+    }
+    
+    /**
+     * Constructs a new parameter instance, based on the given JSON object, 
+     * which is typically read from the Data Centre API.
+     * <p>
+     * The preferred language for the new parameter will be set to 
+     * {@link #DEFAULT_LOCALE}.
+     * 
+     * @see #MOSJParameter(org.opencms.json.JSONObject, java.util.Locale) 
+     * @param o The JSON object to base this parameter instance on.
+     * @throws InstantiationException If anything goes wrong when reading the 'id' property from the JSON object.
+     */
+    public MOSJParameter(JSONObject o) throws InstantiationException {
+        this(o, new Locale(DEFAULT_LOCALE) );
+    }
+    
+    /**
+     * Populates or re-populates the list of related {@link TimeSeries}.
+     * <p>
+     * This method evaluates the backing JSON object, and looks for related time
+     * series. A {@link TimeSeries} instance is created for each related time 
+     * series that is referenced.
+     * <p>
+     * Note that any existing list of related time series is cleared before it 
+     * is (potentially again) populated.
+     * 
+     * @return The updated parameter instance.
+     */
+    private MOSJParameter resolveTimeSeries() {
+        this.relatedTimeSeries.clear();
         if (apiStructure.has(API_KEY_RELATED_TIME_SERIES)) {
             try {   
                 JSONArray relatedTimeSeriesArr = this.apiStructure.getJSONArray(API_KEY_RELATED_TIME_SERIES); // Each array entry is a URLs to a related time series
@@ -82,9 +113,9 @@ public class MOSJParameter implements APIEntryInterface {
                             TimeSeries ts = new TimeSeries(timeSeriesJSON, displayLocale);
                             this.addTimeSeries(ts);
                         }
-                    } catch (Exception ee) {
+                    } catch (Exception e) {
                         if (LOG.isWarnEnabled()) {
-                            LOG.warn("Error resolving related time series for MOSJ parameter " + id + ".", ee);
+                            LOG.warn("Error resolving related time series for MOSJ parameter " + id + ".", e);
                         }
                     }
                 }
@@ -92,31 +123,21 @@ public class MOSJParameter implements APIEntryInterface {
                 // Parameter has no related time series
             }
         }
-    }
-    
-    /**
-     * Constructs a new parameter instance, based on the given JSON object, 
-     * which is typically read from the Data Centre API.
-     * <p>
-     * The preferred language for the new parameter will be set to 
-     * {@link #DEFAULT_LOCALE}.
-     * 
-     * @see #MOSJParameter(org.opencms.json.JSONObject, java.util.Locale) 
-     * @param o The JSON object to base this parameter instance on.
-     * @throws InstantiationException If anything goes wrong when reading the 'id' property from the JSON object.
-     */
-    public MOSJParameter(JSONObject o) throws InstantiationException {
-        this(o, new Locale(DEFAULT_LOCALE));
+        return this;
     }
     
     /**
      * Sets the preferred locale.
+     * <p>
+     * This is a costly method, as all related time series have to be resolved 
+     * over again (some of their properties are language-dependent).
      * 
      * @param displayLocale The preferred locale to use when fetching language-specific data.
      * @return The updated parameter instance.
      */
     public MOSJParameter setDisplayLocale(Locale displayLocale) {
         this.displayLocale = displayLocale;
+        resolveTimeSeries();
         return this;
     }
     
@@ -163,6 +184,7 @@ public class MOSJParameter implements APIEntryInterface {
     public String getTitle() {
         return this.getTitle(this.displayLocale);
     }
+    
     /**
      * Gets the group name.
      * <p>
@@ -601,6 +623,7 @@ public class MOSJParameter implements APIEntryInterface {
     /**
      * @see APIEntryInterface#getJSON() 
      */
+    @Override
     public JSONObject getJSON() { return apiStructure; }
     
     /**

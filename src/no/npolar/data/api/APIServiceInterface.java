@@ -64,7 +64,7 @@ public interface APIServiceInterface {
      * Reads a single entry from the service using the given ID.
      * 
      * @param id The ID that uniquely identifies the single entry.
-     * @return The JSON object describing the single entry.
+     * @return The JSON object describing the single entry, or null if no such entry could be found.
      */
     public JSONObject doRead(String id)
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException;

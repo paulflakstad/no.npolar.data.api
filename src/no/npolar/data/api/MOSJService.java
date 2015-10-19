@@ -15,7 +15,7 @@ import java.util.ResourceBundle;
 import no.npolar.data.api.mosj.MOSJParameter;
 import org.opencms.json.JSONArray;
 import org.opencms.json.JSONException;
-import org.opencms.json.JSONObject;
+//import org.opencms.json.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -107,18 +107,38 @@ public class MOSJService extends APIService {
     }
     
     /**
-     * Gets a single MOSJ parameter, identified by the given ID.
+     * Gets a single {@link MOSJParameter}, identified by the given ID.
+     * 
      * @param id The ID.
-     * @return The MOSJ parameter identified by the given ID.
+     * @return The {@link MOSJParameter} identified by the given ID, or null if no such entry exists.
      * @throws java.io.UnsupportedEncodingException
      * @throws MalformedURLException
      * @throws IOException
      * @throws JSONException
      * @throws InstantiationException 
+     * @see APIService#doRead(java.lang.String, java.lang.String) 
      */
     public MOSJParameter getMOSJParameter(String id) 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
-        return new MOSJParameter( this.doRead(id) );
+        return new MOSJParameter(this.doRead(id, this.getParameterBaseURL()), displayLocale);
+    }
+    
+    /**
+     * Gets a single {@link TimeSeries}, identified by the given ID.
+     * 
+     * @param id The ID.
+     * @return The {@link TimeSeries} identified by the given ID, or null if no such entry exists.
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
+     * @see APIService#doRead(java.lang.String, java.lang.String) 
+     */
+    public TimeSeries getTimeSeries(String id) 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        return new TimeSeries( this.doRead(id, this.getTimeSeriesBaseURL()), displayLocale);
+        
     }
     
     /**
