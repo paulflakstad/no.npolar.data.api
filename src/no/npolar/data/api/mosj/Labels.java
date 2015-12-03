@@ -26,6 +26,10 @@ public class Labels {
     /** Chart label: Error. */
     public static final String CHART_ERROR_0 = "label.chart.error";
     
+    /** Series label: Unit. */
+    public static final String SERIES_UNIT_0 = "label.series.unit";
+    /** Series label: Series title / name. */
+    public static final String SERIES_TITLE_0 = "label.series.title";
     
     /**
      * Default constructor. Does nothing.
