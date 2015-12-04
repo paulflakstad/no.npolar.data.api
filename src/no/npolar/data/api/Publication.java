@@ -292,8 +292,10 @@ public class Publication implements APIEntryInterface {
         // Create the mapper
         try { 
             mappings = new Mapper();
+            // Translate 2-letter country, e.g. "NO" => "Norway"
             try { mappings.addAllPipeSeparated(labels.getString(Labels.DATA_COUNTRIES_0)); } catch (Exception e) { }
-            try { mappings.addAllPipeSeparated(labels.getString(Labels.DATA_DB_VALUES_0)); } catch (Exception e) { }
+            // Translate general strings used by the service, e.g. "NP Report Series" => "Norwegian Polar Institute Report series"
+            try { mappings.addAllPipeSeparated(labels.getString(Labels.DATA_DB_VALUES_0)); } catch (Exception e) { } 
             //try { mappings.addMapping("Temakart nr.", "Thematic map no."); } catch (Exception e) { }
         } catch (Exception e) { }
         
@@ -412,7 +414,6 @@ public class Publication implements APIEntryInterface {
                     try {
                         journalSeries = journalObj.getString(JSON_KEY_NPI_SERIES).trim(); // If not, use the NPI series.
                     } catch (Exception ee) {
-                        
                     }
                 }
                 if (journalObj.has(JSON_KEY_SERIES_NO)) {
