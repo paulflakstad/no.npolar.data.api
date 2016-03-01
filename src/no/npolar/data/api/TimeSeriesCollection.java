@@ -1,5 +1,6 @@
 package no.npolar.data.api;
 
+//import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,8 +8,9 @@ import java.util.Comparator;
 //import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.Map;
-import java.util.TreeMap;
+//import java.util.Map;
+//import java.util.TreeMap;
+import java.util.TreeSet;
 //import java.util.Map;
 import no.npolar.data.api.mosj.MOSJParameter;
 //import org.opencms.json.JSONArray;
@@ -32,9 +34,14 @@ import org.apache.commons.logging.LogFactory;
 public class TimeSeriesCollection {
     /** Holds all the time series in this collection. */
     private List<TimeSeries> timeSeriesList = null;
-    /** Holds all the data points. The keys are the time markers (as strings), i.e. the years. The TreeMap natively orders by keys. */
-    private TreeMap<String, TimeSeriesDataPoint[]> dataSet = null;
+    //** Holds all data points. The keys are the time markers (timestamps, e.g. years or dates). The TreeMap natively orders by keys. */
+    //private TreeMap<TimeSeriesTimestamp, TimeSeriesDataPoint[]> dataSet = null;
+    //private TreeMap<String, TimeSeriesDataPoint[]> dataSet = null;
+    //private TreeMap<TimeSeriesTimestamp, TimeSeries[]> allSeriesByTime = null;
+    /** Holds all time markers (timestamps). */
+    private TreeSet<TimeSeriesTimestamp> allTimestamps = null;
     //public static final Comparator<TimeSeries> SORT_BIGGEST_FIRST = null;
+    
     /** Preferred locale to use when getting language-specific data. */
     private Locale displayLocale = null;
     /** The title/name of this collection. For MOSJ, this would be the parameter title. */
@@ -43,8 +50,8 @@ public class TimeSeriesCollection {
     private List<TimeSeriesDataUnit> units = null;
     // Default Highcharts chart type. @ToDo: Move all Highcharts-specific stuff to separate class.
     //public static final String DEFAULT_HC_SERIES_TYPE = "line";
-    /** Holds the number of time markers. */
-    protected int numTimeMarkers = 0;
+    //** Holds the number of time markers. */
+    //protected int numTimeMarkers = 0;
     /** Flag indicating whether this collections contains any error bar series or not. */
     private boolean hasErrorBarSeries = false;
     /** The logger. */
@@ -61,9 +68,6 @@ public class TimeSeriesCollection {
      * @throws JSONException 
      */
     public TimeSeriesCollection(Locale displayLocale, List<TimeSeries> tss) throws JSONException {
-        timeSeriesList = new ArrayList<TimeSeries>();
-        dataSet = new TreeMap<String, TimeSeriesDataPoint[]>(); // TreeMap => natively orders by keys
-        units = new ArrayList<TimeSeriesDataUnit>();
         this.displayLocale = displayLocale;
         this.setTimeSeries(tss);
     }
@@ -79,7 +83,46 @@ public class TimeSeriesCollection {
         this(displayLocale, tss);
         this.title = title;
     }
-    
+    /**
+     * Sets the time series in this collection to the given list of time series.
+     * <p>
+     * All existing time series are cleared in the process.
+     * 
+     * @param tss The time series that this collection should contain.
+     * @return This instance, updated.
+     */
+    private TimeSeriesCollection setTimeSeries(List<TimeSeries> tss) {
+        // Clear all lists
+        allTimestamps = new TreeSet<TimeSeriesTimestamp>();
+        timeSeriesList = new ArrayList<TimeSeries>();
+        units = new ArrayList<TimeSeriesDataUnit>();
+        //units = new TreeSet<TimeSeriesDataUnit>();
+        
+        // Add the given time series
+        timeSeriesList.addAll(tss);
+        
+        //System.out.println("Collating time series: ");
+        
+        // Loop all time series
+        Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
+        while (iTimeSeries.hasNext()) {
+            TimeSeries timeSeries = iTimeSeries.next();
+            //System.out.println("\t" + timeSeries.getTitle());
+            // Add timestamps from this time series
+            allTimestamps.addAll(timeSeries.getTimestamps());
+            
+            // Add the unit to the list of units, if not already added
+            if (!units.contains(timeSeries.getUnit()))
+                units.add(timeSeries.getUnit());
+            
+            if (timeSeries.isErrorBarSeries()) {
+                this.hasErrorBarSeries = true;
+            }
+        }
+        //System.out.println("Collated " + allTimestamps.size() + "*" + timeSeriesList.size() + "=" + (allTimestamps.size() * timeSeriesList.size()) + " data points total.");
+        
+        return this;
+    }
     /**
      * Sorts / re-orders the series in this collection.
      * 
@@ -145,7 +188,8 @@ public class TimeSeriesCollection {
      * @return The number of time markers in this collection.
      */
     public int getTimeMarkersCount() {
-        return numTimeMarkers;
+        return allTimestamps.size();
+        //return numTimeMarkers;
     }
     
     /**
@@ -154,7 +198,7 @@ public class TimeSeriesCollection {
      * @return All time series in this collection.
      */
     public List<TimeSeries> getTimeSeries() { 
-        return this.timeSeriesList;
+        return timeSeriesList;
     }
     
     /**
@@ -196,12 +240,17 @@ public class TimeSeriesCollection {
      * 
      * @return The "raw" data set underlying the time series in this collection.
      */
-    public TreeMap<String, TimeSeriesDataPoint[]> getDataSet() {
+    /*public TreeMap<TimeSeriesTimestamp, TimeSeriesDataPoint[]> getDataSet() {
+    //public TreeMap<String, TimeSeriesDataPoint[]> getDataSet() {
         return this.dataSet;
-    }
+    }*/
+    /*
+    public TreeMap<TimeSeriesTimestamp, TimeSeries[]> getTimestampedTimeSeries() {
+        return this.allSeriesByTime;
+    }*/
     
     /**
-     * Adds data points to this time series collection. 
+     * Adds data points to this time series collection.
      * <p>
      * Useful in particular on irregular time series, if we want to show time
      * markers that have no associated data.
@@ -209,12 +258,31 @@ public class TimeSeriesCollection {
      * @param dataPoints
      * @return This collection, updated.
      */
-    public TimeSeriesCollection addDataPoints(Map<String, TimeSeriesDataPoint[]> dataPoints) {
+    /*public TimeSeriesCollection addDataPoints(Map<TimeSeriesTimestamp, TimeSeriesDataPoint[]> dataPoints) {
+    //public TimeSeriesCollection addDataPoints(Map<String, TimeSeriesDataPoint[]> dataPoints) {
         try {
             this.dataSet.putAll(dataPoints);
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Unable to add data points to collection '" + this.getTitle() + "'.", e);
+            }
+        }
+        return this;
+    }*/
+    
+    /**
+     * Adds a timestamp with empty value to this collection.
+     * 
+     * @param timestamp The timestamp.
+     * @return This instance, updated.
+     */
+    public TimeSeriesCollection setEmptyOnTimestamp(TimeSeriesTimestamp timestamp) {
+        try {
+            //this.allSeriesByTime.put(timestamp, null);
+            allTimestamps.add(timestamp);
+        }catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unable to add empty data point to collection '" + this.getTitle() + "'.", e);
             }
         }
         return this;
@@ -225,9 +293,11 @@ public class TimeSeriesCollection {
      * 
      * @return An iterator for the time markers in this collection.
      */
-    public Iterator<String> getTimeMarkerIterator() {
+    public Iterator<TimeSeriesTimestamp> getTimeMarkerIterator() {
+    //public Iterator<String> getTimeMarkerIterator() {
         try {
-            return this.getDataSet().keySet().iterator();
+            return allTimestamps.iterator();
+            //return this.getDataSet().keySet().iterator();
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Attempting to get time marker iterator for '" + this.getTitle() + "' failed.", e);
@@ -252,8 +322,15 @@ public class TimeSeriesCollection {
      * @param timeMarker The time marker to get data points for.
      * @return Every data point (from all time series) for the given time marker.
      */
-    public TimeSeriesDataPoint[] getDataPointsForTimeMarker(String timeMarker) {
-        return this.getDataSet().get(timeMarker);
+    public TimeSeriesDataPoint[] getDataPointsForTimeMarker(TimeSeriesTimestamp timeMarker) {
+        //return this.getDataSet().get(timeMarker);
+        TimeSeriesDataPoint[] dataPoints = new TimeSeriesDataPoint[timeSeriesList.size()];
+        int i = 0;
+        Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
+        while (iTimeSeries.hasNext()) {
+            dataPoints[i] = iTimeSeries.next().getDataPointForTimeMarker(timeMarker);
+        }
+        return dataPoints;
     }
     
     /**
@@ -265,10 +342,13 @@ public class TimeSeriesCollection {
      * @param tss The time series to add.
      * @return The updated instance.
      */
-    private TimeSeriesCollection setTimeSeries(List<TimeSeries> tss) /*throws JSONException*/ {
+    /*private TimeSeriesCollection setTimeSeriesOld(List<TimeSeries> tss) {
         timeSeriesList.clear();
         units.clear();
         dataSet.clear();
+        allSeriesByTime.clear();
+        
+        TreeSet<TimeSeriesTimestamp> allTimestamps = new TreeSet<TimeSeriesTimestamp>();
         
         timeSeriesList.addAll(tss);
         
@@ -278,6 +358,8 @@ public class TimeSeriesCollection {
         while (iTimeSeries.hasNext()) {
             TimeSeries timeSeries = iTimeSeries.next();
             
+            allTimestamps.addAll(timeSeries.getTimestamps());
+            
             // Add the unit to the list of units, if not already added
             //TimeSeriesDataUnit tsDataUnit = new TimeSeriesDataUnit(ts.getUnit(), ts.getUnitVerbose(displayLocale));
             
@@ -285,7 +367,7 @@ public class TimeSeriesCollection {
                 units.add(timeSeries.getUnit());
             
             // Get all data points in the time series
-            List<TimeSeriesDataPoint> dataPoints = timeSeries.getDataPoints();
+            TreeSet<TimeSeriesDataPoint> dataPoints = timeSeries.getDataPoints();
             
             // Update variable holding the number of time markers
             if (dataPoints.size() > numTimeMarkers) {
@@ -296,9 +378,18 @@ public class TimeSeriesCollection {
             Iterator<TimeSeriesDataPoint> i = dataPoints.iterator();
             while (i.hasNext()) {
                 TimeSeriesDataPoint dataPoint = i.next();
-                String dataPointKey = dataPoint.getTimestampFormatted();
+                
+                // Use the associated timestamp object as the key
+                TimeSeriesTimestamp dataPointKey = dataPoint.getTimestamp();
+                //String dataPointKey = dataPoint.getTimestamp().format(new SimpleDateFormat(TimeSeriesTimestamp.PATTERN_TIME_STANDARD));
+                //String dataPointKey = dataPoint.getTimestampFormatted();
+                
+                // If there is no data on that timestamp, add it, and map it to 
+                // an (empty) array of data points. The array's capacity (size) 
+                // is set to the total number of time series in this collection
                 if (!dataSet.containsKey(dataPointKey)) {
-                    dataSet.put(dataPointKey, new TimeSeriesDataPoint[timeSeriesList.size()]);
+                    dataSet.put(dataPointKey, new TimeSeriesDataPoint[timeSeriesList.size()] );
+                    //System.out.println("TS collection: added data at " + dataPointKey);
                 } 
                 dataSet.get(dataPointKey)[timeSeriesIndex] = dataPoint;
             }
@@ -308,9 +399,12 @@ public class TimeSeriesCollection {
             
             timeSeriesIndex++;
         }
+        System.out.println("Collating " + dataSet.size() + "*" + dataSet.firstEntry().getValue().length 
+                                + "=" + (dataSet.size() * dataSet.firstEntry().getValue().length) 
+                                + " data points total.");
         
         return this;
-    }
+    }*/
     
     /**
      * @param ts

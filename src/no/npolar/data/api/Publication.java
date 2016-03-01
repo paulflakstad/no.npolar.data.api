@@ -730,6 +730,8 @@ public class Publication implements APIEntryInterface {
     
     /**
      * Gets the default link for this publication.
+     * 
+     * @param baseUrl The base URL, that is, the URL of the service.
      * @return The default link for this publication, or an empty string if none.
      */
     public String getPubLink(String baseUrl) {

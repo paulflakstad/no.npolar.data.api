@@ -22,7 +22,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Provides an interface to read MOSJ-specific data from the Norwegian Polar 
  * Institute Data Centre.
- * 
+ * <p>
  * ToDo: In addition to this MOSJ-specific service, there should be an agnostic, 
  *  generic class TimeSeriesService / MonitoringService. This class could then 
  *  probably extend that one.
@@ -34,10 +34,10 @@ public class MOSJService extends APIService {
     /** The URL path to use when accessing the service. */
     public static final String SERVICE_PATH = "indicator/";
     
-    /** The URL path addon for time series entries. */
+    /** The URL path add-on for time series entries. */
     public static final String SERVICE_PATH_TIMESERIES = "timeseries/";
     
-    /** The URL path addon for time series entries. */
+    /** The URL path add-on for time series entries. */
     public static final String SERVICE_PATH_PARAMETER = "parameter/";
     
     /** Translations. */

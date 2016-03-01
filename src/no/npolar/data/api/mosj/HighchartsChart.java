@@ -1,16 +1,23 @@
 package no.npolar.data.api.mosj;
 
-import java.util.HashMap;
+//import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+//import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+//import java.util.Map;
 import java.util.ResourceBundle;
+//import java.util.TreeSet;
 import no.npolar.data.api.MOSJService;
 import no.npolar.data.api.TimeSeriesDataUnit;
 import no.npolar.data.api.TimeSeries;
 import no.npolar.data.api.TimeSeriesCollection;
 import no.npolar.data.api.TimeSeriesDataPoint;
+import no.npolar.data.api.TimeSeriesTimestamp;
+import no.npolar.data.api.Labels;
 import org.opencms.json.JSONObject;
 import org.opencms.json.JSONException;
 import org.apache.commons.logging.Log;
@@ -21,7 +28,7 @@ import org.opencms.util.CmsStringUtil;
 /**
  * Adds support for generating Highcharts {@link http://highcharts.com} charts.
  * <p>
- * The chart is generated from a {@link MOSJParameter MOSJ parameter} (which has 
+ * The chart is generated from a {@link MOSJParameter} (which has 
  * related time series), possibly with custom settings that may be global or 
  * specific to individual time series.
  * <p>
@@ -82,7 +89,7 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_Y_AXIS_MIN = "minValue";
     /** Override key: Y-axis "allow decimals" flag. {@link http://api.highcharts.com/highcharts#yAxis.allowDecimals } */
     public static final String OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY = "integerValues";
-    /** Override key: Manual y-axis placement. */
+    //** Override key: Manual y-axis placement. */
     //public static final String OVERRIDE_KEY_Y_AXIS = "yAxis";
     /** The default series type name ("line"). */
     public static final String DEFAULT_SERIES_TYPE = "line";
@@ -95,10 +102,27 @@ public class HighchartsChart {
     /** The dash style keyword that indicates a long/dashed line. */
     public static final String DASH_STYLE_LONG = "longdash";
     
+    /** Highcharts-specific timestamp formatting for timestamps with <strong>date</strong> accuracy. */
+    public static final String DATE_FORMAT_DATE = "yyyy,M,d";
+    
     /** The number formatting pattern to use. */
     public static final String NUMBER_FORMAT = TimeSeriesDataPoint.DEFAULT_NUMBER_FORMAT;
     /** The number formatting locale (English, because we need 3.14, not 3,14). */
     public static final Locale NUMBER_FORMAT_LOCALE = Locale.forLanguageTag("en");
+    
+    /**
+     * Threshold value, indicates the maximum number of data points (per series) 
+     * that will be added inline (as part of the <code>data</code> array). 
+     * <p>
+     * For any series containing more data points, the <code>data</code> array
+     * will be <strong>empty</strong>, and must be populated by a javascript 
+     * function that AJAX-loads the data. This approach is employed in order to 
+     * avoid severe performance hits when dealing with large time series.
+     * <p>
+     * For more info, see <code>fillEmptyData(obj)</code> in commons.js and the 
+     * {@link #getChartConfigurationString()}.
+     */
+    public static final int MAX_ALLOWED_INLINE_POINTS = 500;
     
     /**
      * Creates a new instance based on the given MOSJ parameter and overrides.
@@ -145,7 +169,10 @@ public class HighchartsChart {
             TimeSeries ts = i.next();
             JSONObject tsOverrides = getTimeSeriesOverrides(ts, overrides);
             if (tsOverrides != null && tsOverrides.has(OVERRIDE_KEY_ORDER_INDEX)) {
-                try { ts.setOrderIndex(tsOverrides.getInt(OVERRIDE_KEY_ORDER_INDEX)); manuallyOrdered = true; } catch (Exception e) {}
+                try { 
+                    ts.setOrderIndex(tsOverrides.getInt(OVERRIDE_KEY_ORDER_INDEX));
+                    manuallyOrdered = true; 
+                } catch (Exception e) {}
             }
         }
         
@@ -163,7 +190,7 @@ public class HighchartsChart {
      * added. E.g. in a collection that has time markers for 2010, 2012, 2013, 
      * and 2015, time markers for 2011 and 2014 will be added.
      * 
-     * @param timeSeriesCollection
+     * @param timeSeriesCollection The time series collection that is possibly missing time markers.
      * @return The given time series collection, updated.
      */
     protected TimeSeriesCollection fillTimeMarkerGaps(TimeSeriesCollection timeSeriesCollection) {
@@ -173,9 +200,9 @@ public class HighchartsChart {
             
             // First, find the smallest interval between two points
             int smallestInterval = Integer.MAX_VALUE;
-            Iterator<String> itr = timeSeriesCollection.getTimeMarkerIterator();
+            Iterator<TimeSeriesTimestamp> itr = timeSeriesCollection.getTimeMarkerIterator();
             while (itr.hasNext()) {
-                year = Integer.valueOf(itr.next());
+                year = Integer.valueOf(itr.next().toString());
                 if (prevYear != Integer.MAX_VALUE) {
                     if (year - prevYear < smallestInterval) {
                         smallestInterval = year - prevYear;
@@ -186,26 +213,27 @@ public class HighchartsChart {
             
             year = Integer.MIN_VALUE;
             prevYear = Integer.MAX_VALUE;
-            Map<String, TimeSeriesDataPoint[]> dataToAdd = new HashMap<String, TimeSeriesDataPoint[]>();
+            //Map<TimeSeriesTimestamp, TimeSeriesDataPoint[]> dataToAdd = new HashMap<TimeSeriesTimestamp, TimeSeriesDataPoint[]>();
             
             itr = timeSeriesCollection.getTimeMarkerIterator();
             while (itr.hasNext()) {
-                String yearStr = itr.next();
-                System.out.println("Evaluating '" + yearStr + "'");
+                String yearStr = itr.next().toString();
+                //System.out.println("Evaluating '" + yearStr + "'");
                 year = Integer.valueOf(yearStr);
                 if (prevYear != Integer.MAX_VALUE) {
                     while (year - prevYear > smallestInterval) {
                         prevYear = prevYear + smallestInterval;
-                        System.out.println("Adding missing year: " + prevYear);
-                        dataToAdd.put(String.valueOf(prevYear), null);
+                        //System.out.println("Adding missing year: " + prevYear);
+                        //dataToAdd.put(new TimeSeriesTimestamp(year), null);
+                        timeSeriesCollection.setEmptyOnTimestamp(new TimeSeriesTimestamp(year));
                     }
                 }
                 prevYear = year;
             }
-            timeSeriesCollection.addDataPoints(dataToAdd);
+            //timeSeriesCollection.addDataPoints(dataToAdd);
         } catch (Exception e) {
             // Non-yearly time marker format
-            System.out.println("CRASH! Error was: " + e.getMessage());
+            //System.out.println("CRASH! Error was: " + e.getMessage());
             e.printStackTrace();
         }
         return timeSeriesCollection;
@@ -242,6 +270,9 @@ public class HighchartsChart {
             
             String type = "zoomType: 'x'";
             int step = timeSeriesCollection.getTimeMarkersCount() / 8;
+            if (this.containsDateSeries()) {
+                step = 0;
+            }
             int maxStaggerLines = -1;
             int xLabelRotation = -1;
             boolean hideMarkers = false;
@@ -266,14 +297,17 @@ public class HighchartsChart {
             s += "\nchart: { ";
             s += type;
             // Swap grouping and series names?
-            if (invertGrouping) {
+            //if (invertGrouping || ) {
                 s += ",";
                 s += "\nevents: {";
                     s += "\nload: function() {";
-                        s += "\ntoggleHighChartsGrouping(this);";
+                        if (invertGrouping) {
+                            s += "\ntoggleHighChartsGrouping(this);";
+                        }
+                        s += "\nfillEmptyData(this);"; // Enables AJAX-loading of data, see getValuesForTimeSeries() and fillEmptyData() in commons.js
                     s += "\n}";
                 s += "\n}";
-            }
+            //}
             s += "}, ";
             
             s += "\ntitle: { text: '" + mosjParameter.getTitle().replaceAll("'", "\\\\'") + "' }, ";
@@ -352,8 +386,18 @@ public class HighchartsChart {
             
             // The x axis
             s += "\nxAxis: [{ ";
-                    // ToDo: Default should be datetime, not categories - .... or SHOULD IT???? http://stackoverflow.com/questions/23816474/highcharts-xaxis-yearly-data
-                    s += "\ncategories: [" + makeCategoriesString(timeSeriesCollection) + "], ";
+                    boolean useCategory = true;
+                    try {
+                        if (this.containsDateSeries()) {
+                            useCategory = false;
+                        }
+                    } catch (Exception e) {}
+                    if (useCategory) {
+                        // ToDo: Default should be datetime, not categories - .... or SHOULD IT???? http://stackoverflow.com/questions/23816474/highcharts-xaxis-yearly-data
+                        s += "\ncategories: [" + makeCategoriesString(timeSeriesCollection) + "], ";
+                    } else {
+                        s += "\ntype: 'datetime', ";
+                    }
                     if (xAxisOnTop) {
                         s += "\nopposite: true,";
                     }
@@ -457,7 +501,11 @@ public class HighchartsChart {
             s += " ], ";
             
             s += "\ntooltip: { ";
-                s += "shared: true";
+                s += "\nshared: true";
+                if (this.containsDateSeries()) {
+                    s += ", ";
+                    s += "\nxDateFormat: '%Y-%m-%d'";
+                }
             s += "\n}, ";
             
             // The actual data
@@ -497,6 +545,27 @@ public class HighchartsChart {
     }
     
     /**
+     * Checks if this chart has at least one time series that has an accuracy 
+     * level equal to {@link TimeSeries#DATE_FORMAT_UNIX_DATE} - hinting that 
+     * we should not use the 'category' approach, but rather the 'datetime'.
+     * 
+     * @return True if this chart has at least one time series with 'date' accuracy level.
+     */
+    public boolean containsDateSeries() {
+        if (mosjParameter.hasAccuracyCompatibleTimeSeries()) {
+            return mosjParameter.getTimeSeries().get(0).getDateTimeAccuracy() > TimeSeriesTimestamp.TYPE_YEAR;
+        } else {
+            Iterator<TimeSeries> i = mosjParameter.getTimeSeries().iterator();
+            while (i.hasNext()) {
+                if (i.next().getDateTimeAccuracy() > TimeSeriesTimestamp.TYPE_YEAR) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+    
+    /**
      * Gets the configuration details for all time series in the given 
      * collection, applying overrides according to the given override object.
      * 
@@ -516,7 +585,7 @@ public class HighchartsChart {
             int timeSeriesIndex = 0;
             while (iTimeSeries.hasNext()) {
                 TimeSeries timeSeries = iTimeSeries.next();
-                
+                //System.out.println("getSeriesDetails: handling " + timeSeries.getTitle());
                 // Defaults
                 String seriesType = timeSeries.getValuesPerDataPoint() >= 5 ? SERIES_TYPE_BOX_PLOT : DEFAULT_SERIES_TYPE;
                 String seriesName = timeSeries.getLabel();// timeSeriesCollection.getTitleForTimeSeries(timeSeries);
@@ -531,7 +600,7 @@ public class HighchartsChart {
                 //System.out.println(tsCustomization);
                 
                 // Handle case: General overrides (e.g. a general "type" override)
-                if (overrides != null) { 
+                if (overrides != null) {
                     try { seriesType = overrides.getString(OVERRIDE_KEY_TYPE_STRING); timeSeries.setChartSeriesType(seriesType); } catch (Exception e) { }
                     try { hideMarkers = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
                     try { errorBarsAlwaysOn = !Boolean.valueOf(overrides.getString(OVERRIDE_KEY_ERROR_TOGGLER)); } catch(Exception ee) {}
@@ -600,8 +669,9 @@ public class HighchartsChart {
                 
                 s += "\n{ ";
                 try {
+                    List<TimeSeriesDataUnit> units = new ArrayList<TimeSeriesDataUnit>(timeSeriesCollection.getUnits());
                     //int yAxis = units.indexOf( new MOSJDataUnit(timeSeries.getUnit(), timeSeries.getUnitVerbose(displayLocale)) );
-                    int yAxis = timeSeriesCollection.getUnits().indexOf(timeSeries.getUnit());
+                    int yAxis = units.indexOf(timeSeries.getUnit());
                     
                     /*
                     // Handle case: same unit, but time series is manually placed on separate y-axis
@@ -640,18 +710,18 @@ public class HighchartsChart {
                     if (timeSeries.getChartDashStyle() != null) {
                         s += "\ndashStyle: '" + timeSeries.getChartDashStyle() + "',";
                     }
-                    s += "\ndata: [ " + getValuesForTimeSeries(timeSeriesCollection, timeSeriesIndex, false) + " ], ";
+                    s += "\ndata: [ " + getValuesForTimeSeries(timeSeriesCollection, timeSeries, false) + " ], ";
                     if (timeSeries.getChartLineThickness() != null) {
                         s += "\nlineWidth: " + timeSeries.getChartLineThickness() + ",";
                     }
                     if (timeSeries.getValuesPerDataPoint() == 5) {
                         s += "\ntooltip: { "
                                 + "\npointFormat: '" 
-                                                + labels.getString(Labels.CHART_MAX_0) + ": {point.high} " + timeSeries.getUnit().getShortForm() + "<br/>"
-                                                + labels.getString(Labels.CHART_HIGH_0) + ": {point.q3} " + timeSeries.getUnit().getShortForm() + "<br/>"
-                                                + "<span style=\"font-weight:bold;\">"+ labels.getString(Labels.CHART_MEDIAN_0) + ": {point.median} " + timeSeries.getUnit().getShortForm() + "</span><br/>"
-                                                + labels.getString(Labels.CHART_LOW_0) + ": {point.q1} " + timeSeries.getUnit().getShortForm() + "<br/>"
-                                                + labels.getString(Labels.CHART_LOW_0) + ": {point.low} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + labels.getString(Labels.TIME_SERIES_POINT_VALUE_MAX_0) + ": {point.high} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + labels.getString(Labels.TIME_SERIES_POINT_VALUE_HIGH_0) + ": {point.q3} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + "<span style=\"font-weight:bold;\">"+ labels.getString(Labels.TIME_SERIES_POINT_MEDIAN_0) + ": {point.median} " + timeSeries.getUnit().getShortForm() + "</span><br/>"
+                                                + labels.getString(Labels.TIME_SERIES_POINT_VALUE_LOW_0) + ": {point.q1} " + timeSeries.getUnit().getShortForm() + "<br/>"
+                                                + labels.getString(Labels.TIME_SERIES_POINT_VALUE_MIN_0) + ": {point.low} " + timeSeries.getUnit().getShortForm() + "<br/>"
                                                 + "'"
                             + "\n}";
                     } else {
@@ -667,7 +737,7 @@ public class HighchartsChart {
                         
                         // first we define the actual error bar series.
                         // its "parent" will be the series directly above here.
-                        String errorBarSeriesName = CmsStringUtil.escapeJavaScript(seriesName) + " " + labels.getString(Labels.CHART_ERROR_0).toLowerCase();
+                        String errorBarSeriesName = CmsStringUtil.escapeJavaScript(seriesName) + " " + labels.getString(Labels.TIME_SERIES_POINT_ERROR_0).toLowerCase();
                         //s += "\nname: '" + timeSeriesCollection.getTitleForTimeSeries(timeSeries) + " error',";
                         s += "\nname: '" + errorBarSeriesName + "',";
                         s += "\nid: '" + timeSeries.getId() + "-error" + "',";
@@ -679,7 +749,7 @@ public class HighchartsChart {
                         //    s += "\nlinkedTo: null,";
                         //    s += "\nvisible: false,";
                         //}
-                        s += "\ndata: [" + getValuesForTimeSeries(timeSeriesCollection, timeSeriesIndex, true) + "],";
+                        s += "\ndata: [" + getValuesForTimeSeries(timeSeriesCollection, timeSeries, true) + "],";
                         s += "\ntooltip: {"
                                     + "\npointFormat: '({point.low}-{point.high} " + timeSeries.getUnit().getShortForm() + ")<br/>'"
                                 + "\n}";
@@ -752,29 +822,145 @@ public class HighchartsChart {
     }
     
     /**
-     * Gets the values for a single time series, identified by the given time 
-     * series index. 
-     * <p>
-     * The index corresponds to its placement in the 
-     * {@link TimeSeriesCollection#timeSeriesList }.)
+     * Transforms a service-formatted date "YYYY-MM-dd" into UTC form, ready for 
+     * javascript's <code>Date.UTC()</code> function.
+     * 
+     * @param dateFromService Date in form YYYY-MM-dd (january=1)
+     * @return Date in form YYYY,M,d (january=0)
+     */
+    private String toUTCDate(String dateFromService) {
+        String[] parts = dateFromService.split("-");
+
+        String year = parts[0];
+        int month = Integer.parseInt(parts[1]);
+        int date = Integer.parseInt(parts[2]);
+        
+        return "" + year + "," + (month-1) + "," + date;
+    }
+    
+    /**
+     * Gets the values for a single time series, in the context of the given 
+     * time series collection.
      * <p>
      * The returned values string is "aware" of other time series in the given 
      * collection, and will contain <code>null</code> values for any time 
-     * markers where the specified time series lacks a value.
+     * markers where the specific time series lacks a value.
+     * <p>
+     * For charts of type <code>datetime</code>, when the time series contains 
+     * a large number (500 or more) of data points, an empty string will be 
+     * returned, meaning the values will have to be added manually at a later 
+     * time. (Typically this is done in the chart's <code>load</code> event.)
      * 
-     * @param timeSeriesIndex The index identifying the time series. (Corresponds to its placement in {@link TimeSeriesCollection#timeSeriesList}.)
+     * @param timeSeries The time series.
+     * @param timeSeriesCollection The time series collection to use as context.
+     * @param errorBarValues Whether or not to produce error bar values.
      * @return The values for the single time series, with <code>null</code> values where necessary.
      */
-    private String getValuesForTimeSeries(TimeSeriesCollection timeSeriesCollection, int timeSeriesIndex, boolean errorBarValues) {
+    private String getValuesForTimeSeries(TimeSeriesCollection timeSeriesCollection, TimeSeries timeSeries, boolean errorBarValues) {
+        System.out.print("Generating series data ...");
+        long a = System.currentTimeMillis();
+        
+        
+        String s = "";
+        
+        TimeSeriesTimestamp firstTimestamp = timeSeries.getTimestamps().get(0);
+        
+        // If we're dealing with dated series / single values
+        //*
+        if (timeSeries.isSingleValueSeries() && firstTimestamp.getType() == TimeSeriesTimestamp.TYPE_DATE && timeSeries.size() >= MAX_ALLOWED_INLINE_POINTS) {
+            // return empty string => values must be filled later (usually done 
+            // in the chart's load event)
+            return s; 
+        }//*/
+        /*
+        if (firstTimestamp.isMorePreciseThan(TimeSeriesTimestamp.TYPE_YEAR) && !firstTimestamp.isLiteralType()) {
+            // ... we can just output the time/value pair directly
+            try {
+                JSONArray dataArr = timeSeries.getJSON().getJSONArray(TimeSeries.API_KEY_DATA_POINTS);
+                for (int i = 0; i < dataArr.length(); i++) {
+                    if (i > 0) {
+                        s += ",";
+                    }
+                    JSONObject dataObj = dataArr.getJSONObject(i);
+                    String val = dataObj.getString("value");
+                    String date = dataObj.getString("date");
+                    s += "[Date.UTC("+toUTCDate(date)+"),"+val+"]";
+                }
+            } catch (Exception e) {
+                s += "{ 'error' : '" + e.getMessage() + "' }";
+            }
+        }
+        //*/ 
+        else {
+
+            // We must loop all time markers to ensure we get proper null values
+            // at time markers where the time series is missing a value
+            Iterator<TimeSeriesTimestamp> iTimeMark = timeSeriesCollection.getTimeMarkerIterator();//= getDataSet().keySet().iterator();
+
+            // Loop all time markers of the given time series collection
+            while (iTimeMark.hasNext()) {
+                // Get the time marker
+                TimeSeriesTimestamp timeMark = iTimeMark.next();
+
+                // Extract the data points for ALL time series for this time marker (each cell in the array represents one time series - so e.g. 3 cells = 3 time series)
+                //TimeSeriesDataPoint[] timeMarkData = timeSeriesCollection.getDataPointsForTimeMarker(timeMark); 
+
+                try {
+                    // Get the data point for the particular time series that we're interested in
+                    //TimeSeriesDataPoint dataPoint = timeSeriesClone.removeDataPointForTimeMarker(timeMark);
+                    TimeSeriesDataPoint dataPoint = timeSeries.getDataPointForTimeMarker(timeMark);
+
+                    if (!errorBarValues) {
+                        TimeSeriesTimestamp timestamp = dataPoint.getTimestamp();
+                        if (timestamp.isMorePreciseThan(TimeSeriesTimestamp.TYPE_YEAR) && !timestamp.isLiteralType()) {
+                            //s += "[Date.UTC(" + timestamp.getUTCDate() + "), " + dataPoint.getValue() + "]";
+                            s += "[" + getDateUTC(timestamp) + ", " + dataPoint.getValue() + "]";
+                            //s += "[" + getDateUTC(timestamp) + ", " + dataPoint.getValue("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
+                        } else {
+                            if (dataPoint.getPointCount() == 5) {
+                                s += "[" + dataPoint.getAllValues("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
+                            } else {
+                                s += dataPoint.getValue();
+                                //s += dataPoint.getValue("#.#####################", NUMBER_FORMAT_LOCALE);
+                            }
+                        }
+                    } else {
+                        String hiLoStr = dataPoint.getHighLow("#.######################", ",", NUMBER_FORMAT_LOCALE);
+                        if (hiLoStr != null) {
+                            s += "[" + hiLoStr + "]";
+                        } else {
+                            s += "[null,null]";
+                        }
+                    }
+                } catch (Exception e) {
+                    // No data for our particular time series at this time marker 
+                    s += "null";
+                }
+
+                if (iTimeMark.hasNext())
+                    s += ", ";
+            }
+        }
+        long b = System.currentTimeMillis();
+        //System.out.println(" done (" + (b-a) + "ms).");
+        
+        return s;
+    }
+    
+    // Old version
+    /*private String getValuesForTimeSeries(TimeSeriesCollection timeSeriesCollection, int timeSeriesIndex, boolean errorBarValues) {
+        System.out.print("Generating series data ...");
+        long a = System.currentTimeMillis();
+        
         String s = "";
         // We must loop all time markers to ensure we get proper null values
         // at time markers where the time series is missing a value
-        Iterator<String> iTimeMark = timeSeriesCollection.getTimeMarkerIterator();//= getDataSet().keySet().iterator();
+        Iterator<TimeSeriesTimestamp> iTimeMark = timeSeriesCollection.getTimeMarkerIterator();//= getDataSet().keySet().iterator();
         
         // Loop all time markers of the given time series collection
         while (iTimeMark.hasNext()) {
             // Get the time marker
-            String timeMark = iTimeMark.next();
+            TimeSeriesTimestamp timeMark = iTimeMark.next();
             // Extract the data points for ALL time series for this time marker (each cell in the array represents one time series - so e.g. 3 cells = 3 time series)
             TimeSeriesDataPoint[] timeMarkData = timeSeriesCollection.getDataPointsForTimeMarker(timeMark); 
 
@@ -783,10 +969,18 @@ public class HighchartsChart {
                 TimeSeriesDataPoint dataPoint = timeMarkData[timeSeriesIndex];
                 
                 if (!errorBarValues) {
-                    if (dataPoint.getPointCount() == 5) {
-                        s += "[" + dataPoint.getAllValues("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
+                    TimeSeriesTimestamp timestamp = dataPoint.getTimestamp();
+                    if (timestamp.isMorePreciseThan(TimeSeriesTimestamp.TYPE_YEAR) && !timestamp.isLiteralType()) {
+                        s += "[Date.UTC(" + timestamp.getUTCDate() + "), " + dataPoint.getValue() + "]";
+                        //s += "[" + getDateUTC(timestamp) + ", " + dataPoint.getValue() + "]";
+                        //s += "[" + getDateUTC(timestamp) + ", " + dataPoint.getValue("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
                     } else {
-                        s += dataPoint.getVal("#.#####################", NUMBER_FORMAT_LOCALE);
+                        if (dataPoint.getPointCount() == 5) {
+                            s += "[" + dataPoint.getAllValues("#.#####################", NUMBER_FORMAT_LOCALE) + "]";
+                        } else {
+                            s += dataPoint.getValue();
+                            //s += dataPoint.getValue("#.#####################", NUMBER_FORMAT_LOCALE);
+                        }
                     }
                 } 
                 else {
@@ -805,10 +999,27 @@ public class HighchartsChart {
             if (iTimeMark.hasNext())
                 s += ", ";
         }
+        
+        long b = System.currentTimeMillis();
+        System.out.println(" done (" + (b-a) + "ms).");
+        
         return s;
+    }*/
+    
+    /**
+     * Converts the given timestamp to a "Date.UTC(2009,2,18)" type string.
+     * <p>
+     * This method is costly, as a calendar instance is used as a foundation.
+     * 
+     * @param ts The timestamp to convert.
+     * @return A "Date.UTC(2009,2,18)" type string that represents the given timestamp.
+     */
+    private String getDateUTC(TimeSeriesTimestamp ts) {
+        Calendar tempCal = new GregorianCalendar();
+        tempCal.setTime(ts.getTime());
+        return "Date.UTC(" + tempCal.get(Calendar.YEAR) + "," + tempCal.get(Calendar.MONTH) + "," + tempCal.get(Calendar.DATE) + ")";
+        
     }
-    
-    
     
     /**
      * Get a Highcharts-munchable HTML table with all time series data.
@@ -861,11 +1072,11 @@ public class HighchartsChart {
                 s += "</tr>\n</thead>\n";
                 s += "<tbody>\n";
                 
-                Iterator<String> iTimeMark = tsc.getTimeMarkerIterator();
+                Iterator<TimeSeriesTimestamp> iTimeMark = tsc.getTimeMarkerIterator();
 
                 while (iTimeMark.hasNext()) {
                     s += "<tr>";
-                    String timeMarker = iTimeMark.next();
+                    TimeSeriesTimestamp timeMarker = iTimeMark.next();
                     s += "<th><span class=\"hs-time-marker\">" + timeMarker + "</span></th>"; // The span is vital for Highslide (but not the span's class)
                     TimeSeriesDataPoint[] timeMarkerData = tsc.getDataPointsForTimeMarker(timeMarker); // Get the array of data points for this time marker
 
@@ -873,7 +1084,7 @@ public class HighchartsChart {
                         s += "<td>";
                         try {
                             TimeSeriesDataPoint dp = timeMarkerData[i];
-                            s += dp.getVal("#.#####################");
+                            s += dp.getValue("#.#####################");
                         } catch (Exception ee) {
                             //s += "null"; // No, just leave empty
                             // ToDo: Log this
@@ -907,7 +1118,7 @@ public class HighchartsChart {
     protected String makeCategoriesString(TimeSeriesCollection tsc) {
         String s = "";
         try {
-            Iterator<String> itr = tsc.getTimeMarkerIterator();
+            Iterator<TimeSeriesTimestamp> itr = tsc.getTimeMarkerIterator();
             while (itr.hasNext()) {
                 s += "'" + itr.next() + "'";
                 if (itr.hasNext()) s += ", ";
