@@ -152,7 +152,7 @@ public class Labels {
     /** The key for topic "biodiversity". */
     public static final String TOPIC_BIODIVERSITY_0 = TOPIC_PREFIX_0 + "biodiversity";
     /** The key for topic "biology". */
-    public static final String TOPIC_BIOLOGI_0 = TOPIC_PREFIX_0 + "biology";
+    public static final String TOPIC_BIOLOGY_0 = TOPIC_PREFIX_0 + "biology";
     /** The key for topic "biogeochemistry". */
     public static final String TOPIC_BIOGEOCHEMISTRY_0 = TOPIC_PREFIX_0 + "biogeochemistry";
     /** The key for topic "chemistry". */
