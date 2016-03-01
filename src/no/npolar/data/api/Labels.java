@@ -2,8 +2,8 @@ package no.npolar.data.api;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Locale;
-import java.util.ResourceBundle;
+//import java.util.Locale;
+//import java.util.ResourceBundle;
 
 /**
  * Provides access to human-readable, localized translations of service identifier
@@ -16,6 +16,22 @@ import java.util.ResourceBundle;
  */
 public class Labels {
     public static Map<String, String> norm = new HashMap<String, String>();
+    
+    public static final String TIME_SERIES_PREFIX_0 = "timeseries.";
+    public static final String TIME_SERIES_UNIT_0 = TIME_SERIES_PREFIX_0 + "unit";
+    public static final String TIME_SERIES_TITLE_0 = TIME_SERIES_PREFIX_0 + "title";
+    
+    public static final String TIME_SERIES_POINT_PREFIX_0 = TIME_SERIES_PREFIX_0 + "point.";
+    public static final String TIME_SERIES_POINT_MEDIAN_0 = TIME_SERIES_POINT_PREFIX_0 + "median";
+    public static final String TIME_SERIES_POINT_ERROR_0 = TIME_SERIES_POINT_PREFIX_0 + "error";
+    
+    public static final String TIME_SERIES_POINT_VALUE_PREFIX_0 = TIME_SERIES_POINT_PREFIX_0 + "value.";
+    public static final String TIME_SERIES_POINT_VALUE_LOW_0 = TIME_SERIES_POINT_VALUE_PREFIX_0 + "low";
+    public static final String TIME_SERIES_POINT_VALUE_HIGH_0 = TIME_SERIES_POINT_VALUE_PREFIX_0 + "high";
+    public static final String TIME_SERIES_POINT_VALUE_MIN_0 = TIME_SERIES_POINT_VALUE_PREFIX_0 + "min";
+    public static final String TIME_SERIES_POINT_VALUE_MAX_0 = TIME_SERIES_POINT_VALUE_PREFIX_0 + "max";
+    public static final String TIME_SERIES_POINT_VALUE_MEDIAN_0 = TIME_SERIES_POINT_VALUE_PREFIX_0 + "max";
+    public static final String TIME_SERIES_POINT_VALUE_ERROR_0 = TIME_SERIES_POINT_VALUE_PREFIX_0 + "max";
     
     public static final String PUB_REF_EDITOR_0 = "publication.reference.editor";
     public static final String PUB_REF_EDITORS_0 = "publication.reference.editors";

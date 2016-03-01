@@ -2,11 +2,17 @@ package no.npolar.data.api;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.ResourceBundle;
+//import java.util.TreeMap;
+//import java.util.TreeSet;
 import no.npolar.data.api.mosj.HighchartsChart;
 import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONArray;
@@ -31,28 +37,43 @@ import org.apache.commons.logging.LogFactory;
  */
 public class TimeSeries implements APIEntryInterface {
     // Date format parts
-    public static final String DATE_FORMAT_UNIX_YEAR = "%Y";
-    public static final String DATE_FORMAT_UNIX_MONTH = "%m";
-    public static final String DATE_FORMAT_UNIX_DATE = "%d";
-    public static final String DATE_FORMAT_UNIX_HOUR = "%H";
-    public static final String DATE_FORMAT_UNIX_MINUTE = "%M";
-    public static final String DATE_FORMAT_UNIX_SECOND = "%S";
+    //public static final String DATE_FORMAT_UNIX_YEAR = "%Y";
+    //public static final String DATE_FORMAT_UNIX_MONTH = "%m";
+    //public static final String DATE_FORMAT_UNIX_DATE = "%d";
+    //public static final String DATE_FORMAT_UNIX_HOUR = "%H";
+    //public static final String DATE_FORMAT_UNIX_MINUTE = "%M";
+    //public static final String DATE_FORMAT_UNIX_SECOND = "%S";
         
     /** Pattern that fits the API timestamps. Used to parse timestamps read from the API. */
     public static final String PATTERN_DATE_API = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 1871-06-01T12:00:00Z
+    ///** Pattern that matches "ISO date" dates. Used by the API. */
+    //public static final String PATTERN_ISODATE_API = "yyyy-MM-dd";
     
     /** The ID for this time series, as read from the API. */
     private String id = null;
     /** The complete time series data, as read from the API. */
     private JSONObject apiStructure = null;
-    /** A string representing the timestamp accuracy, one of DATE_FORMAT_UNIX_XXXXX constants - or, in exceptional cases, the literal value as read from the API (e.g. '2007/2008'). */
-    private String dateTimeAccuracy = null;
+    ///** A string representing the timestamp accuracy, one of DATE_FORMAT_UNIX_XXXXX constants - or, in exceptional cases, the literal value as read from the API (e.g. '2007/2008'). */
+    //private String dateTimeAccuracy = null;
     /** Preferred locale to use when getting language-specific data. */
     private Locale displayLocale = null;
     /** The unit for the data in this time series. */
     private TimeSeriesDataUnit unit = null;
-    /** The data points in this time series. */
+    ///** The data points in this time series. */
+    //private List<TimeSeriesDataPoint> dataPoints = null;
+    //private TreeSet<TimeSeriesDataPoint> dataPoints = null;
+    
+    /** The timestamps in this series. */
+    private List<TimeSeriesTimestamp> timestamps = null;
+    //private TreeSet<TimeSeriesTimestamp> timestamps = null;
+        
+    /** The data points in this series. */
     private List<TimeSeriesDataPoint> dataPoints = null;
+    //private TreeMap<TimeSeriesTimestamp, TimeSeriesDataPoint> timeSeriesData = null;
+    //private Map<TimeSeriesTimestamp, TimeSeriesDataPoint> timeSeriesData = null;
+    
+    /** The type of the timestamps in this series. */
+    private int timestampsType = TimeSeriesTimestamp.TYPE_UNKNOWN;
     
     /** Flag indicating if any data point has a "high" value. */
     protected boolean hasHigh = false;
@@ -90,40 +111,93 @@ public class TimeSeries implements APIEntryInterface {
     /** Chart setting: Series type. */
     protected String chartSeriesType = null;
     
+    /** The number of actual data points in this series. */
+    private int numDataPoints = 0;
     
-    /** The format to use when rendering timestamps. */
-    private SimpleDateFormat timestampFormat = null;
+    
+    //** The format to use when rendering timestamps. */
+    //private SimpleDateFormat timestampFormat = null;
     
     // Data access keys (used to extract stuff from the JSON object returned by the API)
+    /** API key: Titles */
     public static final String API_KEY_TITLES = "titles";
+    /** API key: Title. */
     public static final String API_KEY_TITLE = "title";
     //public static final String API_KEY_TITLE = "text";
+    /** API key: Title -> Label. */
     public static final String API_KEY_TITLE_LABEL = "label";
+    /** API key: ID. */
     public static final String API_KEY_ID = "id";
     //public static final String API_KEY_DATA_POINTS = "points";
+    /** API key: Data points. */
     public static final String API_KEY_DATA_POINTS = "data";
-    public static final String API_KEY_POINT_VAL = "value";
+    /** API key: Data point -> Timestamp. */
+    public static final String API_KEY_POINT_WHEN = "when";
+    /**
+     * API key: Data point -> Timestamp.
+     * @deprecated Use {@link API_KEY_POINT_WHEN} instead.
+     */
     public static final String API_KEY_POINT_TIMESTAMP = "datetime";
-    public static final String API_KEY_POINT_YEAR = "year";
+    /**
+     * API key: Data point -> timestamp format.
+     * @deprecated Not used by the API anymore. No replacement.
+     */
     public static final String API_KEY_POINT_TIMESTAMP_FORMAT = "datetime_format";
+    /**
+     * API key: Data point -> Timestamp.
+     * @deprecated Use {@link API_KEY_POINT_WHEN} instead.
+     */
+    public static final String API_KEY_POINT_DATE = "date";
+    /**
+     * API key: Data point -> Year stamp.
+     * @deprecated Use {@link API_KEY_POINT_WHEN} instead.
+     */
+    public static final String API_KEY_POINT_YEAR = "year";
+    /** API key: Data point -> Main value. */
+    public static final String API_KEY_POINT_VAL = "value";
+    /** API key: Data point -> High value. */
     public static final String API_KEY_POINT_HIGH = "high";
+    /** API key: Data point -> Low value. */
     public static final String API_KEY_POINT_LOW = "low";
+    /** API key: Data point -> Maximum value. */
     public static final String API_KEY_POINT_MAX = "max";
+    /** API key: Data point -> Minimum value. */
     public static final String API_KEY_POINT_MIN = "min";
+    /** API key: Units. */
     public static final String API_KEY_UNITS = "units";
+    /** API key: Unit. */
     public static final String API_KEY_UNIT = "unit";
+    /** API key: Unit -> Symbol. */
     public static final String API_KEY_UNIT_SYMBOL = "symbol";
+    /** API key: Labels. */
     public static final String API_KEY_LABELS = "labels";
+    /** API key: Labels -> Label. */
     public static final String API_KEY_LABELS_LABEL = "label";
+    /** API key: Labels -> Label for */
     public static final String API_KEY_LABELS_LABEL_FOR = "variable";
+    /** API key: Labels -> Label language. */
     public static final String API_KEY_LABELS_LABEL_LANGUAGE = "lang";
+    /** API key: Variables. */
     public static final String API_KEY_VARIABLES = "variables";
+    /** API key: Variables -> Name. */
     public static final String API_KEY_VARIABLES_NAME = "name";
+    /** API key: Variables -> Labels. */
     public static final String API_KEY_VARIABLES_LABELS = "labels";
+    /** API key: Variables -> Label. */
     public static final String API_KEY_VARIABLES_LABEL = "label";
+    /** API key: Variables -> Units. */
     public static final String API_KEY_VARIABLES_UNITS = "units";
     
-    /** Comparator used to sort time series in a collection by their order index. */
+    /** Mapping of partial keys (like "low") to their complete counterparts, used to identify default labels.  */
+    public static final Map<String, String> DEFAULT_LABEL_KEYS = new HashMap<String, String>()
+        {{
+            put(API_KEY_POINT_HIGH, Labels.TIME_SERIES_POINT_VALUE_HIGH_0);
+            put(API_KEY_POINT_LOW, Labels.TIME_SERIES_POINT_VALUE_LOW_0);
+            put(API_KEY_POINT_MAX, Labels.TIME_SERIES_POINT_VALUE_MAX_0);
+            put(API_KEY_POINT_MIN, Labels.TIME_SERIES_POINT_VALUE_MIN_0); 
+        }};
+    
+    /** Compares time series by their order index, intended for sorting by order index ascending. */
     public static final Comparator<TimeSeries> ORDER_INDEX_COMPARATOR = new Comparator<TimeSeries>() {
         @Override
         public int compare(TimeSeries o1, TimeSeries o2) {
@@ -131,10 +205,10 @@ public class TimeSeries implements APIEntryInterface {
         }
     };
     
+    /** Translations. */
+    protected ResourceBundle labels = null;
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(TimeSeries.class);
-    
-    //protected ResourceBundle labels = null;
     
     /**
      * Creates a time series from the given JSON object, and localized according
@@ -148,17 +222,37 @@ public class TimeSeries implements APIEntryInterface {
         apiStructure = o;
         this.displayLocale = displayLocale;
         //labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
-        dataPoints = new ArrayList<TimeSeriesDataPoint>();
+        //dataPoints = new ArrayList<TimeSeriesDataPoint>();
+        //dataPoints = new TreeSet<TimeSeriesDataPoint>(TimeSeriesDataPoint.COMPARE_TIMESTAMP);
         try {
             id = apiStructure.getString(API_KEY_ID);
-            try { dateTimeAccuracy = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
+            //try { dateTimeAccuracy = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
             // Update settings
-            setUnit().setTimestampFormat();
+            setUnit();
+            //setTimestampFormat();
             // Set data points
             initDataPoints();
         } catch (Exception e) {
             throw new InstantiationException("Error attempting to create timeseries instance from JSON object: " + e.getMessage());
         }
+    }
+    
+    /**
+     * A copy constructor that is not really a copy constructor. 
+     * <p>
+     * The "copy" is created using the backing JSON, fetched from the given 
+     * original time series. This means that <strong>the copy might differ from 
+     * the original</strong> – in particular, this may occur if the original has 
+     * been manually updated after instantiation.
+     * <p>
+     * In other words, this constructor will re-create a "clean" version of the 
+     * given original time series.
+     * 
+     * @param other The time series holding the JSON and locale on which to base the "copy" on.
+     * @throws InstantiationException 
+     */
+    public TimeSeries(TimeSeries other) throws InstantiationException {
+        this(other.apiStructure, other.displayLocale);
     }
     
     /**
@@ -178,7 +272,7 @@ public class TimeSeries implements APIEntryInterface {
             try { unitShort = apiStructure.getJSONObject(API_KEY_UNIT).getString(API_KEY_UNIT_SYMBOL); } catch (Exception e) {}
             // Value description/label (e.g. "Precipitation") should always be present ...
             try { unitLong = getLabelFor(API_KEY_POINT_VAL); } catch (Exception e) { }
-            
+                        
             // ... so log a warning if it's missing
             if (unitLong == null || unitLong.equals(API_KEY_POINT_VAL)) {
                 unitLong = "";
@@ -244,6 +338,7 @@ public class TimeSeries implements APIEntryInterface {
         this.chartDashStyle = dashStyle;
         return this;
     }
+    
     /**
      * Sets the chart marker thickness for this series.
      * 
@@ -256,6 +351,7 @@ public class TimeSeries implements APIEntryInterface {
         this.chartMarkersThickness = markersThickness;
         return this;
     }
+    
     /**
      * Enables or disables chart markers for this series.
      * 
@@ -268,6 +364,7 @@ public class TimeSeries implements APIEntryInterface {
         this.chartMarkersEnabled = markersEnabled;
         return this;
     }
+    
     /**
      * Enables or disables "connected null values" - that is, sets whether or 
      * not to draw series with null values as continuous (connected) or 
@@ -282,11 +379,12 @@ public class TimeSeries implements APIEntryInterface {
         this.chartConnectNulls = connectNulls;
         return this;
     }
+    
     /**    
      * Sets the color for this time series.
      * 
      * @param color The color, as a CSS-style hex value, with or without a leading '#'.
-     * @return the updated time series.
+     * @return The updated time series.
      * @see HighchartsChart#OVERRIDE_KEY_COLOR
      * @see {http://api.highcharts.com/highcharts#plotOptions.series.color}
      */
@@ -317,6 +415,7 @@ public class TimeSeries implements APIEntryInterface {
         
         return this;
     }
+    
     /**
      * Unsets the chart color (if any).
      * 
@@ -326,6 +425,7 @@ public class TimeSeries implements APIEntryInterface {
         this.chartColor = null;
         return this;
     }
+    
     /**
      * Sets the chart series type for this time series.
      * 
@@ -338,6 +438,7 @@ public class TimeSeries implements APIEntryInterface {
         this.chartSeriesType = seriesType;
         return this;
     }
+    
     /**
      * Sets the order index for this time series.
      * 
@@ -349,36 +450,44 @@ public class TimeSeries implements APIEntryInterface {
         this.orderIndex = orderIndex;
         return this;
     }
+    
     /**
-     * @return the chart line thickness for this time series.
+     * @return The chart line thickness for this time series.
      */
     public Integer getChartLineThickness() { return this.chartLineThickness; }
+    
     /**
-     * @return the chart dash style for this time series.
+     * @return The chart dash style for this time series.
      */
     public String getChartDashStyle() { return this.chartDashStyle; }
+    
     /**
-     * @return the chart markers thickness for this time series.
+     * @return The chart markers thickness for this time series.
      */
     public Integer getChartMarkersThickness() { return this.chartMarkersThickness; }
+    
     /**
-     * @return the "show markers" chart setting for this time series.
+     * @return The "show markers" chart setting for this time series.
      */
     public boolean isChartMarkersEnabled() { return this.chartMarkersEnabled; }
+    
     /**
-     * @return the "connect nulls" chart setting for this time series.
+     * @return The "connect nulls" chart setting for this time series.
      */
     public boolean isChartConnectNulls() { return this.chartConnectNulls; }
+    
     /**
-     * @return the chart series color for this time series.
+     * @return The chart series color for this time series.
      */
     public String getChartColor() { return this.chartColor; }
+    
     /**
-     * @return the chart series type for this time series.
+     * @return The chart series type for this time series.
      */
     public String getChartSeriesType() { return this.chartSeriesType; }
+    
     /**
-     * @return the order index for this time series in the chart.
+     * @return The order index for this time series in the chart.
      */
     public Integer getOrderIndex() { return this.orderIndex; }
     
@@ -422,6 +531,7 @@ public class TimeSeries implements APIEntryInterface {
         }
         return null;
     }*/
+    
     /**
      * Gets a localized label for a given variable.
      * <p>
@@ -432,8 +542,9 @@ public class TimeSeries implements APIEntryInterface {
      * @return the label for the given variable, or itself, if no label could be resolved.
      */
     private String getLabelFor(String variableName) {
-        if (!apiStructure.has(API_KEY_LABELS) || variableName == null)
+        if (variableName == null || !(apiStructure.has(API_KEY_LABELS) || DEFAULT_LABEL_KEYS.containsKey(variableName))) {
             return variableName;
+        }
         try {
             JSONArray labelsArr = apiStructure.getJSONArray(API_KEY_LABELS);
             for (int i = 0; i < labelsArr.length(); i++) {
@@ -444,8 +555,20 @@ public class TimeSeries implements APIEntryInterface {
                 }
             }
         } catch (Exception e) {
-            // WTF
+            // No label for that variable, or no labels array at all
         }
+        
+        // No label explicitly defined - fallback to default..?
+        if (DEFAULT_LABEL_KEYS.containsKey(variableName)) {
+            if (this.labels == null) {
+                this.labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
+            }
+            try {
+                return labels.getString(DEFAULT_LABEL_KEYS.get(variableName));
+            } catch (Exception e) {}
+        }
+        
+        // No label found anywhere
         return variableName;
     }
     
@@ -491,6 +614,7 @@ public class TimeSeries implements APIEntryInterface {
             return getTitle(loc);
         }
     }
+    
     /**
      * @return The label for this time series, in the preferred language.
      * @see #getLabel(java.util.Locale) 
@@ -548,7 +672,7 @@ public class TimeSeries implements APIEntryInterface {
     }
     
     /**
-     * @return the unit used in this time series.
+     * @return The unit used in this time series.
      */
     public TimeSeriesDataUnit getUnit() {
         return this.unit;
@@ -572,8 +696,10 @@ public class TimeSeries implements APIEntryInterface {
         return APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_UNITS), API_KEY_UNIT, loc);
     }
     */
+    
     /**
-     * Initializes the data points. 
+     * Initializes the data points, based on the contents of the backing JSON's 
+     * {@link #API_KEY_DATA_POINTS} array.
      * <p>
      * This method is called by the constructor.
      * 
@@ -582,19 +708,95 @@ public class TimeSeries implements APIEntryInterface {
      */
     private TimeSeries initDataPoints() throws JSONException {
         JSONArray dataPointsJSONArr = apiStructure.getJSONArray(API_KEY_DATA_POINTS);
-        if (dataPointsJSONArr.length() > 0) {
-            dataPoints = new ArrayList<TimeSeriesDataPoint>();
-            for (int i = 0; i < dataPointsJSONArr.length(); i++) {
+        //if (dataPointsJSONArr.length() > 0) {
+            //dataPoints = new ArrayList<TimeSeriesDataPoint>();
+            //dataPoints = new TreeSet<TimeSeriesDataPoint>(TimeSeriesDataPoint.COMPARE_TIMESTAMP);
+            
+            numDataPoints = dataPointsJSONArr.length();
+            
+            dataPoints = new ArrayList<TimeSeriesDataPoint>(numDataPoints); // new
+            
+            timestamps = new ArrayList<TimeSeriesTimestamp>(numDataPoints);
+            //timestamps = new TreeSet<TimeSeriesTimestamp>(TimeSeriesTimestamp.CHRONOLOGICAL);
+            
+            //timeSeriesData = new TreeMap<TimeSeriesTimestamp, TimeSeriesDataPoint>(TimeSeriesTimestamp.CHRONOLOGICAL);
+            
+            for (int i = 0; i < numDataPoints; i++) {
                 try {
                     JSONObject dataPointJSON = dataPointsJSONArr.getJSONObject(i);
                     Double value = null;
-                    //String timestampFormat = null;
-                    String timestamp = null;
+                    //String timestamp = null;
                     //int year = Integer.MIN_VALUE;
                     try { value = dataPointJSON.getDouble(API_KEY_POINT_VAL); } catch (Exception ee) {  }
-                    // The timestamp is either a full timestamp (string) or just the year (int)
-                    try { 
-                        timestamp = dataPointJSON.getString(API_KEY_POINT_TIMESTAMP); 
+                    
+                    // Data point had no value -> disregard, continue to next
+                    if (value == null) {
+                        continue;
+                    }
+                    
+                    TimeSeriesTimestamp timestamp = null;
+                    // The timestamp is either 
+                    //  - a full timestamp (string)
+                    //  - a date timestamp (string)
+                    //  - just the year (int)
+                    try {
+                        if (dataPointJSON.has(API_KEY_POINT_WHEN)) {
+                            //System.out.println("Found " + API_KEY_POINT_DATE);
+                            if (this.timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN || this.timestampsType == TimeSeriesTimestamp.TYPE_LITERAL) {
+                                // Timestamp type unknown: Rely on sniffing the type
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_WHEN));
+                            } else {
+                                // Timestamp type known: Create it specifically
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_WHEN), this.timestampsType);
+                            }
+                        } else {
+                            throw new InstantiationException("Missing required field '" + API_KEY_POINT_WHEN + "'.");
+                        }
+                        
+                        /*else if (dataPointJSON.has(API_KEY_POINT_YEAR)) {
+                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getInt(API_KEY_POINT_YEAR));
+                        }*/
+                        
+                        /*if (dataPointJSON.has(API_KEY_POINT_TIMESTAMP)) {
+                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_TIMESTAMP));
+                        } else if (dataPointJSON.has(API_KEY_POINT_DATE)) {
+                            //System.out.println("Found " + API_KEY_POINT_DATE);
+                            if (this.timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN) {
+                                // Timestamp type unknown: Rely on sniffing the type
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_DATE));
+                            } else {
+                                // Timestamp type known: Create it specifically
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_DATE), this.timestampsType);
+                            }
+                            //this.dateTimeAccuracy = DATE_FORMAT_UNIX_DATE;
+                            //this.setTimestampFormat(); // Because the datetime accuracy changed
+                            //System.out.println("Crated timestamp: " + timestamp);
+                        } else {
+                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getInt(API_KEY_POINT_YEAR));
+                        }*/
+                    } catch (Exception e) {
+                        LOG.error("Cannot create timestamp for data point in time series " + this.getId() + ": " + e.getMessage());
+                    }
+                    
+                    if (this.timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN || this.timestampsType == TimeSeriesTimestamp.TYPE_LITERAL) {
+                        // Set timestamps type (common for this series)
+                        this.timestampsType = timestamp.getType();
+                    } else {
+                        if (this.timestampsType != timestamp.getType() // Means this series contains more than 1 type of timestamps
+                                && !(this.timestampsType == TimeSeriesTimestamp.TYPE_LITERAL || timestamp.getType() == TimeSeriesTimestamp.TYPE_LITERAL)) {
+                            LOG.error("Mixing timestamp is not recommended, but was found in time series " + this.getId() + ".");
+                        }
+                    }
+                    /*try { 
+                        if (dataPointJSON.has(API_KEY_POINT_TIMESTAMP)) {
+                            timestamp = dataPointJSON.getString(API_KEY_POINT_TIMESTAMP);
+                        } else if (dataPointJSON.has(API_KEY_POINT_DATE)) {
+                            //System.out.println("Found " + API_KEY_POINT_DATE);
+                            timestamp = dataPointJSON.getString(API_KEY_POINT_DATE) + "T12:00:00Z";
+                            this.dateTimeAccuracy = DATE_FORMAT_UNIX_DATE;
+                            this.setTimestampFormat(); // Because the datetime accuracy changed
+                            //System.out.println("Crated timestamp: " + timestamp);
+                        }
                     } catch (Exception ee) {
                         try {
                             // Probably temporary
@@ -605,61 +807,115 @@ public class TimeSeries implements APIEntryInterface {
                         } catch (Exception eee) {
                         } 
                     }
-                    
-                    // Data point had no value -> disregard, continue to next
-                    if (value == null) {
-                        continue;
-                    }
-                    
-                    updateExtremeValues(value);
+                    */
                     
                     //try { timestampFormat = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
                     TimeSeriesDataPoint dp = new TimeSeriesDataPoint(
                                         value, 
                                         timestamp, 
-                                        this.getTimestampFormat(),
-                                        this.getDateTimeAccuracy(),  // ToDo: This time series should keep track of the format, not the data point
+                                        //this.getTimestampFormat(),
+                                        //this.getDateTimeAccuracy(),  // ToDo: This time series should keep track of the format, not the data point
                                         this.displayLocale);
+                    
+                    //addDataPoint(dp);
+                    //*
+                    //updateExtremeValues(value);
+                    // Add the timestamp
+                    //timestamps.add(timestamp);
                     
                     // ToDo: This time series should keep track of whether high/low/max/min values exist, not the data point
                     // (is this already handled by the isErrorBarSeries() method???)
                     if (dataPointJSON.has(API_KEY_POINT_HIGH)) {
                         dp.setHigh(dataPointJSON.getDouble(API_KEY_POINT_HIGH));
-                        this.hasHigh = true;
-                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_HIGH));
+                        //this.hasHigh = true;
+                        //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_HIGH));
                     } else if (this.hasHigh) {
                         // Log this
                     }
                     if (dataPointJSON.has(API_KEY_POINT_LOW)) {
                         dp.setLow(dataPointJSON.getDouble(API_KEY_POINT_LOW));
-                        this.hasLow = true;
-                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_LOW));
+                        //this.hasLow = true;
+                        //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_LOW));
                     } else if (this.hasLow) {
                         // Log this
                     }
                     if (dataPointJSON.has(API_KEY_POINT_MAX)) {
                         dp.setMax(dataPointJSON.getDouble(API_KEY_POINT_MAX));
-                        this.hasMax = true;
-                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MAX));
+                        //this.hasMax = true;
+                        //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MAX));
                     } else if (this.hasMax) {
                         // Log this
                     }
                     if (dataPointJSON.has(API_KEY_POINT_MIN)) {
                         dp.setMin(dataPointJSON.getDouble(API_KEY_POINT_MIN));
-                        this.hasMin = true;
-                        updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MIN));
+                        //this.hasMin = true;
+                        //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MIN));
                     } else if (this.hasMin) {
                         // Log this
                     }
                     
-                    dataPoints.add(dp);
+                    //dataPoints.add(dp);
+                    //updateExtremeValues(dp);
+                    // Store the data point, mapped to its timestamp
+                    //timeSeriesData.put(timestamp, dp);
+                    //*/
+                    addDataPoint(dp);
                 } catch (Exception e) {
                     // ToDo: ?
-                }
-            }
-        }
+                } 
+                //*
+                if (this.isSingleValueSeries() && this.timestampsType == TimeSeriesTimestamp.TYPE_DATE && numDataPoints >= 500) {
+                    // This is a long, high-resolution series that needs performance optimization.
+                    // No table will be output (link to table instead), and we'll load the JSON data async'ly into the chart.
+                    //System.out.println("Breaking out.");
+                    //break; // Break the for-loop: 
+                }else {
+                    //System.out.println("NOT breaking out.");
+                }//*/
+            } // for-loop
+        //}
         return this;
     }
+    
+    /**
+     * Adds a data point to this series.
+     * 
+     * @param dp The data point to add.
+     */
+    public synchronized void addDataPoint(TimeSeriesDataPoint dp) {
+        // Update flags to "true" if necessary - but never to false
+        if (dp.hasHigh()) {
+            this.hasHigh = true;
+        }
+        if (dp.hasLow()) {
+            this.hasLow = true;
+        }
+        if (dp.hasMax()) {
+            this.hasMax = true;
+        }
+        if (dp.hasMin()) {
+            this.hasMin = true;
+        }
+        
+        // Add the data point
+        dataPoints.add(dp);
+        // Add the timestamp
+        timestamps.add(dp.getTimestamp());
+        // Update extreme values of this series
+        updateExtremeValues(dp);
+    }
+    
+    /**
+     * Updates the extreme values of this series, based on the given data point.
+     * 
+     * @see #updateExtremeValues(double) 
+     * @param dp The data point holding the value(s) that are potentially new extreme values.
+     */
+    public synchronized void updateExtremeValues(TimeSeriesDataPoint dp) {
+        updateExtremeValues(dp.getAbsMax());
+        updateExtremeValues(dp.getAbsMin());
+    }
+    
     /**
      * Updates the minimum and maximum values of this time series, if the given 
      * value exceeds the current extreme values.
@@ -685,6 +941,29 @@ public class TimeSeries implements APIEntryInterface {
             } 
         }
     }
+    
+    /**    
+     * Returns the number of data points in this series.
+     * <p>
+     * Normally, this is the size of the {@link #API_KEY_DATA_POINTS} array of 
+     * the backing JSON.
+     * 
+     * @return The number of data points in this series.
+     */
+    public int size() {
+        return numDataPoints;
+    }
+    
+    /**
+     * Determines whether or not this series contains a single value per 
+     * timestamp.
+     * 
+     * @return True if this series contains a single value per timestamp, false if not.
+     */
+    public boolean isSingleValueSeries() {
+        return !(this.hasHigh || this.hasLow || this.hasMax || this.hasMin);
+    }
+    
     /**
      * Determines whether or not this series contains no negative values.
      * 
@@ -693,28 +972,37 @@ public class TimeSeries implements APIEntryInterface {
     public boolean isPositiveValuesOnlySeries() {
         return this.minValue >= 0;
     }
+    
     /**
      * @return The maximum value in this time series.
      */
     public double getMaxValue() {
         return this.maxValue;
     }
+    
     /**
      * @return The minimum value in this time series.
      */
     public double getMinValue() {
         return this.minValue;
     }
+    
     /**
      * Determines whether or not this series contains only integer values.
      * 
      * @return True if this series contains only integer values, false if not.
      */
     public boolean isIntegerValuesOnlySeries() { return !this.isDecimalValueSeries; }
+    
     /**
      * @return The list of data points in this time series.
-     */
-    public List<TimeSeriesDataPoint> getDataPoints() /*throws JSONException*/ { return dataPoints; }
+     */    
+    public List<TimeSeriesTimestamp> getTimestamps() {
+    //public TreeSet<TimeSeriesTimestamp> getTimestamps() {
+    //public TreeSet<TimeSeriesDataPoint> getDataPoints() /*throws JSONException*/ { return dataPoints; }
+    //public List<TimeSeriesDataPoint> getDataPoints() /*throws JSONException*/ { return dataPoints; }
+        return timestamps;
+    }
     
     /**
      * Gets the data point for a specific time marker. 
@@ -724,16 +1012,27 @@ public class TimeSeries implements APIEntryInterface {
      * @param timeMarker The time marker to get the data point for.
      * @return The data point for the given time marker, or null if there is no data for that time marker.
      */
-    public TimeSeriesDataPoint getDataPointForTimeMarker(String timeMarker) {
+    public TimeSeriesDataPoint getDataPointForTimeMarker(TimeSeriesTimestamp timeMarker) {
+        //return timeSeriesData.get(timeMarker);
+        //*
         Iterator<TimeSeriesDataPoint> iDataPoints = getDataPoints().iterator();
         while (iDataPoints.hasNext()) {
             TimeSeriesDataPoint dataPoint = iDataPoints.next();
-            if (dataPoint.getTimestamp(timestampFormat).equals(timeMarker)) {
+            if (dataPoint.getTimestamp().equals(timeMarker)) {
                 return dataPoint;
             }
         }
         return null;
+        //*/
     }
+    
+    public List<TimeSeriesDataPoint> getDataPoints() {
+        return dataPoints;
+    }
+    
+    //public TimeSeriesDataPoint removeDataPointForTimeMarker(TimeSeriesTimestamp timeMarker) {
+    //    return timeSeriesData.remove(timeMarker);
+    //}
     
     /**
      * Gets the API key for a value field, based on the given value identifier.
@@ -741,7 +1040,7 @@ public class TimeSeries implements APIEntryInterface {
      * If there is no specific match for the value identifier, the default 
      * {@link #API_KEY_POINT_VAL} is returned.
      * 
-     * @param valueIdentifier The value identifier, one of the VALUE_XXX constants.
+     * @param valueIdentifier The value identifier, one of the VALUE_XXX constants of {@link TimeSeriesDataPoint}.
      * @return The API key that corresponds to the given value identifier.
      */
     public String getValueAPIKey(int valueIdentifier) {
@@ -760,6 +1059,7 @@ public class TimeSeries implements APIEntryInterface {
                 return API_KEY_POINT_VAL;
         }
     }
+    
     /**
      * Gets the data points in this time series as an HTML table row string.
      * <p>
@@ -783,10 +1083,10 @@ public class TimeSeries implements APIEntryInterface {
             
             //s += "<!-- Total rows: " + rows.size() + ", this.getUnit().getShortForm()=" + this.getUnit().getShortForm() + " -->\n";
 
-            Iterator<String> iTimeMarker = tsc.getTimeMarkerIterator();
+            Iterator<TimeSeriesTimestamp> iTimeMarker = tsc.getTimeMarkerIterator();
 
             while (iTimeMarker.hasNext()) {
-                String timeMarker = iTimeMarker.next();
+                TimeSeriesTimestamp timeMarker = iTimeMarker.next();
                 
                 //s += "<!-- getting data for " + timeMarker + " ... -->\n";
                 
@@ -840,10 +1140,10 @@ public class TimeSeries implements APIEntryInterface {
             
             //s += "<!-- Total rows: " + rows.size() + ", this.getUnit().getShortForm()=" + this.getUnit().getShortForm() + " -->\n";
 
-            Iterator<String> iTimeMarker = tsc.getTimeMarkerIterator();
+            Iterator<TimeSeriesTimestamp> iTimeMarker = tsc.getTimeMarkerIterator();
 
             while (iTimeMarker.hasNext()) {
-                String timeMarker = iTimeMarker.next();
+                TimeSeriesTimestamp timeMarker = iTimeMarker.next();
                 
                 //s += "<!-- getting data for " + timeMarker + " ... -->\n";
                 
@@ -902,19 +1202,25 @@ public class TimeSeries implements APIEntryInterface {
         return s;
     }
     */
+    
     /**
      * @return The ID of this time series. 
      */
     @Override
     public String getId() { return id; }
+    
     /**
      * @return The JSON object that reflects how this time series is represented by the service. 
+     * @deprecated Replaced by the interface-defined {@link #getJSON()} method (which is identical).
      */
     public JSONObject getAPIStructure() { return apiStructure; }
+    
     /**
      * @return The timestamp accuracy level. 
      */
-    public String getDateTimeAccuracy() { return dateTimeAccuracy; }
+    public int getDateTimeAccuracy() { return timestampsType; }
+    //public String getDateTimeAccuracy() { return dateTimeAccuracy; }
+        
     /**
      * @return A flag indicating whether or not this series has error bars. 
      */
@@ -923,7 +1229,12 @@ public class TimeSeries implements APIEntryInterface {
     /**
      * Gets the number of values contained in each data point of this series.
      * <p>
-     * If high/low values exist, 3 is returned. Otherwise 1 is returned.
+     * This method should always return 1, 3 or 5:
+     * <ul>
+     * <li>1: only main value</li>
+     * <li>3: additional high and low values (typically "error bar" series)</li>
+     * <li>5: additional minimum and maximum values (typically "boxplot" series)</li>
+     * </ul>
      * 
      * @return The number of values contained in this data point.
      */
@@ -942,8 +1253,56 @@ public class TimeSeries implements APIEntryInterface {
      * 
      * @return The timestamp format for this time series, formatted according to its own defined accuracy level.
      */
-    public SimpleDateFormat getTimestampFormat() { return this.timestampFormat; }
+    //public SimpleDateFormat getTimestampFormat() { return this.timestampFormat; }
     
+    /**
+     * Resolves a date format pattern by evaluating a given timestamp (which is 
+     * typically read from the API service).
+     * 
+     * @param apiTimestamp The timestamp to evaluate.
+     * @return A date format pattern that can be used when parsing the timestamp string.
+     */
+    /*public String resolveTimestampPattern(String apiTimestamp) {
+        String[] variants = new String[] { "yyyy-mm-dd", "yyyy-mm", "yyyy" };
+        int i = 0;
+        for (; i < variants.length; i++) {
+            try {
+                new SimpleDateFormat(variants[i]).parse(apiTimestamp);
+                break;
+            } catch (Exception e) {
+                
+            }
+        }
+        
+        return variants[i];
+    }*/
+    
+    
+    
+    /**
+     * Resolves a date format pattern by evaluating a given timestamp (which is 
+     * typically read from the API service).
+     * 
+     * @param apiTimestamp The timestamp to evaluate.
+     * @return A date format pattern that can be used when parsing the timestamp string.
+     */
+    /*public String normalizeTimestamp(String apiTimestamp) {
+        String[] variants = new String[] { PATTERN_DATE_API, PATTERN_DATE_API, "yyyy-MM", "yyyy" };
+        int i = 0;
+        for (; i < variants.length; i++) {
+            try {
+                new SimpleDateFormat(variants[i]).parse(apiTimestamp);
+                break;
+            } catch (Exception e) {
+                // Just continue
+            }
+        }
+        try {
+            return new SimpleDateFormat(PATTERN_DATE_API, displayLocale).format(new SimpleDateFormat(variants[i], displayLocale).parse(apiTimestamp));
+        } catch (Exception e ) {
+            return null;
+        }
+    }*/
     
     /**
      * Sets the timestamp format for this time series, according to its own
@@ -951,8 +1310,20 @@ public class TimeSeries implements APIEntryInterface {
      * 
      * @return This time series, updated.
      */
-    private TimeSeries setTimestampFormat() {
+    /*private TimeSeries setTimestampFormat() {
         String f = null;
+        
+        if (timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN) {
+            f = TimeSeriesTimestamp.PATTERN_TIME_STANDARD;
+        } else if (timestampsType == TimeSeriesTimestamp.TYPE_TIME) {
+            f = "yyyy-MM-dd HH:mm:ss";
+        } else if (timestampsType == TimeSeriesTimestamp.TYPE_DATE) {
+            f = "yyyy-MM-dd HH:mm:00";
+        } else if (timestampsType == TimeSeriesTimestamp.TYPE_MONTH) {
+            f = "yyyy-MM-dd HH:00:00";
+        } else if (timestampsType == TimeSeriesTimestamp.TYPE_YEAR) {
+            f = "yyyy";
+        }
         
         if (dateTimeAccuracy == null) {
             f = PATTERN_DATE_API;
@@ -971,9 +1342,10 @@ public class TimeSeries implements APIEntryInterface {
         } else {                                                                            // Default
             f = "'" + dateTimeAccuracy + "'"; // No format, use the "format" as a literal, e.g. "2007/08" or "1990–2010"
         }
-        this.timestampFormat = new SimpleDateFormat(f, displayLocale);
+        
+        this.timestampFormat = new SimpleDateFormat(TimeSeriesTimestamp.PATTERN_TIME_STANDARD, displayLocale);
         return this;
-    }
+    }*/
     
     /**
      * @see APIEntryInterface#getJSON()

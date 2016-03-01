@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import no.npolar.data.api.APIEntryInterface;
 import no.npolar.data.api.APIServiceInterface;
 import no.npolar.data.api.MOSJService;
 import no.npolar.data.api.TimeSeries;
 import no.npolar.data.api.TimeSeriesCollection;
+import no.npolar.data.api.TimeSeriesTimestamp;
 import no.npolar.data.api.util.APIUtil;
+import no.npolar.data.api.Labels;
 import org.opencms.json.JSONArray;
 import org.opencms.json.JSONObject;
 import org.apache.commons.logging.Log;
@@ -32,8 +35,13 @@ public class MOSJParameter implements APIEntryInterface {
     protected List<TimeSeries> relatedTimeSeries = null;
     //protected List<MOSJTimeSeries> relatedTimeSeries = null;
     
+    /** All related time series. */
+    protected TimeSeriesCollection tsc = null;
+    
     /** Preferred locale to use when getting language-specific data. */
     protected Locale displayLocale = null;
+    /** Localized strings. */
+    protected ResourceBundle labels = null;
     /** Default locale string. */
     public static final String DEFAULT_LOCALE = "en";
     
@@ -65,6 +73,7 @@ public class MOSJParameter implements APIEntryInterface {
         } catch (Exception e) {
             throw new InstantiationException("Error attempting to create MOSJ parameter instance from JSON object: " + e.getMessage());
         }
+        this.labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
         resolveTimeSeries();
     }
@@ -110,7 +119,10 @@ public class MOSJParameter implements APIEntryInterface {
                                 LOG.warn("MOSJ parameter " + id + " includes a problem time series at " + relatedTimeSeriesUrl);
                             }
                         } else {
+                            long a = System.currentTimeMillis();
                             TimeSeries ts = new TimeSeries(timeSeriesJSON, displayLocale);
+                            long b = System.currentTimeMillis();
+                            //System.out.println("Created time series (" + (b-a) +"ms).");
                             this.addTimeSeries(ts);
                         }
                     } catch (Exception e) {
@@ -269,7 +281,17 @@ public class MOSJParameter implements APIEntryInterface {
             return true;
         }
         
-        String testAccuracy = relatedTimeSeries.get(0).getDateTimeAccuracy();
+        int testAccuracy = relatedTimeSeries.get(0).getDateTimeAccuracy();
+        Iterator<TimeSeries> i = relatedTimeSeries.iterator();
+        while (i.hasNext()) {
+            TimeSeries ts = i.next();
+            if (ts.getDateTimeAccuracy() != testAccuracy) {
+                return false;
+            }
+            testAccuracy = ts.getDateTimeAccuracy();
+        }
+        
+        /*String testAccuracy = relatedTimeSeries.get(0).getDateTimeAccuracy();
         Iterator<TimeSeries> i = relatedTimeSeries.iterator();
         while (i.hasNext()) {
             TimeSeries ts = i.next();
@@ -277,7 +299,7 @@ public class MOSJParameter implements APIEntryInterface {
                 return false;
             }
             testAccuracy = ts.getDateTimeAccuracy();
-        }
+        }*/
         return true;
     }
     
@@ -328,10 +350,10 @@ public class MOSJParameter implements APIEntryInterface {
             if (timeSeriesList != null && !timeSeriesList.isEmpty()) {
                 
                 // heading
-                s += "Series name;Unit;";
+                s += labels.getString(Labels.TIME_SERIES_TITLE_0) + ";" + labels.getString(Labels.TIME_SERIES_UNIT_0) + ";";
                 
                 // The columns, based on timestamps (i.e. years)
-                Iterator<String> iTimeMarkers = tsc.getTimeMarkerIterator();
+                Iterator<TimeSeriesTimestamp> iTimeMarkers = tsc.getTimeMarkerIterator();
                 while (iTimeMarkers.hasNext()) {
                     s += "" + iTimeMarkers.next();
                     s += iTimeMarkers.hasNext() ? ";" : "\n";
@@ -418,10 +440,10 @@ public class MOSJParameter implements APIEntryInterface {
             if (timeSeriesList != null && !timeSeriesList.isEmpty()) {
                 
 
-                s += "<thead>\n<tr><th scope=\"col\">&nbsp;</th><th scope=\"col\">Unit</th>";
+                s += "<thead>\n<tr><th scope=\"col\">&nbsp;</th><th scope=\"col\">" + labels.getString(Labels.TIME_SERIES_UNIT_0) + "</th>";
                 
                 // The columns, based on timestamps (i.e. years)
-                Iterator<String> iTimeMarkers = tsc.getTimeMarkerIterator();
+                Iterator<TimeSeriesTimestamp> iTimeMarkers = tsc.getTimeMarkerIterator();
                 while (iTimeMarkers.hasNext()) {
                     // The span is vital for Highcharts (but the class name is arbitrary), if the chart is to be generated based on the table
                     s += "<th scope=\"col\"><span class=\"hs-time-marker\">" + iTimeMarkers.next() + "</span></th>";
@@ -593,15 +615,21 @@ public class MOSJParameter implements APIEntryInterface {
      * @return The collection of time series related to this parameter.
      */
     public TimeSeriesCollection getTimeSeriesCollection() {
-        try {
-            TimeSeriesCollection tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries, this.getTitle());
-            return tsc;
-        } catch (Exception e) {
-            if (LOG.isErrorEnabled()) {
-                LOG.error("Error constructing time series collection for MOSJ parameter " + this.getId() + ": ", e);
+        if (this.tsc == null) {
+            try {
+                long a = System.currentTimeMillis();
+                tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries, this.getTitle());
+                long b = System.currentTimeMillis();
+                //System.out.println("Creating time series collection ... done (" + (b-a) + "ms).");
+                //return tsc;
+            } catch (Exception e) {
+                if (LOG.isErrorEnabled()) {
+                    LOG.error("Error constructing time series collection for MOSJ parameter " + this.getId() + ": ", e);
+                }
+                return null;
             }
         }
-        return null;
+        return tsc;
     }
     
     /**

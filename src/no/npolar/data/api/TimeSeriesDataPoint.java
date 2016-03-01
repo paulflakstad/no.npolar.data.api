@@ -3,7 +3,7 @@ package no.npolar.data.api;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Comparator;
 import java.util.Locale;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,6 +17,13 @@ import org.apache.commons.logging.LogFactory;
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class TimeSeriesDataPoint {
+    /** Compares two data points by their timestamps, will sort chronologically. */
+    public static final Comparator<TimeSeriesDataPoint> COMPARE_TIMESTAMP = new Comparator<TimeSeriesDataPoint>() {
+        @Override
+        public int compare(TimeSeriesDataPoint o1, TimeSeriesDataPoint o2) {
+            return o1.getTimestamp().toString().compareTo(o2.getTimestamp().toString());
+        }
+    };
     /** Value identifier: Main value. */
     public static final int VALUE_MAIN = 0;
     /** Value identifier: Low value. */
@@ -34,16 +41,18 @@ public class TimeSeriesDataPoint {
     protected boolean hasMax = false;
     protected boolean hasMin = false;
     
-    protected Date dateTime = null;
+    //protected Date dateTime = null;
     protected double max = 0;   // maximum value (?)
     protected double high = 0;    // upper value (?)
-    protected Double val = null;   // value
+    protected Double val = null;   // main value
     protected double low = 0;    // lower value (?)
     protected double min = 0;   // minimum value (?)
-    protected String dateTimeAccuracy = null;
+    //protected String dateTimeAccuracy = null;
+    
+    TimeSeriesTimestamp timestamp = null;
     
     private SimpleDateFormat timestampFormat = null;
-    /** Pattern that fits the API timestamps. Used to parse timestamps read from the API. */
+    //** Pattern that fits the API timestamps. Used to parse timestamps read from the API. */
     //public static final String PATTERN_DATE_API = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 1871-06-01T12:00:00Z
     //public static final String NUMBER_FORMAT_LOCALE_HIGHCHARTS = "en";
     /** Preferred locale to use when getting/constructing language-specific data. */
@@ -53,28 +62,51 @@ public class TimeSeriesDataPoint {
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(TimeSeriesDataPoint.class);
     
+    
     /**
-     * Constructs a new data point based on the given details.
+     * Creates a new data point, based on the given details.
      * 
      * @param val The value. (High-low / max-min must be set after construction.)
-     * @param dateTime The timestamp string.
-     * @param timestampFormat The timestamp format.
-     * @param dateTimeAccuracy The timestamp accuracy level.
+     * @param timestamp The timestamp.
      * @param displayLocale The locale to use when getting/constructing language-specific stuff.
      */
-    public TimeSeriesDataPoint(double val, String dateTime, SimpleDateFormat timestampFormat, String dateTimeAccuracy, Locale displayLocale) {
+    public TimeSeriesDataPoint(double val, TimeSeriesTimestamp timestamp, Locale displayLocale) {
         this.displayLocale = displayLocale;
-        this.dateTimeAccuracy = dateTimeAccuracy;
         this.val = val;
-        try {
-            this.dateTime = new SimpleDateFormat(TimeSeries.PATTERN_DATE_API, displayLocale).parse(dateTime);
-        } catch (Exception e) {
-            //e.printStackTrace();
-            // should log this
-        }
-        
-        this.timestampFormat = timestampFormat;
+        this.timestamp = timestamp;
     }
+    
+    /**
+     * Gets the absolute minimum value contained in this data point.
+     * <p>
+     * The value is either the minimum, low or main value.
+     * 
+     * @return The absolute minimum value contained in this data point.
+     */
+    public double getAbsMin() {
+        if (hasMin)
+            return get(VALUE_MIN);
+        if (hasLow)
+            return get(VALUE_LOW);
+        return get(VALUE_MAIN);
+    }
+    
+    /**
+     * Gets the absolute maximum value contained in this data point.
+     * <p>
+     * The value is either the maximum, high or main value.
+     * 
+     * @return The absolute maximum value contained in this data point.
+     */
+    public double getAbsMax() {
+        if (hasMax)
+            return get(VALUE_MAX);
+        if (hasHigh)
+            return get(VALUE_HIGH);
+        return get(VALUE_MAIN);
+    }
+    
+    //public String getDateTimeAccuracy() { return this.dateTimeAccuracy; }
     
     /**
      * Gets the value identified by the given value key.
@@ -126,29 +158,46 @@ public class TimeSeriesDataPoint {
     }
     
     /**
+     * Gets the number of values contained in this data point.
+     * <p>
+     * If high/low values exist, 3 is returned. Otherwise 1 is returned.
+     * 
+     * @return The number of values contained in this data point.
+     */
+    public int getPointCount() { 
+        if (this.hasMinMax())
+            return 5;
+        if (this.hasHighLow())
+            return 3;
+        else
+            return 1;
+    }
+    
+    /**
      * Checks if the value is an integer or not.
      * 
      * @return True if the value is an integer, false if not.
      */
-    public boolean valIsInt() { return val % 1 == 0; }
+    public boolean isIntValue() { return val % 1 == 0; }
     
     /**
      * Gets the (raw) value.
      * 
      * @return The (raw) value.
      */
-    public double getVal() { return val; }
+    public double getValue() { return val; }
     
     /**
      * Gets the value, formatted according to the given format.
      *
+     * @return The value, formatted according to the given format.
      * @see TimeSeriesDataPoint#formatNumber(double, java.lang.String, java.util.Locale) 
      */
-    public String getVal(String format) {
-        return formatNumber(getVal(), format, null);
+    public String getValue(String format) {
+        return formatNumber(getValue(), format, null);
         /*
         if (format == null)
-            return String.valueOf(getVal());
+            return String.valueOf(getValue());
         else {
             DecimalFormat df = (DecimalFormat)NumberFormat.getInstance(new Locale(NUMBER_FORMAT_LOCALE_HIGHCHARTS)); // Highcharts needs 3.14, not 3,14
             df.applyPattern(format);
@@ -158,31 +207,16 @@ public class TimeSeriesDataPoint {
     }
     
     /**
-     * Gets the number of values contained in this data point.
-     * <p>
-     * If high/low values exist, 3 is returned. Otherwise 1 is returned.
-     * 
-     * @return The number of values contained in this data point.
-     */
-    public int getPointCount() { 
-        if (this.hasMax && this.hasMin)
-            return 5;
-        if (this.hasHighLow())
-            return 3;
-        else
-            return 1;
-    }
-    
-    /**
      * Gets the value, formatted according to the given format and locale. 
      * 
+     * @return The value, formatted according to the given format and locale. 
      * @see #formatNumber(double, java.lang.String, java.util.Locale) 
      */
-    public String getVal(String format, Locale locale) {
-        return formatNumber(getVal(), format, locale);
+    public String getValue(String format, Locale locale) {
+        return formatNumber(getValue(), format, locale);
         /*
         if (locale == null) {
-            return getVal(format);
+            return getValue(format);
         }
         else {
             DecimalFormat df = (DecimalFormat)NumberFormat.getInstance(locale);
@@ -197,6 +231,7 @@ public class TimeSeriesDataPoint {
      * <p>
      * Separate values are comma-separated in the returned string.
      * 
+     * @return All the values, comma-separated and formatted according to the given format and locale.
      * @see #formatNumber(double, java.lang.String, java.util.Locale) 
      */
     public String getAllValues(String format, Locale locale) {
@@ -238,6 +273,7 @@ public class TimeSeriesDataPoint {
         df.applyPattern(format);
         return df.format(number);
     }
+    
     /**
      * Gets the high and low values, separated, formatted and localized 
      * according to the given format pattern and locale.
@@ -245,7 +281,7 @@ public class TimeSeriesDataPoint {
      * @param format The format pattern.
      * @param separator The separator. If null, the default (comma) is be used.
      * @param locale The locale.
-     * @return the high and low values.
+     * @return The high and low values.
      */
     public String getHighLow(String format, String separator, Locale locale) {
         if (this.hasHighLow()) {
@@ -272,32 +308,48 @@ public class TimeSeriesDataPoint {
      * 
      * @return The (raw) timestamp.
      */
-    public Date getTimestamp() { return this.dateTime; }
+    /*public Date getTimestamp() { 
+        if (this.timestamp != null) {
+            return this.timestamp.getTime();
+        }
+        return this.dateTime; 
+    }*/
+    
+    /**
+     * Gets the timestamp.
+     * 
+     * @return The timestamp.
+     */
+    public TimeSeriesTimestamp getTimestamp() {
+        return this.timestamp;
+    }
     
     /**
      * Gets the timestamp, formatted according to the configured timestamp format.
      * 
      * @return The timestamp, formatted according to the configured timestamp format.
      */
-    public String getTimestampFormatted() {
-            return getTimestamp(this.timestampFormat);
-    }
+    /*public String getTimestampFormatted() {
+        return getTimestamp(this.timestampFormat);
+    }*/
+    
     /**
      * Gets a string representation of this instance, consisting of the main 
      * value and the timestamp.
      * 
-     * @return 
+     * @return A string representation of this instance.
      */
     @Override
     public String toString() { 
         String s = "";
-        if (this.valIsInt()) {
+        if (this.isIntValue()) {
             s += val.intValue();
         } else {
             s += val;
         }
         //s += " (" + formatDate() + ")";
-        s += " (" + getTimestampFormatted() + ")";
+        //s += " (" + getTimestampFormatted() + ")";
+        s += " (" + getTimestamp().toString() + ")";
         return s;
     }
     
@@ -306,9 +358,10 @@ public class TimeSeriesDataPoint {
      * 
      * @return The timestamp, formatted according to the given format.
      */
-    public String getTimestamp(SimpleDateFormat df) {
+    /*public String getTimestamp(SimpleDateFormat df) {
         return df.format(dateTime);
-    }
+    }*/
+    
     /**
      * Sets the high value.
      * 
@@ -320,6 +373,7 @@ public class TimeSeriesDataPoint {
         this.hasHigh = true;
         return this;
     }
+    
     /**
      * Sets the low value.
      * 
@@ -331,6 +385,7 @@ public class TimeSeriesDataPoint {
         this.hasLow = true;
         return this;
     }
+    
     /**
      * Sets the max value.
      * 
@@ -342,6 +397,7 @@ public class TimeSeriesDataPoint {
         this.hasMax = true;
         return this;
     }
+    
     /**
      * Sets the min value.
      * 
@@ -354,8 +410,54 @@ public class TimeSeriesDataPoint {
         return this;
     }
     
-    /** @return True if this instance has both high and low, false if not. */
-    public boolean hasHighLow() { return hasHigh && hasLow; } /* Should be in TimeSeries */
+    /** 
+     * Determines whether or not this data point has high and low values set.
+     * 
+     * @return True if both high and low values are set, false if not. 
+     */
+    public boolean hasHighLow() { return hasHigh && hasLow; } /* Should be in TimeSeries (?) */
+    
+    /** 
+     * Determines whether or not this data point has min and max values set.
+     * 
+     * @return True if both min and max values are set, false if not. 
+     */
+    public boolean hasMinMax() { return hasMin && hasMax; } /* Should be in TimeSeries (?) */
+    
+    /** 
+     * Determines whether or not this data point has a high value set.
+     * 
+     * @return True if this data point has a high value set, false if not. 
+     */
+    public boolean hasHigh() { return hasHigh; }
+    
+    /** 
+     * Determines whether or not this data point has a low value set.
+     * 
+     * @return True if this data point has a low value set, false if not. 
+     */
+    public boolean hasLow() { return hasLow; }
+    
+    /** 
+     * Determines whether or not this data point has a max value set.
+     * 
+     * @return True if this data point has a max value set, false if not. 
+     */
+    public boolean hasMax() { return hasMax; }
+    
+    /** 
+     * Determines whether or not this data point has a min value set.
+     * 
+     * @return True if this data point has a min value set, false if not. 
+     */
+    public boolean hasMin() { return hasMin; }
+    
+    /** 
+     * Determines whether or not this data point has a main value set.
+     * 
+     * @return True if this data point has a main value set, false if not. 
+     */
+    public boolean hasVal() { return val != null; }
     
     /*
      * Gets the datetime for this data point, formatted according to its own
