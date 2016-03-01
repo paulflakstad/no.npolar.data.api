@@ -147,6 +147,8 @@ public class Labels {
     
     /** The key prefix for topics. */
     public static final String TOPIC_PREFIX_0 = "topic.";
+    /** The key for topic "acidification". */
+    public static final String TOPIC_ACIDIFICATION_0 = TOPIC_PREFIX_0 + "acidification";
     /** The key for topic "atmosphere". */
     public static final String TOPIC_ATMOSPHERE_0 = TOPIC_PREFIX_0 + "atmosphere";
     /** The key for topic "biodiversity". */
