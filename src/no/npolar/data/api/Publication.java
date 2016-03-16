@@ -52,7 +52,7 @@ public class Publication implements APIEntryInterface {
     /** JSON key: Type. */
     public static final String JSON_KEY_LINK_TYPE       = "type";
     /** JSON key: Published timestamp. */
-    public static final String JSON_KEY_PUB_TIME        = "published_sort";
+    public static final String JSON_KEY_PUB_TIME        = "published";
     /** JSON key: Published timestamp accuracy. */
     public static final String JSON_KEY_PUB_ACCURACY    = "published_helper";
     /** JSON key: Publish year. */
