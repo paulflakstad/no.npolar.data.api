@@ -113,7 +113,14 @@ public class Publication implements APIEntryInterface {
     public static final String JSON_KEY_CONF_COUNTRY    = "country";
     /** JSON key: Conference dates. */
     public static final String JSON_KEY_CONF_DATES      = "dates";
-    //public static final String JSON_KEY_
+    /** JSON key: ISBN identifier. */
+    public static final String JSON_KEY_ISBN            = "isbn";
+    /** JSON key: ISSN identifier. */
+    public static final String JSON_KEY_ISSN            = "issn";
+    /** JSON key: Supplement (?). */
+    public static final String JSON_KEY_SUPPLEMENT      = "suppl";
+    /** JSON key: Article number (?). */
+    public static final String JSON_KEY_ARICLE_NUMBER   = "art_no";
 
     /** Pre-defined JSON value: state "submitted". */
     public static final String JSON_VAL_STATE_SUBMITTED = "submitted";
