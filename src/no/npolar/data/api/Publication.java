@@ -204,6 +204,9 @@ public class Publication implements APIEntryInterface {
     /** Identifier constant for reference string partial: translator(s). */
     public static final int CITE_PART_TRANSLATORS = 2;
     
+    /** The supported publication time patterns. */
+    public static final String[] PATTERNS_PUB_TIME = { "yyyy", "yyyy-MM", "yyyy-MM-dd" };
+    
     // Class members
     protected String title = "";
     protected String authors = "";
@@ -311,7 +314,7 @@ public class Publication implements APIEntryInterface {
         // All the non-complex stuff
         try { title     = o.getString(JSON_KEY_TITLE).trim(); } catch (Exception e) { title = labels.getString(Labels.LABEL_DEFAULT_TITLE_0); }
         //try { pubYear   = o.getString(JSON_KEY_PUBYEAR); if (pubYear.equalsIgnoreCase("0")) pubYear = ""; } catch (Exception e) { }
-        try { pubDate   = new SimpleDateFormat(DATE_FORMAT_JSON).parse(o.getString(JSON_KEY_PUBDATE)); } catch (Exception e) { }
+        //try { pubDate   = new SimpleDateFormat(DATE_FORMAT_JSON).parse(o.getString(JSON_KEY_PUBDATE)); } catch (Exception e) { }
         try { id        = o.getString(JSON_KEY_ID); } catch (Exception e) { }
         try { type      = o.getString(JSON_KEY_TYPE); } catch (Exception e) { }
         try { language  = o.getString(JSON_KEY_LANGUAGE); } catch (Exception e) { }
@@ -324,8 +327,10 @@ public class Publication implements APIEntryInterface {
         try { topics    = o.getJSONArray(JSON_KEY_TOPICS); } catch (Exception e) { }
         
         ////////////////////////////////////////////////////////////////////////
-        // Publish time (year OR month of year OR full date)
+        // Publish time: year OR month of year OR full date
+        String publishTimePattern = PATTERNS_PUB_TIME[0];
         try { 
+            /*
             String publishTimeFormatStr = o.getString(JSON_KEY_PUB_ACCURACY);
             if (publishTimeFormatStr.contains("d")) {
                 publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_DATE_0), displayLocale);
@@ -334,11 +339,48 @@ public class Publication implements APIEntryInterface {
             } else {
                 publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
             }
+            */
+            String publishTimeString = o.getString(JSON_KEY_PUB_TIME);
+            int publishTimeStringLength = publishTimeString.length();
+            if (publishTimeStringLength == 10) { // yyyy-MM-dd
+                publishTimePattern = PATTERNS_PUB_TIME[2];
+                publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_DATE_0), displayLocale);
+            } else if (publishTimeStringLength == 7) { // yyyy-MM
+                publishTimePattern = PATTERNS_PUB_TIME[1];
+                publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_MONTH_0), displayLocale);
+            } else if (publishTimeStringLength == 4) { // yyyy
+                publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
+            }
         } catch (Exception e) { 
             publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
         }
-        try { publishTime = new SimpleDateFormat(DATE_FORMAT_JSON).parse(o.getString(JSON_KEY_PUB_TIME)); } catch (Exception e) { }
-        try { pubYear = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale).format(publishTime); } catch (Exception e) { }
+        try { 
+            publishTime = new SimpleDateFormat(publishTimePattern).parse(o.getString(JSON_KEY_PUB_TIME));
+        } catch (Exception e) {
+            System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+            }
+        }
+        try {
+            pubYear = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale).format(publishTime);
+        } catch (Exception e) {
+            System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
+            }
+        } finally {
+            if (pubYear == null || pubYear.isEmpty()) {
+                try {
+                    pubYear = o.getString(JSON_KEY_PUB_TIME).substring(0, 4);
+                } catch (Exception e) {
+                    System.out.println("Fallback routine for determining publish year failed. Publication ID was " + this.id);
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Fallback routine for determining publish year failed. Publication ID was " + this.id);
+                    }
+                }
+            }
+        }
         
         ////////////////////////////////////////////////////////////////////////
         // Publisher
