@@ -38,6 +38,9 @@ public class SearchFilter {
     /** The prefix used on names of parameters that are used for filtering. */
     public static final String PARAM_NAME_PREFIX = "filter-";
     
+    /** Pattern used to create/normalize timestamps, in order to use them as filter values. */
+    public static final String PATTERN_DATETIME_FILTER = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // e.g. 1871-06-01T12:00:00Z
+    
     /**
      * Creates a new filter for the given field, based on the given details.
      * 
