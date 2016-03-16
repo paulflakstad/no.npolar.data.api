@@ -42,6 +42,16 @@ public abstract class APIService implements APIServiceInterface {
     public static final String API_KEY_ENTRIES = "entries";
     public static final String API_KEY_FACETS = "facets";
     
+    /** Request parameter: The query string. */
+    public static final String PARAM_QUERY = "q";
+    /** Request parameter: How many results to fetch (max). */
+    public static final String PARAM_RESULTS_COUNT = "limit";
+    /** Request parameter: What fields to fetch. Define as a comma-separated string. */
+    public static final String PARAM_FIELDS = "fields";
+    /** Request parameter: What facets to fetch. Defined as a comma-separated string. Use "false" for none. */
+    public static final String PARAM_FACETS = "facets";
+    /** Request parameter: What field to sort by. Prefix with minus sign for reversed order. */
+    public static final String PARAM_SORT_BY = "sort";
     
     /** The protocol to use when accessing the service. */
     protected static final String SERVICE_PROTOCOL = "http";
