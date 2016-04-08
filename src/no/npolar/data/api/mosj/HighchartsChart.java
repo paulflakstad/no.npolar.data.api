@@ -296,13 +296,18 @@ public class HighchartsChart {
             // Chart type
             s += "\nchart: { ";
             s += type;
-            // Swap grouping and series names?
+            // Swap grouping and series names? 
+            // Important: The js method toggleHighChartsGrouping(jQuery) MUST be available
             //if (invertGrouping || ) {
                 s += ",";
                 s += "\nevents: {";
                     s += "\nload: function() {";
                         if (invertGrouping) {
-                            s += "\ntoggleHighChartsGrouping(this);";
+                            s += "\nvar customSettings = {};"; 
+                            if (overrides != null) {                                
+                                s += "\ncustomSettings = " + overrides.toString() + ";";
+                            }
+                            s += "\ntoggleHighChartsGrouping(this, customSettings);";
                         }
                         s += "\nfillEmptyData(this);"; // Enables AJAX-loading of data, see getValuesForTimeSeries() and fillEmptyData() in commons.js
                     s += "\n}";
