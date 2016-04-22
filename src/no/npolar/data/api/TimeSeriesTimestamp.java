@@ -65,7 +65,7 @@ public class TimeSeriesTimestamp implements Comparable<TimeSeriesTimestamp> {
     /** Timestamp type: time (down to the second). The value must equal the corresponding patterns index in {@link #PATTERNS_SUPPORTED}. */
     public static final int TYPE_TIME = 3;
     /** Timestamp type: literal (use as-is). */
-    public static final int TYPE_LITERAL = 99;
+    public static final int TYPE_LITERAL = -1;
     /** Timestamp type: unknown. */
     public static final int TYPE_UNKNOWN = Integer.MIN_VALUE;
     
@@ -175,6 +175,7 @@ public class TimeSeriesTimestamp implements Comparable<TimeSeriesTimestamp> {
                     //this.timestamp = DATE_FORMAT_STANDARD.format(DATE_FORMAT_STANDARD.parse(timestamp + getDefaultAddon(type)));
                     this.timestamp = timestamp + getDefaultAddon(type);
                 }
+                // We have now determined a type, so break the sniffer loop
                 break;
             } catch (Exception e) {}
         }

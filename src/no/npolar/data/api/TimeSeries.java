@@ -741,9 +741,10 @@ public class TimeSeries implements APIEntryInterface {
                     //  - just the year (int)
                     try {
                         if (dataPointJSON.has(API_KEY_POINT_WHEN)) {
-                            //System.out.println("Found " + API_KEY_POINT_DATE);
+                            //System.out.println("Found time marker " + API_KEY_POINT_WHEN);
                             if (this.timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN || this.timestampsType == TimeSeriesTimestamp.TYPE_LITERAL) {
                                 // Timestamp type unknown: Rely on sniffing the type
+                                //System.out.println("Time marker type unknown, sniffing...");
                                 timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_WHEN));
                             } else {
                                 // Timestamp type known: Create it specifically
