@@ -15,10 +15,11 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * A MOSJTimeSeries instance represents a time series, which is in essence a 
- * collection (list) of data points ({@link MOSJDataPoint} instances). The time 
- * series also contains a title, datetime accuracy (for the data points) and 
- * other meta data.
- * 
+ * collection (list) of data points ({@link MOSJDataPoint} instances).
+ * <p>
+ * The time series also contains a title, datetime accuracy (for the data 
+ * points) and other meta data.
+ * <p>
  * Example time series (randomly chosen): 
  * http://apptest.data.npolar.no:9000/monitoring/timeseries/e5b14b14-2143-539a-a03d-cd5c10fb80a3
  * 
@@ -165,7 +166,9 @@ public class MOSJTimeSeries {
                     }
                     dataPoints.add(dp);
                 } catch (Exception e) {
-                    // ToDo: ?
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Undefined error adding data point for time series " + this.getID(), e);
+                    }
                 }
             }
         }

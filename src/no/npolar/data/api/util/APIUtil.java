@@ -3,14 +3,17 @@ package no.npolar.data.api.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import no.npolar.data.api.APIEntry;
 import no.npolar.data.api.APIService;
 import org.opencms.json.JSONArray;
 import org.apache.commons.lang.StringUtils;
@@ -52,6 +55,63 @@ public class APIUtil {
     }
     
     /**
+     * Creates a OOCSS-style class set consisting of a base class and modifier
+     * classes of that base class.
+     * <p>
+     * Examples of invocations and their return strings:
+     * <ul>
+     * <li>("pagination__page", "next") : "pagination__page pagination__page--next"</li>
+     * <li>("pagination__page", "prev", "inactive") : "pagination__page pagination__page--prev pagination__page--inactive"</li>
+     * </ul>
+     * @param baseClass The base class.
+     * @param modifier The modifier.
+     * @param modifiers Optional additional modifiers.
+     * @return The ready-to-use class set.
+     */
+    public static String classMod(String baseClass, String modifier, String ... modifiers) {
+        String s =  baseClass + " " + baseClass + "--" + modifier;
+        for (String m : modifiers) {
+            s += " " + baseClass + "--" + m;
+        }
+        return s;
+    }
+    
+    /**
+     * Tests the availability of the given URL by issuing a HTTP GET request and 
+     * sniffing the response code.
+     * 
+     * @param testUrl The URL to test.
+     * @param validResponseCodes A set of valid response codes. (Typically just [200]).
+     * @param timeout The timeout, in milliseconds, for each GET request.
+     * @param attempts The number of connection attempts (each one lasting the length of timeout).
+     * @return true if the URL is available, false if not.
+     * @throws MalformedURLException If it's not possible to construct a {@link URL} from the given testUrl.
+     */
+    public static boolean testAvailability(String testUrl, int[] validResponseCodes, int timeout, int attempts) throws MalformedURLException {
+        int responseCode = 0;        
+        URL url = new URL(testUrl);
+        
+        for (int i = 0; i < attempts; i++) {
+            try {
+                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setReadTimeout(timeout);
+                connection.connect();
+                responseCode = connection.getResponseCode();
+                break;
+            } catch (Exception e) {
+            }
+        }        
+        
+        for (int i = 0; i < validResponseCodes.length; i++) {
+            if (responseCode == validResponseCodes[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
      * Queries the service at the given URL, and tries to return the service 
      * response as a JSON object.
      * 
@@ -72,6 +132,67 @@ public class APIUtil {
             }
         }
         return null;
+    }
+    
+    /**
+     * Takes a service URL in common form, and tries to "normalize" it to a 
+     * machine-readable api.npolar.no URL.
+     * <p>
+     * Protocols of type "http(s)://" are preserved, and if no protocol was 
+     * specified – e.g. the given serviceUrl starts with "//" – then the 
+     * returned URL will also use this form. 
+     * <p>
+     * Examples (input / output):
+     * <dl>
+     * <dt>//data.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287/edit</dt>
+     * <dd>//api.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287</dd>
+     * <dt>//data.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287</dt>
+     * <dd>//api.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287</dd>
+     * <dt>http://data.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287/edit</dt>
+     * <dd>http://api.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287</dd>
+     * <dt>https://data.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287/edit</dt>
+     * <dd>https://api.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287</dd>
+     * <dt>https://api.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287</dt>
+     * <dd>https://api.npolar.no/indicator/timeseries/1fcec195-ce45-4257-976f-3064ecb7a287 (unchanged)</dd>
+     * </dl>
+     * 
+     * @param serviceUrl
+     * @return 
+     */
+    public static String toApiUrl(String serviceUrl) {
+        if (serviceUrl == null) {
+            return null;
+        }
+        String protocol = "";
+        try {
+            if (!serviceUrl.startsWith("//")) {
+                protocol = serviceUrl.substring(0, serviceUrl.indexOf("//"));
+                if (!protocol.matches("^(http|https):$")) {
+                    protocol = "";
+                }
+            }
+            serviceUrl = serviceUrl.substring(serviceUrl.indexOf("//"));
+        } catch (Exception e) {
+            // This is an illegal format
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error: Unable to normalize the given service URL '" + serviceUrl + "'. Misspelled/missing URL?");
+            }
+            return null;
+        }
+        if (serviceUrl.endsWith("/edit")) {
+            try {
+                serviceUrl = serviceUrl.substring(0, serviceUrl.length() - "/edit".length());
+            } catch (Exception e) {
+                if (LOG.isErrorEnabled()) {
+                    LOG.error("Error stripping trailing '/edit' from the given service URL '" + serviceUrl + "'.");
+                }
+            }
+        }
+        if (serviceUrl.startsWith("//" + APIService.SERVICE_DOMAIN_NAME_HUMAN + "/")) {
+            serviceUrl = serviceUrl.replace(APIService.SERVICE_DOMAIN_NAME_HUMAN, APIService.SERVICE_DOMAIN_NAME);
+        }
+        return (protocol.isEmpty() ? "" : protocol) + serviceUrl;
+        //return "http:" + serviceUrl;
     }
     
     /**
@@ -238,38 +359,84 @@ public class APIUtil {
     }
     
     /**
+     * Gets the query string from the given URI.
+     * <p>
+     * If no query string is present, an empty string is returned.
+     * 
+     * @param theUri The URI - may or may not contain a query string.
+     * @return The query string, if any, or an empty string if none.
+     */
+    public static String getQueryString(String theUri) {
+        try {
+            return theUri.substring(theUri.indexOf("?")).substring(1);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+    
+    /**
      * Pulls parameters from the given URI string and returns them neatly in a 
      * map.
      * <p>
      * If no parameters were present, an empty map is returned.
+     * <p>
+     * Note that each value in the returned map may contain multiple values 
+     * split by e.g. the "AND" or "OR" delimiter (see {@link APIService.Delimiter#AND}).
      * 
-     * @param uri The URI string to pull parameters from
+     * @param uri The URI string to extract parameters from.
      * @return The parameters pulled from the given URI string, or an empty map if none.
      */
-    public static Map<String, List<String>> getQueryParametersFromString(String uri) {
+    public static Map<String, String> getParametersInQueryString(String uri) {
+    //public static Map<String, List<String>> getParametersInQueryString(String uri) {
         // The parameter map
-        Map<String, List<String>> m = new HashMap<String, List<String>>();
-        
+        Map<String, String> m = new HashMap<String, String>();
+        //Map<String, List<String>> m = new HashMap<String, List<String>>();
+        //System.out.println("#getParametersInQueryString invoked with '" + uri + "'");
         // Require that there was a URI string, and that it did contain a "?"
-        if (uri == null || uri.isEmpty() || uri.indexOf("?") == -1)
-            return m; // No? Then don't continue
+        if (uri == null || uri.isEmpty() || !uri.contains("?")) {
+            //System.out.println("NULL or no query string: " + uri);
+            return m; // Nope => return empty map
+        }
         
         // Require that there was in fact something AFTER the "?" as well.
+        String queryString = getQueryString(uri);
+        if (queryString.isEmpty()) {
+            return m; // Nope => return empty map
+        }
+            
+        /*
         uri = uri.substring(uri.indexOf("?"));
         if (uri.length() <= 1) {
             return m; // No? Then don't continue
         } else {
             uri = uri.substring(1); // OK! Now let's remove the trailing "?", so we're left with only the parameters
-        }
+        }*/
         
         // Split on "&" to separate each parameter's key-value pair, then loop
-        String[] params = uri.split("\\&");
-        for (int i = 0; i < params.length; i++) {
-            String[] keyVal = params[i].split("="); // Split on "=" to separate key and value
-            String key = keyVal[0]; // Get the key
-            m.put(key, new ArrayList<String>()); // Put the key in the map
+        String[] keyValPairs = queryString.split("\\&");
+        for (int i = 0; i < keyValPairs.length; i++) {
+            // Separate key and value, and inject into the map
+            String[] keyVal = keyValPairs[i].split("=");
+            String key = keyVal[0];
+            
+            // Handle cases of HTML-escaped ampersand
+            if (key.startsWith("amp;")) {
+                key = key.substring("amp;".length());
+            }
+            m.put(key, "");
+            //System.out.print("#getParametersInQueryString MAPPING " + key);
+            //m.put(key, new ArrayList<String>());
+            // The try/catch is vital to handles cases of "key exists but not value" properly
             try {
-                if (keyVal[1].contains(",")) {
+                m.put(key, keyVal[1]);
+                //System.out.println("=" + keyVal[1]);
+                /*if (keyVal[1].contains(",")) {
+                
+                    //
+                    // The routine below is BAD because the delimiter may 
+                    // alo be "|", ".." (and possibly other ones)
+                    //
+                
                     String[] vals = keyVal[1].split(","); // Split the value on "," to separate multiple values, then loop
                     for (int j = 0; j < vals.length; j++) {
                         String val = vals[j]; // Get the single value string and ... 
@@ -277,29 +444,63 @@ public class APIUtil {
                     }
                 } else {
                     m.get(key).add(keyVal[1]); // Add the single value string
-                }
+                }*/
                 
+            } catch (Exception e) {
+                //System.out.println("=[EMPTY]");
+            }
+        }
+        //System.out.println("Done, returning " + m.size() + " mapped parameters");
+        return m;
+    }
+    
+    /**
+     * Gets a list of all the parameter keys present in the given URI, if any.
+     * 
+     * @param uri The URI, which may or may not include a query string.
+     * @return All the parameter keys present in the given URI, or empty list if none.
+     */
+    public static List<String> getParametersKeysInQueryString(String uri) {
+        List<String> keys = new ArrayList<String>();
+        
+        // Require that there was a URI string, and that it did contain a "?"
+        if (uri == null || uri.isEmpty() || !uri.contains("?"))
+            return keys; // Nope => return empty list
+        
+        // Require that there was in fact something AFTER the "?" as well.
+        String queryString = getQueryString(uri);
+        if (queryString.isEmpty())
+            return keys; // Nope => return empty list
+        
+        // Extract and store each key
+        String[] keyValPairs = queryString.split("\\&");
+        for (String keyValPair : keyValPairs) {
+            try {
+                keys.add(keyValPair.split("=")[0]);
             } catch (Exception e) {}
         }
         
-        return m;
+        return keys;
     }
+    
     /**
      * Converts the given map of parameter names and values to a string.
      * <p>
-     * Any map key should be the parameter name, and its associated list should 
-     * hold any and all parameter value(s).
-     * <p>
-     * Multiple parameter values will be comma-separated in the returned string.
+     * Any map key should be the parameter name, and its associated values. 
+     * (Possibly multiple values delimited by a delimiter in 
+     * {@link APIService.Delimiter}.)
      * 
-     * @param m The parameter map.
-     * @return A string representation of the the given parameter map.
+     * @param keyValuePairs The parameter keys and associated values.
+     * @return A string representation of the the given parameter map, ready to use in a URI.
      */
-    public static String getParameterString(Map<String, List<String>> m) {
+    public static String getParameterString(Map<String, String> keyValuePairs) {
+    //public static String getParameterString(Map<String, List<String>> m) {
         String s = "";
-        Iterator<String> iKeys = m.keySet().iterator();
+        Iterator<String> iKeys = keyValuePairs.keySet().iterator();
         while (iKeys.hasNext()) {
             String key = iKeys.next();
+            s += key + "=" + keyValuePairs.get(key) + (iKeys.hasNext() ? "&" : "");
+            /*
             s += key + "=";
             List<String> vals = m.get(key);
             Iterator<String> iVals = vals.iterator();
@@ -311,6 +512,58 @@ public class APIUtil {
             
             if (iKeys.hasNext())
                 s += "&";
+            */
+        }
+        return s;
+    }
+    
+    /**
+     * Converts the given map of parameter names and values to a string.
+     * <p>
+     * Any map key should be the parameter name, and its associated values. 
+     * (Possibly multiple values delimited by a delimiter in 
+     * {@link APIService.Delimiter}.)
+     * 
+     * @param keyValuePairs The parameter keys and associated values.
+     * @return A string representation of the the given parameter map, ready to use in a URI.
+     */
+    public static String toQueryString(Map<String, String> keyValuePairs) {
+        String s = "";
+        Iterator<String> iKeys = keyValuePairs.keySet().iterator();
+        while (iKeys.hasNext()) {
+            String key = iKeys.next();
+            s += key + "=" + keyValuePairs.get(key) + (iKeys.hasNext() ? "&" : "");
+        }
+        return s;
+    }
+    
+    /**
+     * Converts the given parameter map to a parameter string, stripped of any 
+     * parameters given as exclusions.
+     * 
+     * @param params The parameter map - will not be modified in any way (= safe to pass request.getParameterMap()).
+     * @param exclusions (Optional) parameters to strip from the return string.
+     * @return A parameter string, stripped of any parameters given as exclusions.
+     */
+    public static String toParameterString(Map<String, String[]> params, String ... exclusions) {
+        if (params.isEmpty()) {
+            return "";
+        }
+
+        List<String> e = new ArrayList<String>(0);
+        for (String exclusion : exclusions) {
+            e.add(exclusion);
+        }
+
+        String s = "";
+        Iterator<String> i = params.keySet().iterator();
+        while (i.hasNext()) {
+            String key = i.next(); // e.g. "facets" (parameter name)
+            if (e.contains(key)) {
+                continue;
+            }
+            String[] values = params.get(key); // e.g. get the parameter value(s) for "facets"
+            s += key + "=" + APIService.combine(APIService.Delimiter.AND, values) + (i.hasNext() ? "&" : "");
         }
         return s;
     }
@@ -352,7 +605,11 @@ public class APIUtil {
      * @see #markdownToHtml(java.lang.String, boolean) 
      */
     public static String markdownToHtml(String s) {
-        return markdownToHtml(s, true);
+        try {         
+            return markdownToHtml(s, true);
+        } catch (Exception e) { 
+            return s + "\n<!-- Could not process this as markdown: " + e.getMessage() + " -->"; 
+        }
     }
 
     /** 
@@ -415,5 +672,25 @@ public class APIUtil {
         }
         
         return null; // No match
+    }
+    
+    /**
+     * Gets the date format for the given timestamp, if the timestamp follows a
+     * pattern defined in {@link APIEntry.TimestampPattern}.
+     * 
+     * @param timestamp The timestamp, e.g. "2016-01-01" or "2015".
+     * @return A date format that fits the given timestamp, and can be used to format/parse it.
+     * @see APIEntry.TimestampPattern
+     */
+    public static SimpleDateFormat getTimestampFormat(String timestamp) {
+        for (APIEntry.TimestampPattern t : APIEntry.TimestampPattern.values()) {
+            try {
+                SimpleDateFormat f = new SimpleDateFormat(t.toString());
+                f.parse(timestamp);
+                return f;
+            } catch (Exception e) {}
+        }
+        // Return default
+        return new SimpleDateFormat(APIEntry.TimestampPattern.TIME.toString());
     }
 }

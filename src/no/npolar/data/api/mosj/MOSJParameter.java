@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import no.npolar.data.api.APIEntry;
 import no.npolar.data.api.APIEntryInterface;
 import no.npolar.data.api.APIServiceInterface;
 import no.npolar.data.api.MOSJService;
@@ -26,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class MOSJParameter implements APIEntryInterface {
+public class MOSJParameter extends APIEntry implements APIEntryInterface {
     /** This parameter's ID, as read from the API. */
     private String id = null;
     /** The complete parameter data, as read from the API. */
@@ -45,13 +46,24 @@ public class MOSJParameter implements APIEntryInterface {
     /** Default locale string. */
     public static final String DEFAULT_LOCALE = "en";
     
+    public class Key extends APIEntry.Key {
+        public static final String TITLES = "titles";
+        //public static final String TEXT = "text";
+        public static final String TITLE = "title";
+        //public static final String ID = "id";
+        public static final String RELATED_TIME_SERIES = "timeseries";
+    }
     
     // Data Centre keywords
-    public static final String API_KEY_TITLES = "titles";
-    //public static final String API_KEY_TITLE = "text";
-    public static final String API_KEY_TITLE = "title";
-    public static final String API_KEY_ID = "id";
-    public static final String API_KEY_RELATED_TIME_SERIES = "timeseries";
+    /** @deprecated Use {@link Key#TITLES } instead. */
+    public static final String API_KEY_TITLES = Key.TITLES;//"titles";
+    /** @deprecated Use {@link Key#TITLE } instead. */
+    public static final String API_KEY_TITLE = Key.TITLE;//"title";
+    /** @deprecated Use {@link Key#ID } instead. */
+    public static final String API_KEY_ID = Key.ID;//"id";
+    /** @deprecated Use {@link Key#RELATED_TIME_SERIES } instead. */
+    public static final String API_KEY_RELATED_TIME_SERIES = Key.RELATED_TIME_SERIES;// "timeseries";
+    //public static final String API_KEY_TITLE = Key.TEXT; //"text";
     
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(MOSJParameter.class);
@@ -69,7 +81,7 @@ public class MOSJParameter implements APIEntryInterface {
         this.relatedTimeSeries = new ArrayList<TimeSeries>();
         apiStructure = o;
         try {
-            id = o.getString(API_KEY_ID);
+            id = o.getString(Key.ID);
         } catch (Exception e) {
             throw new InstantiationException("Error attempting to create MOSJ parameter instance from JSON object: " + e.getMessage());
         }
@@ -107,12 +119,15 @@ public class MOSJParameter implements APIEntryInterface {
      */
     private MOSJParameter resolveTimeSeries() {
         this.relatedTimeSeries.clear();
-        if (apiStructure.has(API_KEY_RELATED_TIME_SERIES)) {
+        if (apiStructure.has(Key.RELATED_TIME_SERIES)) {
             try {   
-                JSONArray relatedTimeSeriesArr = this.apiStructure.getJSONArray(API_KEY_RELATED_TIME_SERIES); // Each array entry is a URLs to a related time series
+                JSONArray relatedTimeSeriesArr = this.apiStructure.getJSONArray(Key.RELATED_TIME_SERIES); // Each array entry is a URLs to a related time series
                 for (int i = 0; i < relatedTimeSeriesArr.length(); i++) {
                     try {
-                        String relatedTimeSeriesUrl = relatedTimeSeriesArr.getString(i);
+                        String relatedTimeSeriesUrl = APIUtil.toApiUrl(relatedTimeSeriesArr.getString(i));
+                        if (relatedTimeSeriesUrl == null) {
+                            continue;
+                        }
                         JSONObject timeSeriesJSON = APIUtil.queryService(relatedTimeSeriesUrl);
                         if (timeSeriesJSON == null) {
                             if (LOG.isWarnEnabled()) {
@@ -164,8 +179,8 @@ public class MOSJParameter implements APIEntryInterface {
         String title = null;
         
         try { 
-            JSONArray titles = apiStructure.getJSONArray(API_KEY_TITLES);
-            title = APIUtil.getStringByLocale(titles, API_KEY_TITLE, locale); // Get title in preferred language
+            JSONArray titles = apiStructure.getJSONArray(Key.TITLES);
+            title = APIUtil.getStringByLocale(titles, Key.TITLE, locale); // Get title in preferred language
             /*
             for (int i = 0; i < titles.length(); i++) {
                 JSONObject titleObj = titles.getJSONObject(i);
@@ -174,10 +189,10 @@ public class MOSJParameter implements APIEntryInterface {
             } 
             //*/
             if (title == null)  { // No title in that language
-                title = APIUtil.getStringByLocale(titles, API_KEY_TITLE, new Locale(DEFAULT_LOCALE)); // Get title in default language
+                title = APIUtil.getStringByLocale(titles, Key.TITLE, new Locale(DEFAULT_LOCALE)); // Get title in default language
             }
             if (title == null) {
-                title = titles.getJSONObject(0).getString(API_KEY_TITLE); // Get ANY title (if there are multiple, we select the first one)
+                title = titles.getJSONObject(0).getString(Key.TITLE); // Get ANY title (if there are multiple, we select the first one)
             }
         } catch (Exception e) { 
             if (LOG.isErrorEnabled()) {
@@ -376,7 +391,6 @@ public class MOSJParameter implements APIEntryInterface {
         } catch (Exception e) {
             //s += "<!-- Error: " + e.getMessage() + " -->\n";
             //e.printStackTrace();
-            // ToDo: Log this
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error creating html table for time series collection '" + this.getTimeSeriesCollection().getTitle() + "'.", e);
             }
@@ -468,7 +482,6 @@ public class MOSJParameter implements APIEntryInterface {
         } catch (Exception e) {
             s += "<!-- Error: " + e.getMessage() + " -->\n";
             //e.printStackTrace();
-            // ToDo: Log this
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error creating html table for time series collection '" + this.getTimeSeriesCollection().getTitle() + "'.", e);
             }

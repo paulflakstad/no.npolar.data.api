@@ -862,7 +862,9 @@ public class TimeSeries implements APIEntryInterface {
                     //*/
                     addDataPoint(dp);
                 } catch (Exception e) {
-                    // ToDo: ?
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Undefined error adding data point for time series " + this.getId(), e);
+                    }
                 } 
                 //*
                 if (this.isSingleValueSeries() && this.timestampsType == TimeSeriesTimestamp.TYPE_DATE && numDataPoints >= 500) {

@@ -14,6 +14,7 @@ public class MOSJTestService extends MOSJService {
      * given locale.
      * 
      * @param loc The preferred language.
+     * @param secure Pass <code>true</code> to use https, or <code>false</code> to use http.
      */
     public MOSJTestService(Locale loc, boolean secure) {
         super(loc, secure);

@@ -281,7 +281,7 @@ public class MOSJDataSet {
                             s += dp.getVal("#.#####################");
                         } catch (Exception ee) {
                             //s += "null"; // No, just leave empty
-                            // ToDo: Log this
+                            // ToDo: Log this?
                             //s += "<!-- Error: " + ee.getMessage() + " -->";
                         }
                         s += "</td>";
@@ -292,7 +292,6 @@ public class MOSJDataSet {
                 s += "</tbody>\n";
             }
         } catch (Exception e) {
-            // ToDo: Log this
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error creating Highcharts-munchable table for parameter '" + this.parameterTitle + "'.", e);
             }

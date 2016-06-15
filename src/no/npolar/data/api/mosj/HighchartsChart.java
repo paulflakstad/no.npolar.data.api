@@ -398,7 +398,8 @@ public class HighchartsChart {
                         }
                     } catch (Exception e) {}
                     if (useCategory) {
-                        // ToDo: Default should be datetime, not categories - .... or SHOULD IT???? http://stackoverflow.com/questions/23816474/highcharts-xaxis-yearly-data
+                        // ToDo: Default should be datetime, not categories
+                        // .... or SHOULD IT..? See http://stackoverflow.com/questions/23816474/highcharts-xaxis-yearly-data
                         s += "\ncategories: [" + makeCategoriesString(timeSeriesCollection) + "], ";
                     } else {
                         s += "\ntype: 'datetime', ";
@@ -862,7 +863,7 @@ public class HighchartsChart {
      * @return The values for the single time series, with <code>null</code> values where necessary.
      */
     private String getValuesForTimeSeries(TimeSeriesCollection timeSeriesCollection, TimeSeries timeSeries, boolean errorBarValues) {
-        System.out.print("Generating series data ...");
+        //System.out.print("Generating series data ...");
         long a = System.currentTimeMillis();
         
         
@@ -1092,7 +1093,7 @@ public class HighchartsChart {
                             s += dp.getValue("#.#####################");
                         } catch (Exception ee) {
                             //s += "null"; // No, just leave empty
-                            // ToDo: Log this
+                            // ToDo: Log this ?
                             //s += "<!-- Error: " + ee.getMessage() + " -->";
                         }
                         s += "</td>";
@@ -1104,7 +1105,6 @@ public class HighchartsChart {
             }
         } catch (Exception e) {
             //e.printStackTrace();
-            // ToDo: Log this
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error creating html table for time series collection '" + tsc.getTitle() + "'.", e);
             }

@@ -38,7 +38,7 @@ public class Chapter extends Publication {
         if (!pubYear.isEmpty() || !getPubDate().isEmpty()) {
             s += " " + (!getPubDate().isEmpty() ? getPubDateAsYear() : pubYear) + "."; // Date takes precedence over year
         }
-        if (!this.isState(JSON_VAL_STATE_PUBLISHED)) {
+        if (!this.isState(Val.STATE_PUBLISHED)) {
             s += " <em>(" + labels.getString(Labels.PUB_STATE_PREFIX_0.concat(getState())) + ")</em>";
         }
         
@@ -67,13 +67,13 @@ public class Chapter extends Publication {
                 // Parent editor(s)
                 String parentEditors = parent.getEditors();
                 if (!parentEditors.isEmpty()) {
-                    s += parentEditors + " (" + labels.getString(parent.getPeopleByRole(JSON_VAL_ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ")";
+                    s += parentEditors + " (" + labels.getString(parent.getPeopleByRole(Val.ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ")";
                     s += ": ";
                 }
                 
                 // Parent title and, for books, possibly also volume
                 s += "<a href=\"" + URL_PUBLINK_BASE + parentId + "\">" + parent.getTitle();
-                if (parent.getType().equals(TYPE_BOOK) && !parent.getVolume().isEmpty()) {
+                if (parent.getType() == Type.BOOK && !parent.getVolume().isEmpty()) {
                     s += " (Vol." + NBSP + parent.getVolume() + ")";
                 }
                 s += ". "; // Don't end the parent link before we're done with the entire parent string (series etc.)
@@ -82,7 +82,7 @@ public class Chapter extends Publication {
                 String editorsStr = getEditors();
                 // Parent publication editors
                 if (!editorsStr.isEmpty()) {
-                    s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.JSON_VAL_ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + "): ";
+                    s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.Val.ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + "): ";
                 }
             }
         //}
@@ -110,7 +110,7 @@ public class Chapter extends Publication {
                 s = s.substring(0, s.length()-1);
 
             // Volume / series
-            if (!journalObj.isType(Publication.TYPE_BOOK)) {
+            if (!journalObj.isType(Publication.Type.BOOK)) {
                 if (!journalObj.getVolume().isEmpty() || !journalObj.getJournalSeries().isEmpty()) {
                     if (!journalObj.getJournalSeries().isEmpty()) {
                         s += (journal.isEmpty() ? "" : (journal.endsWith(".") ? "" : ".")) + " " + mappings.getMapping(journalObj.getJournalSeries());

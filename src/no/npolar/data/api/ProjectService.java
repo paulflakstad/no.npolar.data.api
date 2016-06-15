@@ -3,10 +3,12 @@ package no.npolar.data.api;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+//import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.opencms.json.JSONArray;
 import org.opencms.json.JSONException;
 
@@ -17,6 +19,9 @@ import org.opencms.json.JSONException;
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class ProjectService extends APIService {
+    
+    /** The logger. */
+    private static final Log LOG = LogFactory.getLog(MOSJService.class);
     
     /** The URL path to use when accessing the service. */
     protected static final String SERVICE_PATH = "project/";
@@ -32,6 +37,8 @@ public class ProjectService extends APIService {
         this.displayLocale = loc;
         if (displayLocale == null)
             this.displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
+        
+        initPresetParameters();
     }
     
     /**
@@ -43,13 +50,21 @@ public class ProjectService extends APIService {
      * @param id The project ID.
      * @return the project object, or null if no such project could be created.
      */
-    public Project getProject(String id) {
+    public Project get(String id) {
         try {
-            return new Project(this.doRead(id), displayLocale);
+            return new Project(doRead(id), displayLocale);
         } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Could not read Project with ID "+id, e);
+            }
             return null;
         }
     }
+    
+    /**
+     * @deprecated Use {@link #get(java.lang.String)} instead.
+     */
+    public Project getProject(String id) { return get(id); }
     
     /**
      * Queries the service using the given parameters and returns all (if any)
@@ -65,7 +80,7 @@ public class ProjectService extends APIService {
      * @throws JSONException
      * @throws InstantiationException
      */
-    public GroupedCollection<Project> getProjects(Map<String, String[]> params) 
+    public GroupedCollection<Project> getProjects() 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
         
         // Define the order of the grouping
@@ -79,19 +94,27 @@ public class ProjectService extends APIService {
         GroupedCollection<Project> gc = new GroupedCollection<Project>();
         gc.setOrder(order);
         
-        doQuery(params);
-        JSONArray entries = getEntries();
+        JSONArray projectEntries = doQuery(getParameters()).getEntries();
         
-        if (entries != null) {
-            for (int i = 0; i < entries.length(); i++) {
+        if (projectEntries != null) {
+            for (int i = 0; i < projectEntries.length(); i++) {
                 try {
-                    gc.add(new Project(entries.getJSONObject(i), displayLocale));
+                    gc.add(new Project(projectEntries.getJSONObject(i), displayLocale));
                 } catch (Exception e) {
                     throw new InstantiationException("Error when trying to create projects list: " + e.getMessage());
                 }
             }
         }
         return gc;
+    }
+    
+    /**
+     * @deprecated Probably more  {@link #getProjects()} instead.
+     */
+    public GroupedCollection<Project> getProjects(Map<String, String[]> params) 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        addParameters(params);
+        return getProjects();
     }
     
     /**
@@ -111,18 +134,42 @@ public class ProjectService extends APIService {
         
         List<Project> list = new ArrayList<Project> ();
         
-        JSONArray publicationObjects = doQuery(params).getEntries();
+        addParameters(params);
         
-        if (publicationObjects != null) {
-            for (int i = 0; i < publicationObjects.length(); i++) {
+        JSONArray projectEntries = doQuery(apiParams).getEntries();
+        
+        if (projectEntries != null) {
+            for (int i = 0; i < projectEntries.length(); i++) {
                 /*try {*/
-                    list.add(new Project(publicationObjects.getJSONObject(i), displayLocale));
+                    list.add(new Project(projectEntries.getJSONObject(i), displayLocale));
                 /*} catch (Exception e) {
                     throw new InstantiationException("Error when trying to create publications list: " + e.getMessage());
                 }*/
             }
         }
         return list;
+    }
+    
+    /**
+     * Gets a list of projects, using the current settings.
+     * <p>
+     * Intended used <strong>after</strong> having set parameters using 
+     * {@link #addDefaultParameter(java.lang.String, java.lang.String)}, 
+     * {@link #addParameter(java.lang.String, java.lang.String)}, 
+     * {@link #addFilter(java.lang.String, java.lang.String)}, 
+     * {@link #setQueryString(java.lang.String)}, etc.
+     * 
+     * @return A list of projects matching the current set of parameters, or an empty list if none matched.
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
+     */
+    public List<Project> getProjectList() 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        
+        return getProjectList(null);
     }
     
     /**
@@ -136,7 +183,7 @@ public class ProjectService extends APIService {
      * @see APIService#getDefaultParameters()
      * @return the default parameters (if any).
      */
-    @Override
+    /*@Override
     public Map<String, String[]> getDefaultParameters() {
         if (defaultParams == null || defaultParams.isEmpty()) {
             defaultParams = new HashMap<String, String[]>();
@@ -146,6 +193,67 @@ public class ProjectService extends APIService {
         }
         defaultParams.putAll(getUnmodifiableParameters());
         return defaultParams;
+    }*/
+    
+    /**
+     * @see APIService#initDefaultParameters() 
+     */
+    private void initPresetParameters() {
+        initUnmodifiableParameters();
+        initDefaultParameters();
+    }
+    /**
+     * @see APIService#initUnmodifiableParameters() 
+     */
+    private void initUnmodifiableParameters() {
+    }
+    
+    /**
+     * Sets the initial default parameters (if any).
+     * <p>
+     * The following default parameter(s) are set:
+     * <ul>
+     * <li>not-draft: yes</li>
+     * </ul>
+     * <p>
+     * These initial settings can be expanded or modified with  
+     * {@link #makeDefaultParameter(java.lang.String, java.lang.String)} or
+     * {@link #makeDefaultParameter(java.lang.String, no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...)}.
+     * 
+     * @see APIService#getDefaultParameters()
+     */
+    //@Override
+    private void initDefaultParameters() {
+        makeDefaultParameter(
+                modNot(Project.Key.DRAFT),
+                toParamVal(Project.Val.DRAFT_TRUE)
+        );
+    }
+    
+    /**
+     * Adjust setting for whether or not to include entries flagged as drafts.
+     * <p>
+     * This setting will apply appropriate adjustment to the current set of 
+     * default parameters. Any later overriding of the default parameters may
+     * overwrite the setting done here.
+     * 
+     * @param allow Provide true to allow drafts, false to disallow.
+     * @return this service instance, updated with the new value.
+     */
+    public ProjectService setAllowDrafts(boolean allow) {
+        Object currentSetting = getPresetParameters().get(modNot(Publication.Key.DRAFT)); // get("not-draft");
+        
+        if (!allow) {
+                makeDefaultParameter(
+                        modNot(Publication.Key.DRAFT),
+                        toParamVal(Publication.Val.DRAFT_TRUE)
+                );
+        } else {
+            if (currentSetting != null) {
+                defaultParams.remove(modNot(Publication.Key.DRAFT));
+            }
+        }
+        return this;
     }
     
     /**
@@ -155,12 +263,12 @@ public class ProjectService extends APIService {
      * 
      * @return A list of unmodifiable parameters, or an empty list if none. 
      */
-    @Override
+    /*@Override
     public Map<String, String[]> getUnmodifiableParameters() {
         Map<String, String[]> params = new HashMap<String, String[]>();
-        params.put("format", new String[]{ "json" });
+        params.put(Param.FORMAT, new String[] {ParamVal.FORMAT_JSON});
         return params;
-    }
+    }*/
     
     /**
      * @see APIServiceInterface#getServiceBaseURL() 

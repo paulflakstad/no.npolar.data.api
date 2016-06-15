@@ -39,18 +39,18 @@ public class PublicationContributor {
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
         try {
-            try { id = contributor.getString(Publication.JSON_KEY_ID); } catch (Exception e) { }
-            try { organisation = contributor.getString(Publication.JSON_KEY_ORG); } catch (Exception e) { }
-            try { fName = contributor.getString(Publication.JSON_KEY_FNAME); } catch (Exception e) { fName = ""; }
-            try { lName = contributor.getString(Publication.JSON_KEY_LNAME); } catch (Exception e) { lName = ""; }
+            try { id = contributor.getString(Publication.Key.ID); } catch (Exception e) { }
+            try { organisation = contributor.getString(Publication.Key.ORG); } catch (Exception e) { }
+            try { fName = contributor.getString(Publication.Key.FNAME); } catch (Exception e) { fName = ""; }
+            try { lName = contributor.getString(Publication.Key.LNAME); } catch (Exception e) { lName = ""; }
 
             // Evaluate the person's role(s)
             JSONArray rolesArr = null;
             try {
-                rolesArr = contributor.getJSONArray(Publication.JSON_KEY_ROLES);
+                rolesArr = contributor.getJSONArray(Publication.Key.ROLES);
             } catch (Exception e) {
                 // No role defined, assume role=author
-                addRole(Publication.JSON_VAL_ROLE_AUTHOR);
+                addRole(Publication.Val.ROLE_AUTHOR);
             }
             if (rolesArr != null) {
                 for (int j = 0; j < rolesArr.length(); j++) {
@@ -60,7 +60,7 @@ public class PublicationContributor {
             }
 
             // NPI affiliate?
-            try { if (contributor.getString(Publication.JSON_KEY_ORG).equalsIgnoreCase(Publication.JSON_VAL_ORG_NPI)) isNPIContributor = true; } catch (Exception e) {}
+            try { if (contributor.getString(Publication.Key.ORG).equalsIgnoreCase(Publication.Val.ORG_NPI)) isNPIContributor = true; } catch (Exception e) {}
         } catch (Exception e) { }
     }
 
@@ -160,7 +160,7 @@ public class PublicationContributor {
      */
     @Override
     public String toString() {
-        return fName + " " + lName + (hasRole(Publication.JSON_VAL_ROLE_EDITOR) ? " (" + labels.getString(Labels.PUB_REF_EDITOR_0) + ")" : "");
+        return fName + " " + lName + (hasRole(Publication.Val.ROLE_EDITOR) ? " (" + labels.getString(Labels.PUB_REF_EDITOR_0) + ")" : "");
     }
 
     /**
@@ -190,7 +190,7 @@ public class PublicationContributor {
                 s += lName + APIUtil.getInitials(fName);
         }
 
-        if (this.hasRole(Publication.JSON_VAL_ROLE_EDITOR) && specifyEditorRole)
+        if (this.hasRole(Publication.Val.ROLE_EDITOR) && specifyEditorRole)
             s += " (" + labels.getString(Labels.PUB_REF_EDITOR_0) + ")";
 
         if (isNPIContributor)

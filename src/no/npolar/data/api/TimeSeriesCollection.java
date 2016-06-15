@@ -48,8 +48,6 @@ public class TimeSeriesCollection {
     private String title = null;
     /** Holds all various units used in the data set within this time series collection. */
     private List<TimeSeriesDataUnit> units = null;
-    // Default Highcharts chart type. @ToDo: Move all Highcharts-specific stuff to separate class.
-    //public static final String DEFAULT_HC_SERIES_TYPE = "line";
     //** Holds the number of time markers. */
     //protected int numTimeMarkers = 0;
     /** Flag indicating whether this collections contains any error bar series or not. */
@@ -593,7 +591,7 @@ public class TimeSeriesCollection {
                             s += dp.getVal("#.#####################");
                         } catch (Exception ee) {
                             //s += "null"; // No, just leave empty
-                            // ToDo: Log this
+                            // ToDo: Log this?
                             //s += "<!-- Error: " + ee.getMessage() + " -->";
                         }
                         s += "</td>";
@@ -604,7 +602,6 @@ public class TimeSeriesCollection {
                 s += "</tbody>\n";
             }
         } catch (Exception e) {
-            // ToDo: Log this
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error creating Highcharts-munchable table for time series collection '" + this.title + "'.", e);
             }

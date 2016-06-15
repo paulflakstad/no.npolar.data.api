@@ -12,7 +12,7 @@ import org.opencms.json.JSONObject;
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public interface APIServiceInterface {    
+public interface APIServiceInterface {
     /**
      * Gets the service path, like e.g.: "/publication/", "/project/".
      * 
@@ -90,4 +90,26 @@ public interface APIServiceInterface {
      * @return The full URL used in the last service request, or null if no request has yet been issued.
      */
     public String getLastServiceURL();
+    
+    /**
+     * Gets a single entry, identified by the given ID.
+     * 
+     * @param id The ID.
+     * @return A single entry. 
+     */
+    public <T extends APIEntry> T get(String id);
+    
+    // Filtering narrows results by excluding stuff
+    public APIServiceInterface addFilter(String fieldName, String val);
+    public APIServiceInterface addFilter(String key, APIService.Delimiter del, String value, String ... moreValues);
+    
+    // Generic parameters, use for anything
+    public APIServiceInterface addParameter(String key, String val);
+    public APIServiceInterface addParameter(String key, APIService.Delimiter del, String value, String ... moreValues);
+    
+    // Default parameters, should be set by each service type (or instance)
+    public APIServiceInterface addDefaultParameter(String key, APIService.Delimiter del, String value, String ... moreValues);
+    public APIServiceInterface addDefaultParameter(String key, String value);
+    
+    public APIServiceInterface clearParameters();
 }

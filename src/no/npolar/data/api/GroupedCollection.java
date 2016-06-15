@@ -12,6 +12,7 @@ import java.util.Set;
  * Class for storing various types of Data Centre entries, grouped by type.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
+ * @param <T> Any type that implements {@link APIEntryInterface}, e.g. {@link Publication}.
  */
 public class GroupedCollection<T extends APIEntryInterface> {
     private T t;
@@ -21,7 +22,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     /**
      * Creates a new, empty collection.
      */
-    public GroupedCollection() throws InstantiationException {
+    public GroupedCollection() {
         objects = new LinkedHashMap<String, ArrayList<T>>();
     }
     
@@ -86,8 +87,8 @@ public class GroupedCollection<T extends APIEntryInterface> {
      * assigned the group with the given name, or an empty list if no objects are 
      * currently assigned that group.
      * 
-     * @param type The object group name (see {@link APIObjectInterface#getGroupName()} and "TYPE_" prefixed constants of implementing classes).
-     * @return All objects assigned the group with the given name, or an empty list if none.
+     * @param groupName The object group name (see {@link APIObjectInterface#getGroupName()} and "TYPE_" prefixed constants of implementing classes).
+     * @return Aa list containing all objects assigned to the group with the given name, or an empty list if none.
      */
     public ArrayList<T> getListGroup(String groupName) {
         return this.objects.get(groupName);
@@ -96,7 +97,7 @@ public class GroupedCollection<T extends APIEntryInterface> {
     /**
      * Adds an object to this collection.
      * 
-     * @param o The object to add.
+     * @param t The object to add.
      */
     public final void add(T t) {
         if (objects.get(t.getGroupName()) == null) // Should never happen, but anyway ...

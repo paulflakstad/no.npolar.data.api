@@ -199,7 +199,7 @@ public class PersonCollection {
      * @see #containsRoleOnly(java.lang.String)
      */
     public boolean containsEditorsOnly() {
-        return containsRoleOnly(Publication.JSON_VAL_ROLE_EDITOR);
+        return containsRoleOnly(Publication.Val.ROLE_EDITOR);
     }
 
     /**
@@ -210,7 +210,7 @@ public class PersonCollection {
      * @see #containsRoleOnly(java.lang.String)
      */
     public boolean containsTranslatorsOnly() {
-        return containsRoleOnly(Publication.JSON_VAL_ROLE_TRANSLATOR);
+        return containsRoleOnly(Publication.Val.ROLE_TRANSLATOR);
     }
 
     /**

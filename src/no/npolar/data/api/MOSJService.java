@@ -24,8 +24,7 @@ import org.apache.commons.logging.LogFactory;
  * Institute Data Centre.
  * <p>
  * ToDo: In addition to this MOSJ-specific service, there should be an agnostic, 
- *  generic class TimeSeriesService / MonitoringService. This class could then 
- *  probably extend that one.
+ *  generic class, e.g. "MonitoringService", which this class could then extend.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
@@ -39,6 +38,14 @@ public class MOSJService extends APIService {
     
     /** The URL path add-on for time series entries. */
     public static final String SERVICE_PATH_PARAMETER = "parameter/";
+    
+    /**
+     * The pre-defined parameter values used by this service.
+     */
+    public class ParamVal extends APIService.ParamVal {
+        /** The value used in the APIs {@link APIEntry.Key#SYSTEMS} field, for entries that belong to the MOSJ system */
+        public static final String SYSTEM_MOSJ = "mosj.no";
+    }
     
     /** Translations. */
     protected ResourceBundle labels = null;
@@ -62,6 +69,8 @@ public class MOSJService extends APIService {
         if (displayLocale == null)
             displayLocale = new Locale(DEFAULT_LOCALE_NAME);
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
+        
+        initPresetParameters();
     }
     
     /*
@@ -71,10 +80,8 @@ public class MOSJService extends APIService {
     //*/
     
     /**
-     * Queries the service using the given parameters and returns all (if any)
-     * MOSJ parameters.
-     * <p>
-     * This method is not used anymore by this library.
+     * Queries the service using the current parameters and returns all (if any)
+     * MOSJ parameters, generated from the service response.
      * 
      * @param params The query parameters to use in the service request.
      * @return A list of all MOSJ parameters, generated from the service response, or an empty list (= no matches).
@@ -85,12 +92,48 @@ public class MOSJService extends APIService {
      * @throws IOException
      * @throws JSONException
      * @throws InstantiationException
+     * @deprecated Use {@link #getMOSJParameters()} instead.
      */
     public List<MOSJParameter> getMOSJParameters(Map<String, String[]> params) 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
         
-        doQuery(params);
+        /*doQuery(params);
         JSONArray returnedObjects = getEntries();
+        
+        List<MOSJParameter> list = new ArrayList<MOSJParameter>();
+        
+        if (returnedObjects != null) {
+            for (int i = 0; i < returnedObjects.length(); i++) {
+                try {
+                    list.add(new MOSJParameter(returnedObjects.getJSONObject(i)));
+                } catch (Exception e) {
+                    throw new InstantiationException("Error: " + e.getMessage());
+                }
+            }
+        }
+        return list;*/
+        addParameters(params);
+        return getMOSJParameters();
+    }
+    
+    /**
+     * Queries the service using the current parameters and returns all (if any)
+     * MOSJ parameters, generated from the service response.
+     * 
+     * @return A list of all MOSJ parameters, generated from the service response, or an empty list (= no matches).
+     * @see APIService#doQuery(java.util.Map) 
+     * @see APIService#getEntries() 
+     * @throws UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException
+     */
+    public List<MOSJParameter> getMOSJParameters() 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        
+        //doQuery(params);
+        JSONArray returnedObjects = doQuery(getParameters()).getEntries();
         
         List<MOSJParameter> list = new ArrayList<MOSJParameter>();
         
@@ -108,19 +151,73 @@ public class MOSJService extends APIService {
     
     /**
      * Gets a single {@link MOSJParameter}, identified by the given ID.
+     * <p>
+     * ToDo: Create a MOSJParameter OR a TimeSeries instance. doQuery returns a 
+     * JSONObject with a "collection" property at the root level; its value will 
+     * be "parameter" or "timeseries", depending on the type of entry. This also 
+     * means introducing a base class / interface (e.g. MonitoringData), which 
+     * should then be the type returned by this method.
      * 
-     * @param id The ID.
+     * @param id The parameter ID.
      * @return The {@link MOSJParameter} identified by the given ID, or null if no such entry exists.
-     * @throws java.io.UnsupportedEncodingException
-     * @throws MalformedURLException
-     * @throws IOException
-     * @throws JSONException
-     * @throws InstantiationException 
      * @see APIService#doRead(java.lang.String, java.lang.String) 
      */
-    public MOSJParameter getMOSJParameter(String id) 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
-        return new MOSJParameter(this.doRead(id, this.getParameterBaseURL()), displayLocale);
+    public MOSJParameter get(String id) {
+        try  {
+            return new MOSJParameter(this.doRead(id, this.getParameterBaseURL()), displayLocale);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Could not read MOSJ parameter with ID "+id, e);
+            }
+            return null;
+        }
+    }
+    
+    /**
+     * Gets a single {@link TimeSeries}, identified by the given ID.
+     * 
+     * @param id The time series' ID.
+     * @return The {@link TimeSeries} identified by the given ID, or null if no such entry exists.
+     * @see APIService#doRead(java.lang.String, java.lang.String) 
+     */
+    public TimeSeries getMOSJTimeSeries(String id) {
+        try  {
+            return new TimeSeries(doRead(id, this.getTimeSeriesBaseURL()), displayLocale);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Could not read MOSJ time series with ID "+id, e);
+            }
+            return null;
+        }
+    }
+    
+    /**
+     * @deprecated Use {@link #get(java.lang.String)} instead.
+     */
+    public MOSJParameter getMOSJParameter(String id) {
+        return get(id);
+    }
+    /**
+     * @see APIService#initDefaultParameters() 
+     */
+    private void initPresetParameters() {
+        initUnmodifiableParameters();
+        initDefaultParameters();
+    }
+    /**
+     * @see APIService#initUnmodifiableParameters() 
+     */
+    private void initUnmodifiableParameters() {
+        unmodifiableParams.put(
+                APIService.modFilter(APIEntry.Key.SYSTEMS),
+                toParamVal(MOSJService.ParamVal.SYSTEM_MOSJ)
+        );
+    }
+    /**
+     * @see APIService#initDefaultParameters() 
+     */
+    private void initDefaultParameters() {
+        // Nothing here yet
     }
     
     /**
@@ -144,7 +241,8 @@ public class MOSJService extends APIService {
     /**
      * @see APIService#getDefaultParameters()
      */
-    @Override
+    
+    /*@Override
     public Map<String, String[]> getDefaultParameters() {
         if (defaultParams == null || defaultParams.isEmpty()) {
             defaultParams = new HashMap<String, String[]>();
@@ -152,18 +250,26 @@ public class MOSJService extends APIService {
         }
         defaultParams.putAll(getUnmodifiableParameters());
         return defaultParams;
-    }
+    }*/
+    
+    /*@Override
+    protected void initDefaultParameters() {  
+        super.initDefaultParameters();
+    }*/
     
     /**
      * @see APIService#getUnmodifiableParameters() 
      */
-    @Override
+    /*@Override
     public Map<String, String[]> getUnmodifiableParameters() {
-        Map<String, String[]> unmodParams = new HashMap<String, String[]>();
-        unmodParams.put("format", new String[]{ "json" });
-        unmodParams.put("filter-systems", new String[] { "mosj.no" });
-        return unmodParams;
-    }
+        //Map<String, String[]> unmodParams = new HashMap<String, String[]>();
+        //unmodParams.put("format", new String[]{ "json" });
+        //unmodParams.put("filter-systems", new String[] { "mosj.no" });
+        if (unmodifiableParams == null) {
+            initUnmodifiableParameters();
+        }
+        return super.getUnmodifiableParameters();
+    }*/
     
     /**
      * @see APIServiceInterface#getServiceBaseURL() 

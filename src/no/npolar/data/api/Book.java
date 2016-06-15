@@ -35,7 +35,7 @@ public class Book extends Publication {
         } else {
             // No authors, print editor(s), if any
             if (!editorsStr.isEmpty()) {
-                s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.JSON_VAL_ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ")";
+                s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.Val.ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ")";
             }
         }
         
@@ -43,7 +43,7 @@ public class Book extends Publication {
         if (!pubYear.isEmpty() || !getPubDate().isEmpty()) {
             s += " " + (!getPubDate().isEmpty() ? getPubDateAsYear() : pubYear) + "."; // Date takes precedence over year
         }
-        if (!this.isState(JSON_VAL_STATE_PUBLISHED)) {
+        if (!this.isState(Val.STATE_PUBLISHED)) {
             s += " <em>(" + labels.getString(Labels.PUB_STATE_PREFIX_0.concat(getState())) + ")</em>";
         }
         
@@ -57,7 +57,7 @@ public class Book extends Publication {
         
         // 4: Editor(s)
         if (!authorsStr.isEmpty() && !editorsStr.isEmpty()) { // Require both not-empty author(s) AND not-empty editor(s). If not, editor(s) has already been printed in step 1.
-            s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.JSON_VAL_ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ").";
+            s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.Val.ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ").";
         }
         
         // 5: Translator(s)

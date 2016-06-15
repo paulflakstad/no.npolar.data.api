@@ -19,6 +19,7 @@ import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.poi.hpsf.Thumbnail;
 
 /**
  * Represents a single project entry, as read from the Norwegian Polar 
@@ -32,71 +33,91 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class Project implements APIEntryInterface {
+public class Project extends APIEntry implements APIEntryInterface {
 
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(Project.class);
     
-    // JSON keys 
-    public static final String JSON_KEY_ID            = "_id";
-    public static final String JSON_KEY_WORKSPACE     = "workspace";
-    public static final String JSON_KEY_WEBSITE_FLAG  = "website";
-    public static final String JSON_KEY_TITLE         = "title";
-    public static final String JSON_KEY_ABBREV_TITLE  = "acronym";
-    public static final String JSON_KEY_DESCRIPTION   = "summary";
-    public static final String JSON_KEY_ABSTRACT      = "abstract";
-    public static final String JSON_KEY_NPI_ID        = "np_project_number";
-    public static final String JSON_KEY_RIS_ID        = "ris_id";
-    public static final String JSON_KEY_KEYWORDS      = "keywords";
-    public static final String JSON_KEY_LOGO          = "logo_image_url";
-    public static final String JSON_KEY_FEATURED_IMAGE= "featured_image_url";
-    public static final String JSON_KEY_BEGIN         = "start_date";
-    public static final String JSON_KEY_END           = "end_date";
-    public static final String JSON_KEY_TYPE          = "type";
-    public static final String JSON_KEY_GEO_AREA      = "geo_area";
-    public static final String JSON_KEY_PLACENAMES    = "placenames";
-    public static final String JSON_KEY_PLACENAME     = "placename";
-    public static final String JSON_KEY_AREA          = "area";
-    public static final String JSON_KEY_WEBSITE       = "project_url";
-    public static final String JSON_KEY_PEOPLE        = "people";
-    public static final String JSON_KEY_LEADERS       = "project_leaders";
-    public static final String JSON_KEY_PERSON_FNAME  = "first_name";
-    public static final String JSON_KEY_PERSON_LNAME  = "last_name";
-    public static final String JSON_KEY_PERSON_URI    = "url";
-    public static final String JSON_KEY_PERSON_EMAIL  = "email";
-    public static final String JSON_KEY_PERSON_AFFIL  = "affiliation";
-    public static final String JSON_KEY_ROLE          = "role";
-    public static final String JSON_KEY_ORG           = "org";
-    public static final String JSON_KEY_NAME          = "name";
-    public static final String JSON_KEY_ORGANISATION  = "organisation";
-    public static final String JSON_KEY_ORGANISATIONS = "organisations";
-    public static final String JSON_KEY_PERSON_INST   = "institution";
-    public static final String JSON_KEY_PARTICIPANTS  = "project_participants";
-    public static final String JSON_KEY_PARTNER       = "contract_partners";
-    public static final String JSON_KEY_TOPICS        = "topics";
-    public static final String JSON_KEY_AFFIL_ICE     = "affiliated_ICE";
-    public static final String JSON_KEY_RES_PROG      = "research_programs";
-    public static final String JSON_KEY_RES_PROG_TITLE= "title";
-    public static final String JSON_KEY_RES_PROG_URI  = "href";
-    public static final String JSON_KEY_TRANSLATIONS  = "translations";
+    /**
+     * System keys / field names.
+     */
+    public class Key extends APIEntry.Key {
+        public static final String WORKSPACE     = "workspace";
+        public static final String WEBSITE_FLAG  = "website";
+        public static final String TITLE         = "title";
+        public static final String ABBREV_TITLE  = "acronym";
+        public static final String DESCRIPTION   = "summary";
+        public static final String ABSTRACT      = "abstract";
+        public static final String STATE         = "translations";
+        public static final String NPI_ID        = "np_project_number";
+        public static final String RIS_ID        = "ris_id";
+        public static final String KEYWORDS      = "keywords";
+        public static final String LOGO          = "logo_image_url";
+        public static final String FEATURED_IMAGE= "featured_image_url";
+        public static final String BEGIN         = "start_date";
+        public static final String END           = "end_date";
+        public static final String TYPE          = "type";
+        public static final String DRAFT         = "draft";
+        public static final String GEO_AREA      = "geo_area";
+        public static final String PLACENAMES    = "placenames";
+        public static final String PLACENAME     = "placename";
+        public static final String AREA          = "area";
+        public static final String WEBSITE       = "project_url";
+        public static final String PEOPLE        = "people";
+        public static final String LEADERS       = "project_leaders";
+        public static final String PERSON_FNAME  = "first_name";
+        public static final String PERSON_LNAME  = "last_name";
+        public static final String PERSON_URI    = "url";
+        public static final String PERSON_EMAIL  = "email";
+        public static final String PERSON_AFFIL  = "affiliation";
+        public static final String ROLE          = "role";
+        public static final String ORG           = "org";
+        public static final String NAME          = "name";
+        public static final String ORGANISATION  = "organisation";
+        public static final String ORGANISATIONS = "organisations";
+        public static final String PERSON_INST   = "institution";
+        public static final String PARTICIPANTS  = "project_participants";
+        public static final String PARTNER       = "contract_partners";
+        public static final String TOPICS        = "topics";
+        public static final String AFFIL_ICE     = "affiliated_ICE";
+        public static final String RES_PROG      = "research_programs";
+        public static final String RES_PROG_TITLE= "title";
+        public static final String RES_PROG_URI  = "href";
+        public static final String TRANSLATIONS  = "translations";
+    }
     
-    // JSON pre-defined values
-    public static final String JSON_VAL_PROJECT_LEADER = "projectLeader";
-    public static final String JSON_VAL_PROJECT_PARTICIPANT = "projectParticipant";
+    /**
+     * Pre-defined system values.
+     */
+    public class Val extends APIEntry.Val {
+        public static final String PROJECT_LEADER = "projectLeader";
+        public static final String PROJECT_PARTICIPANT = "projectParticipant";
+
+        public static final String STATE_PLANNED = "planned";
+        public static final String STATE_ONGOING = "ongoing";
+        public static final String STATE_COMPLETED = "completed";
+        public static final String STATE_CANCELLED = "cancelled";
+
+        public static final String TYPE_RESEARCH = "Research";
+        public static final String TYPE_MONITORING = "Monitoring";
+        public static final String TYPE_MODELLING = "Modeling";
+        public static final String TYPE_MAPPING = "Mapping";
+        public static final String TYPE_EDUCATION = "Education";
+        
+        public static final String DRAFT_TRUE = "yes";
+        public static final String DRAFT_FALSE = "no";
+        
+        public static final String ROLE_OWNER = "owner";
+        public static final String ROLE_PARTNER = "partner";
+        public static final String ROLE_LEADER = "projectLeader";
+        public static final String ROLE_PARTICIPANT = "projectParticipant";
+    }
     
-    public static final String JSON_VAL_STATE_PLANNED = "planned";
-    public static final String JSON_VAL_STATE_ONGOING = "ongoing";
-    public static final String JSON_VAL_STATE_COMPLETED = "completed";
-    public static final String JSON_VAL_STATE_CANCELLED = "cancelled";
     
-    public static final String JSON_VAL_TYPE_RESEARCH = "Research";
-    public static final String JSON_VAL_TYPE_MONITORING = "Monitoring";
-    public static final String JSON_VAL_TYPE_MODELLING = "Modeling";
-    public static final String JSON_VAL_TYPE_MAPPING = "Mapping";
-    public static final String JSON_VAL_TYPE_EDUCATION = "Education";
-    
-    
-    /** The date format used in the JSON. */
+    /** 
+     * The date format used in the JSON. 
+     * @deprecated There is no longer a single timestamp pattern, see {@link APIEntry.TimestampPattern}.
+     */
     public static final String DATE_FORMAT_PATTERN_JSON = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     /** The base URL for publication links. */
     public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
@@ -168,7 +189,7 @@ public class Project implements APIEntryInterface {
     
     protected JSONArray topics = null;
     
-    private final SimpleDateFormat DATE_FORMAT_JSON = new SimpleDateFormat(DATE_FORMAT_PATTERN_JSON);
+    //private final SimpleDateFormat DATE_FORMAT_JSON = new SimpleDateFormat(DATE_FORMAT_PATTERN_JSON);
     private SimpleDateFormat dfOutput = null;
     
     private List<ProjectParticipant> leaders = new ArrayList<ProjectParticipant>();
@@ -223,47 +244,47 @@ public class Project implements APIEntryInterface {
         
         ////////////////////////////////////////////////////////////////////////
         // Simple stuff
-        try { id = o.getString(JSON_KEY_ID); } catch (Exception e) { id = null; }
-        try { title = o.getString(JSON_KEY_TITLE); } catch (Exception e) { title = DEFAULT_TITLE; }
-        try { titleAbbrev = o.getString(JSON_KEY_ABBREV_TITLE); } catch (Exception e) { }
-        try { npiId = o.getString(JSON_KEY_NPI_ID); } catch (Exception e) { }
-        try { risId = o.getString(JSON_KEY_RIS_ID); } catch (Exception e) { }
-        try { description = o.getString(JSON_KEY_DESCRIPTION); } catch (Exception e) { }
-        try { abstr = o.getString(JSON_KEY_ABSTRACT); } catch (Exception e) { }
-        try { type = o.getString(JSON_KEY_TYPE); } catch (Exception e) { }
+        try { id = o.getString(Key.ID); } catch (Exception e) { id = null; }
+        try { title = o.getString(Key.TITLE); } catch (Exception e) { title = DEFAULT_TITLE; }
+        try { titleAbbrev = o.getString(Key.ABBREV_TITLE); } catch (Exception e) { }
+        try { npiId = o.getString(Key.NPI_ID); } catch (Exception e) { }
+        try { risId = o.getString(Key.RIS_ID); } catch (Exception e) { }
+        try { description = o.getString(Key.DESCRIPTION); } catch (Exception e) { }
+        try { abstr = o.getString(Key.ABSTRACT); } catch (Exception e) { }
+        try { type = o.getString(Key.TYPE); } catch (Exception e) { }
         
         ////////////////////////////////////////////////////////////////////////
         // Topics
-        try { topics    = o.getJSONArray(JSON_KEY_TOPICS); } catch (Exception e) { }
+        try { topics    = o.getJSONArray(Key.TOPICS); } catch (Exception e) { }
         
         ////////////////////////////////////////////////////////////////////////
         // Simple stuff that needs string substitution
-        //try { area = listToString(Arrays.asList(jsonArrayToStringArray(p.getJSONArray(JSON_KEY_GEO_AREA)))); } catch (Exception e) { }
-        try { keywords  = APIUtil.listToString(Arrays.asList(APIUtil.jsonArrayToStringArray(o.getJSONArray(JSON_KEY_KEYWORDS), null)), null); } catch (Exception e) { }
-        //try { type      = APIUtil.listToString(Arrays.asList(APIUtil.jsonArrayToStringArray(o.getJSONArray(JSON_KEY_TYPE), null)), mappings); } catch (Exception e) { }
-        //try { topics    = APIUtil.listToString(Arrays.asList(APIUtil.jsonArrayToStringArray(o.getJSONArray(JSON_KEY_TOPICS), null)), mappings); } catch (Exception e) { }
+        //try { area = listToString(Arrays.asList(jsonArrayToStringArray(p.getJSONArray(Key.GEO_AREA)))); } catch (Exception e) { }
+        try { keywords  = APIUtil.listToString(Arrays.asList(APIUtil.jsonArrayToStringArray(o.getJSONArray(Key.KEYWORDS), null)), null); } catch (Exception e) { }
+        //try { type      = APIUtil.listToString(Arrays.asList(APIUtil.jsonArrayToStringArray(o.getJSONArray(Key.TYPE), null)), mappings); } catch (Exception e) { }
+        //try { topics    = APIUtil.listToString(Arrays.asList(APIUtil.jsonArrayToStringArray(o.getJSONArray(Key.TOPICS), null)), mappings); } catch (Exception e) { }
 
 
         ////////////////////////////////////////////////////////////////////////
         // Start & end dates
         try {
-            dateStart = DATE_FORMAT_JSON.parse(o.getString(JSON_KEY_BEGIN));
+            dateStart = getDate(o.getString(Key.BEGIN));// DATE_FORMAT_JSON.parse(o.getString(Key.BEGIN));
         } catch (Exception e) {}
 
         try {
-            dateEnd = DATE_FORMAT_JSON.parse(o.getString(JSON_KEY_END));
+            dateEnd = getDate(o.getString(Key.END));//DATE_FORMAT_JSON.parse(o.getString(Key.END));
         } catch (Exception e) {}
 
         ////////////////////////////////////////////////////////////////////////
         // Placenames
         try {
-            JSONArray placenamesArr = o.getJSONArray(JSON_KEY_PLACENAMES);
+            JSONArray placenamesArr = o.getJSONArray(Key.PLACENAMES);
             for (int i = 0; i < placenamesArr.length(); i++) {
                 JSONObject placenameObj = placenamesArr.getJSONObject(i);
                 String placename = "";
                 String area = "";
-                try { placename = placenameObj.getString(JSON_KEY_PLACENAME); } catch (Exception e) {  }
-                try { area = placenameObj.getString(JSON_KEY_AREA); } catch (Exception e) {  }
+                try { placename = placenameObj.getString(Key.PLACENAME); } catch (Exception e) {  }
+                try { area = placenameObj.getString(Key.AREA); } catch (Exception e) {  }
                 placenames.add(new OptLink("" + placename + (placename.isEmpty() ? "" : ", ") + area));
             }
         } catch (Exception e) {
@@ -273,14 +294,14 @@ public class Project implements APIEntryInterface {
         ////////////////////////////////////////////////////////////////////////
         // People
         try {
-            JSONArray peopleArr = o.getJSONArray(JSON_KEY_PEOPLE);
+            JSONArray peopleArr = o.getJSONArray(Key.PEOPLE);
             for (int i = 0; i < peopleArr.length(); i++) {
                 JSONObject personObj = peopleArr.getJSONObject(i);
-                ProjectParticipant participant = new ProjectParticipant(personObj.getString(JSON_KEY_PERSON_FNAME), personObj.getString(JSON_KEY_PERSON_LNAME));
+                ProjectParticipant participant = new ProjectParticipant(personObj.getString(Key.PERSON_FNAME), personObj.getString(Key.PERSON_LNAME));
                 try { 
                     // Organization (per person)
-                    //String orgName = personObj.getJSONObject(JSON_KEY_PERSON_AFFIL).getString(JSON_KEY_ORG);
-                    String orgName = personObj.getString(JSON_KEY_ORGANISATION);
+                    //String orgName = personObj.getJSONObject(Key.PERSON_AFFIL).getString(Key.ORG);
+                    String orgName = personObj.getString(Key.ORGANISATION);
                     if (!orgName.isEmpty()) {
                         String symbol = "";
                         if (!symbolMappings.containsValue(orgName)) {
@@ -299,10 +320,10 @@ public class Project implements APIEntryInterface {
                         */
                     }
                 } catch (Exception e) {  }
-                try { participant.setUri(personObj.getString(JSON_KEY_PERSON_URI)); } catch (Exception e) {  }
+                try { participant.setUri(personObj.getString(Key.PERSON_URI)); } catch (Exception e) {  }
                 String role = "";
-                try { role = personObj.getString(JSON_KEY_ROLE); } catch (Exception e) {}
-                if (role.equals(JSON_VAL_PROJECT_LEADER))
+                try { role = personObj.getString(Key.ROLE); } catch (Exception e) {}
+                if (role.equals(Val.PROJECT_LEADER))
                     leaders.add(participant);
                 else 
                     participants.add(participant);
@@ -312,13 +333,13 @@ public class Project implements APIEntryInterface {
         ////////////////////////////////////////////////////////////////////////
         // Organizations (per project) - aka "partners"
         try {
-            JSONArray organisationsArr = o.getJSONArray(JSON_KEY_ORGANISATIONS);
+            JSONArray organisationsArr = o.getJSONArray(Key.ORGANISATIONS);
             for (int i = 0; i < organisationsArr.length(); i++) {
                 JSONObject organisationObj = organisationsArr.getJSONObject(i);
                 String orgName = "";
                 String orgRole = "";
-                try { orgName = organisationObj.getString(JSON_KEY_NAME); } catch (Exception e) {  }
-                try { orgRole = organisationObj.getString(JSON_KEY_ROLE); } catch (Exception e) {  }
+                try { orgName = organisationObj.getString(Key.NAME); } catch (Exception e) {  }
+                try { orgRole = organisationObj.getString(Key.ROLE); } catch (Exception e) {  }
 
                 partners.add(new OptLink("" + orgName));// + (orgName.isEmpty() ? "" : ", ") + orgRole));
             }
@@ -327,47 +348,47 @@ public class Project implements APIEntryInterface {
         ////////////////////////////////////////////////////////////////////////
         // translations
         try {
-            JSONObject translationsObj = o.getJSONObject(JSON_KEY_TRANSLATIONS).getJSONObject(mappings.getMapping(displayLocale.toString()));
+            JSONObject translationsObj = o.getJSONObject(Key.TRANSLATIONS).getJSONObject(mappings.getMapping(displayLocale.toString()));
             try {
-                description = translationsObj.getString(JSON_KEY_DESCRIPTION);
+                description = translationsObj.getString(Key.DESCRIPTION);
             } catch (Exception e) {}
             try {
-                abstr = translationsObj.getString(JSON_KEY_ABSTRACT);
+                abstr = translationsObj.getString(Key.ABSTRACT);
             } catch (Exception e) {}
         } catch (Exception e) {}
 
 
         /*
         try {
-            JSONArray leadersArr = p.getJSONArray(JSON_KEY_LEADERS);
+            JSONArray leadersArr = p.getJSONArray(Key.LEADERS);
             for (int i = 0; i < leadersArr.length(); i++) {
                 JSONObject leader = leadersArr.getJSONObject(i);
-                Person person = new Person(leader.getString(JSON_KEY_PERSON_FNAME), leader.getString(JSON_KEY_PERSON_LNAME));
+                Person person = new Person(leader.getString(Key.PERSON_FNAME), leader.getString(Key.PERSON_LNAME));
                 try { 
-                    String inst = leader.getString(JSON_KEY_PERSON_INST);
+                    String inst = leader.getString(Key.PERSON_INST);
                     person.setInstitution(inst);
                     if (symbolMappings.get(inst) == null) {
                         symbolMappings.put(inst, getNextOrgSymbol());
                     }
                 } catch (Exception e) {  }
-                try { person.setUri(leader.getString(JSON_KEY_PERSON_URI)); } catch (Exception e) {  }
+                try { person.setUri(leader.getString(Key.PERSON_URI)); } catch (Exception e) {  }
                 leaders.add(person);
             }
         } catch (Exception e) {}
 
         try {
-            JSONArray participantsArr = p.getJSONArray(JSON_KEY_PARTICIPANTS);
+            JSONArray participantsArr = p.getJSONArray(Key.PARTICIPANTS);
             for (int i = 0; i < participantsArr.length(); i++) {
                 JSONObject participant = participantsArr.getJSONObject(i);
-                Person person = new Person(participant.getString(JSON_KEY_PERSON_FNAME), participant.getString(JSON_KEY_PERSON_LNAME));
+                Person person = new Person(participant.getString(Key.PERSON_FNAME), participant.getString(Key.PERSON_LNAME));
                 try { 
-                    String inst = participant.getString(JSON_KEY_PERSON_INST);
+                    String inst = participant.getString(Key.PERSON_INST);
                     person.setInstitution(inst);
                     if (symbolMappings.get(inst) == null) {
                         symbolMappings.put(inst, getNextOrgSymbol());
                     }
                 } catch (Exception e) {  }
-                try { person.setUri(participant.getString(JSON_KEY_PERSON_URI)); } catch (Exception e) {  }
+                try { person.setUri(participant.getString(Key.PERSON_URI)); } catch (Exception e) {  }
                 participants.add(person);
             }
         } catch (Exception e) {}
@@ -375,11 +396,11 @@ public class Project implements APIEntryInterface {
         ////////////////////////////////////////////////////////////////////////
         // Programmes
         try {
-            JSONArray programmesArr = o.getJSONArray(JSON_KEY_RES_PROG);
+            JSONArray programmesArr = o.getJSONArray(Key.RES_PROG);
             for (int i = 0; i < programmesArr.length(); i++) {
                 JSONObject programme = programmesArr.getJSONObject(i);
-                OptLink optLink = new OptLink(mappings.getMapping(programme.getString(JSON_KEY_RES_PROG_TITLE)));
-                try { optLink.setUri(programme.getString(JSON_KEY_RES_PROG_URI)); } catch (Exception e) {  }
+                OptLink optLink = new OptLink(mappings.getMapping(programme.getString(Key.RES_PROG_TITLE)));
+                try { optLink.setUri(programme.getString(Key.RES_PROG_URI)); } catch (Exception e) {  }
                 programmes.add(optLink);
             }
         } catch (Exception e) {}
@@ -501,6 +522,17 @@ public class Project implements APIEntryInterface {
         if (getDateEnd() != null)
             s += (html ? "&nbsp;&ndash;&nbsp;" : " - ") + dfOutput.format(getDateEnd());
         return s;
+    }
+    
+    private Date getDate(String timestamp) {
+        try { 
+            return APIUtil.getTimestampFormat(timestamp).parse(timestamp);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unable to determine start for project with ID " + this.id);
+            }
+            return new Date();
+        }
     }
     
     /**
@@ -736,6 +768,22 @@ public class Project implements APIEntryInterface {
     public List<OptLink> getPartners() {
         return partners;
     }
+    /*
+    public static SimpleDateFormat getTimestampFormat(String timestamp) {
+        for (TimestampPattern t : TimestampPattern.values()) {
+            try {
+                SimpleDateFormat f = new SimpleDateFormat(t.toString());
+                f.parse(timestamp);
+                return f;
+                //pattern = f.toPattern();
+                //break;
+            } catch (Exception e) {
+                //System.out.println("Timestamp [" + ts + "] did not fit pattern [" + t.toString() + "]");
+            }
+        }
+        // Return default
+        return new SimpleDateFormat(TimestampPattern.TIME.toString());
+    }*/
     
     /**
      * Gets a crude string representation of this project, consisting of the
@@ -771,4 +819,116 @@ public class Project implements APIEntryInterface {
      */
     @Override
     public JSONObject getJSON() { return this.o; }
+    
+    
+    
+    
+    // JSON keys 
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ID            = Key.ID;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_WORKSPACE     = Key.WORKSPACE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_WEBSITE_FLAG  = Key.WEBSITE_FLAG;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_TITLE         = Key.TITLE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ABBREV_TITLE  = Key.ABBREV_TITLE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_DESCRIPTION   = Key.DESCRIPTION;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ABSTRACT      = Key.ABSTRACT;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_NPI_ID        = Key.NPI_ID;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_RIS_ID        = Key.RIS_ID;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_KEYWORDS      = Key.KEYWORDS;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_LOGO          = Key.LOGO;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_FEATURED_IMAGE= Key.FEATURED_IMAGE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_BEGIN         = Key.BEGIN;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_END           = Key.END;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_TYPE          = Key.TYPE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_GEO_AREA      = Key.GEO_AREA;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PLACENAMES    = Key.PLACENAMES;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PLACENAME     = Key.PLACENAME;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_AREA          = Key.AREA;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_WEBSITE       = Key.WEBSITE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PEOPLE        = Key.PEOPLE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_LEADERS       = Key.LEADERS;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PERSON_FNAME  = Key.PERSON_FNAME;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PERSON_LNAME  = Key.PERSON_LNAME;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PERSON_URI    = Key.PERSON_URI;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PERSON_EMAIL  = Key.PERSON_EMAIL;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PERSON_AFFIL  = Key.PERSON_AFFIL;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ROLE          = Key.ROLE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ORG           = Key.ORG;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_NAME          = Key.NAME;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ORGANISATION  = Key.ORGANISATION;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_ORGANISATIONS = Key.ORGANISATIONS;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PERSON_INST   = Key.PERSON_INST;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PARTICIPANTS  = Key.PARTICIPANTS;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_PARTNER       = Key.PARTNER;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_TOPICS        = Key.TOPICS;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_AFFIL_ICE     = Key.AFFIL_ICE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_RES_PROG      = Key.RES_PROG;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_RES_PROG_TITLE= Key.RES_PROG_TITLE;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_RES_PROG_URI  = Key.RES_PROG_URI;
+    /** @deprecated Use {@link Key} instead. */
+    public static final String JSON_KEY_TRANSLATIONS  = Key.TRANSLATIONS;
+    
+    // JSON pre-defined values
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_PROJECT_LEADER = Val.PROJECT_LEADER;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_PROJECT_PARTICIPANT = Val.PROJECT_PARTICIPANT;
+    
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_STATE_PLANNED = Val.STATE_PLANNED;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_STATE_ONGOING = Val.STATE_ONGOING;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_STATE_COMPLETED = Val.STATE_COMPLETED;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_STATE_CANCELLED = Val.STATE_CANCELLED;
+    
+    public static final String JSON_VAL_TYPE_RESEARCH = Val.TYPE_RESEARCH;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_TYPE_MONITORING = Val.TYPE_MONITORING;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_TYPE_MODELLING = Val.TYPE_MODELLING;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_TYPE_MAPPING = Val.TYPE_MAPPING;
+    /** @deprecated Use {@link Val} instead. */
+    public static final String JSON_VAL_TYPE_EDUCATION = Val.TYPE_EDUCATION;
 }

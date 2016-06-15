@@ -9,10 +9,11 @@ import java.util.Set;
  * Class for storing Publication objects, grouped by type.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
+ * @deprecated This library uses the more generic {@link GroupedCollection} instead.
  */
 public class PublicationCollection {
     /** The list container, where all publications in this collection is stored. */
-    private LinkedHashMap<String, ArrayList<Publication>> pubs = null;
+    private LinkedHashMap<Publication.Type, ArrayList<Publication>> pubs = null;
     
     /** The pre-defined keyword for identifying peer-reviewed publications. */
     //public static final String PEER_REVIEWED = "peer-reviewed";
@@ -44,8 +45,24 @@ public class PublicationCollection {
     //public static final String OTHER = "other";
     
     /** Order definition – dictates in what order Publications are stored and printed. */
-    String[] order = { 
-        Publication.TYPE_PEER_REVIEWED,
+    Publication.Type[] order = { 
+    //String[] order = { 
+        Publication.Type.PEER_REVIEWED,
+        Publication.Type.BOOK,
+        Publication.Type.EDITORIAL,
+        Publication.Type.REPORT,
+        Publication.Type.MAP,
+        Publication.Type.REVIEW,
+        Publication.Type.PROCEEDINGS,
+        Publication.Type.ABSTRACT,
+        Publication.Type.CORRECTION,
+        Publication.Type.PHD,
+        Publication.Type.MASTER,
+        Publication.Type.POSTER,
+        Publication.Type.POPULAR,
+        Publication.Type.OTHER,
+        Publication.Type.UNDEFINED
+        /*Publication.TYPE_PEER_REVIEWED,
         Publication.TYPE_BOOK,
         Publication.TYPE_EDITORIAL,
         Publication.TYPE_REPORT,
@@ -58,7 +75,7 @@ public class PublicationCollection {
         Publication.TYPE_MASTER,
         Publication.TYPE_POSTER,
         Publication.TYPE_POPULAR,
-        Publication.TYPE_OTHER
+        Publication.TYPE_OTHER*/
     };
     
     /**
@@ -96,7 +113,7 @@ public class PublicationCollection {
      * @return All publications of the given type currently in this collection, or an empty list if none.
      */
     public ArrayList<Publication> getListByType(String pubType) {
-        return this.pubs.get(pubType);
+        return this.pubs.get(Publication.Type.forString(pubType));
     }
     
     /**
@@ -125,7 +142,8 @@ public class PublicationCollection {
      * 
      * @return The publication types contained in this collection.
      */
-    public Set<String> getTypesContained() {
+    public Set<Publication.Type> getTypesContained() {
+    //public Set<String> getTypesContained() {
         return pubs.keySet();
     }
     
@@ -136,7 +154,8 @@ public class PublicationCollection {
      */
     public int size() {
         int size = 0;
-        Iterator<String> i = pubs.keySet().iterator();
+        Iterator<Publication.Type> i = pubs.keySet().iterator();
+        //Iterator<String> i = pubs.keySet().iterator();
         while (i.hasNext()) {
             size += pubs.get(i.next()).size();
         }

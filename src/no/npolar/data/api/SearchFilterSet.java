@@ -47,11 +47,24 @@ public class SearchFilterSet {
             new Comparator<SearchFilterSet>() {
                 @Override
                 public int compare(SearchFilterSet obj1, SearchFilterSet obj2) {
-                    if (obj1.getRelevancy() > obj2.getRelevancy())
+                    try {
+                        // Integer.compare() throws NoSuchMethodException (at least on some Java versions)
+                        //return Integer.compare(obj2.getRelevancy(), obj1.getRelevancy());
+                        if (obj2.getRelevancy() > obj1.getRelevancy()) {
+                            return 1;
+                        } else if (obj2.getRelevancy() < obj1.getRelevancy()) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    } catch (Exception e) { 
+                        return 0;
+                    }
+                    /*if (obj1.getRelevancy() > obj2.getRelevancy())
                         return -1;
                     else if (obj1.getRelevancy() < obj2.getRelevancy())
                         return 1;
-                    return 0;
+                    return 0;*/
                 }
             };
     
@@ -225,8 +238,8 @@ public class SearchFilterSet {
     /**
      * Gets the relevancy weight.
      * <p>
-     * The relevancy weight is typically used for ordering filter sets when 
-     * dealing with many at a time.
+     * The relevancy weight is typically used for ordering filter sets, when 
+     * many sets are to appear together.
      * <p>
      * If not modified, the filter set has relevancy weight = 1 (default).
      * 
@@ -238,8 +251,9 @@ public class SearchFilterSet {
     
     /**
      * Sets the relevancy weight.
-     * <p>The relevancy weight is typically used for ordering filter sets when 
-     * dealing with many at a time.
+     * <p>
+     * The relevancy weight is typically used for ordering filter sets when 
+     * many sets are to appear together.
      * <p>
      * If not modified, the filter set has relevancy weight = 1 (default).
      * 

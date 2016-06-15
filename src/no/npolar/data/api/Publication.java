@@ -1,5 +1,6 @@
 package no.npolar.data.api;
 
+import com.google.gwt.aria.client.Roles;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,124 +33,478 @@ import org.apache.commons.logging.LogFactory;
  * @see https://data.npolar.no/publications/
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class Publication implements APIEntryInterface {
+public class Publication extends APIEntry implements APIEntryInterface {
 
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(Publication.class);
     /** The JSON object that this instance is built from. */
     private JSONObject o = null;
     
-    /** JSON key: Publication title. */
-    public static final String JSON_KEY_TITLE           = "title";
-    /** JSON key: Links. */
-    public static final String JSON_KEY_LINKS           = "links";
-    /** JSON key: Links -> rel. */
-    public static final String JSON_KEY_LINK_REL        = "rel";
-    /** JSON key: Links -> href. */
-    public static final String JSON_KEY_LINK_HREF       = "href";
-    /** JSON key: Links -> href language. */
-    public static final String JSON_KEY_LINK_HREFLANG   = "hreflang";
-    /** JSON key: Type. */
-    public static final String JSON_KEY_LINK_TYPE       = "type";
-    /** JSON key: Published timestamp. */
-    public static final String JSON_KEY_PUB_TIME        = "published";
-    /** JSON key: Published timestamp accuracy. */
+    /**
+     * JSON key: Publication title.
+     * @deprecated Use {@link Key#TITLE} instead.
+     */
+    public static final String JSON_KEY_TITLE           = Key.TITLE;
+    /**
+     * JSON key: Links.
+     * @deprecated Use {@link Key#LINKS} instead.
+     */
+    public static final String JSON_KEY_LINKS           = Key.LINKS;
+    /**
+     * JSON key: The rel property of a link.
+     * @deprecated Use {@link Key#LINK_REL} instead.
+     */
+    public static final String JSON_KEY_LINK_REL        = Key.LINK_REL;
+    /**
+     * JSON key: The href property of a link.
+     * @deprecated Use {@link Key#LINK_HREF} instead.
+     */
+    public static final String JSON_KEY_LINK_HREF       = Key.LINK_HREF;
+    /**
+     * JSON key: The hreflang property of a link.
+     * @deprecated Use {@link Key#LINK_HREFLANG} instead.
+     */
+    public static final String JSON_KEY_LINK_HREFLANG   = Key.LINK_HREFLANG;
+    /**
+     * JSON key: Type of publication.
+     * @deprecated Use {@link Key#LINK_TYPE} instead.
+     */
+    public static final String JSON_KEY_LINK_TYPE       = Key.LINK_TYPE;
+    /**
+     * JSON key: Published timestamp.
+     * @deprecated Use {@link Key#PUB_TIME} instead.
+     */
+    public static final String JSON_KEY_PUB_TIME        = Key.PUB_TIME;
+    /**
+     * JSON key: Published timestamp accuracy.
+     * @deprecated This field has been removed. (Implicitly defined by {@link Key#PUB_TIME}.)
+     */
     public static final String JSON_KEY_PUB_ACCURACY    = "published_helper";
-    /** JSON key: Publish year. */
+    /** 
+     * JSON key: Publish year. 
+     * @deprecated Use {@link Key#PUB_TIME} instead.
+     */
     public static final String JSON_KEY_PUBYEAR         = "published-year";
-    /** JSON key: Publish date. */
+    /**
+     * JSON key: Publish date. 
+     * @deprecated Use {@link Key#PUB_TIME} instead.
+     */
     public static final String JSON_KEY_PUBDATE         = "published-date";
-    /** JSON key: ID. */
-    public static final String JSON_KEY_ID              = "id";
-    /** JSON key: Publication type. */
-    public static final String JSON_KEY_TYPE            = "publication_type";
-    /** JSON key: Publication language. */
-    public static final String JSON_KEY_LANGUAGE        = "publication_lang";
-    /** JSON key: Publication state. */
-    public static final String JSON_KEY_STATE           = "state";
-    /** JSON key: Comment. */
-    public static final String JSON_KEY_COMMENT         = "comment";
-    /** JSON key: Volume. */
-    public static final String JSON_KEY_VOLUME          = "volume";
-    /** JSON key: Issue. */
-    public static final String JSON_KEY_ISSUE           = "issue";
-    /** JSON key: Journal. */
-    public static final String JSON_KEY_JOURNAL         = "journal";
-    /** JSON key: Topics. */
-    public static final String JSON_KEY_TOPICS          = "topics";
-    /** JSON key: Name (generic: journal name, person name etc.). */
-    public static final String JSON_KEY_NAME            = "name";
-    /** JSON key: NPI series. */
-    public static final String JSON_KEY_NPI_SERIES      = "np_series";
-    /** JSON key: Series. */
-    public static final String JSON_KEY_SERIES          = "series";
-    /** JSON key: Series no. */
-    public static final String JSON_KEY_SERIES_NO       = "series_no";
-    /** JSON key: Pages. */
-    public static final String JSON_KEY_PAGES           = "pages";
-    /** JSON key: Page count. */
-    public static final String JSON_KEY_PAGE_COUNT      = "page_count";
-    /** JSON key: People. */
-    public static final String JSON_KEY_PEOPLE          = "people";
-    /** JSON key: First name. */
-    public static final String JSON_KEY_FNAME           = "first_name";
-    /** JSON key: Last name. */
-    public static final String JSON_KEY_LNAME           = "last_name";
-    /** JSON key: Roles. */
-    public static final String JSON_KEY_ROLES           = "roles";
-    /** JSON key: Organization. */
-    public static final String JSON_KEY_ORG             = "organisation";
-    /** JSON key: Organizations. */
-    public static final String JSON_KEY_ORGS            = "organisations";
-    /** JSON key: Location. */
-    public static final String JSON_KEY_LOCATION        = "location";
-    /** JSON key: Conference. */
-    public static final String JSON_KEY_CONF            = "conference";
-    /** JSON key: Conference name. */
-    public static final String JSON_KEY_CONF_NAME       = "name";
-    /** JSON key: Conference place. */
-    public static final String JSON_KEY_CONF_PLACE      = "place";
-    /** JSON key: Conference country. */
-    public static final String JSON_KEY_CONF_COUNTRY    = "country";
-    /** JSON key: Conference dates. */
-    public static final String JSON_KEY_CONF_DATES      = "dates";
-    /** JSON key: ISBN identifier. */
-    public static final String JSON_KEY_ISBN            = "isbn";
-    /** JSON key: ISSN identifier. */
-    public static final String JSON_KEY_ISSN            = "issn";
-    /** JSON key: Supplement (?). */
-    public static final String JSON_KEY_SUPPLEMENT      = "suppl";
-    /** JSON key: Article number (?). */
-    public static final String JSON_KEY_ARICLE_NUMBER   = "art_no";
-
-    /** Pre-defined JSON value: state "submitted". */
-    public static final String JSON_VAL_STATE_SUBMITTED = "submitted";
-    /** Pre-defined JSON value: state "accepted". */
-    public static final String JSON_VAL_STATE_ACCEPTED  = "accepted";
-    /** Pre-defined JSON value: state "published". */
-    public static final String JSON_VAL_STATE_PUBLISHED = "published";
-    /** Pre-defined JSON value: "related". */
-    public static final String JSON_VAL_LINK_RELATED    = "related";
-    /** Pre-defined JSON value: link rel "DOI". */
-    public static final String JSON_VAL_LINK_DOI        = "doi";
-    /** Pre-defined JSON value: link rel "XREF_DOI". */
-    public static final String JSON_VAL_LINK_XREF_DOI   = "xref_doi";
-    /** Pre-defined JSON value: link rel "parent". */
-    public static final String JSON_VAL_LINK_PARENT     = "parent";
-    /** Pre-defined JSON value: role "author". */
-    public static final String JSON_VAL_ROLE_AUTHOR     = "author";
-    /** Pre-defined JSON value: role "co-author". */
-    public static final String JSON_VAL_ROLE_COAUTHOR   = "co-author";
-    /** Pre-defined JSON value: role "editor". */
-    public static final String JSON_VAL_ROLE_EDITOR     = "editor";
-    /** Pre-defined JSON value: role "translator". */
-    public static final String JSON_VAL_ROLE_TRANSLATOR = "translator";
-    /** Pre-defined JSON value: role "publisher". */
-    public static final String JSON_VAL_ROLE_PUBLISHER  = "publisher";
-    /** Pre-defined JSON value: NPI organizational id. */
-    public static final String JSON_VAL_ORG_NPI         = "npolar.no";
+    /** 
+     * JSON key: ID. 
+     * @deprecated Use {@link Key#ID} instead.
+     */
+    public static final String JSON_KEY_ID              = Key.ID;
     
-    /** The date format used in the JSON. */
+    public class Key extends APIEntry.Key {
+        /** Publication title. */
+        public static final String TITLE = "title";
+        /** Publication type. */
+        public static final String TYPE = "publication_type";
+        /** Publication language. */
+        public static final String LANGUAGE = "publication_lang";
+        /** Publication time. */
+        public static final String PUB_TIME = "published";
+        /** DOI. */
+        public static final String DOI = "doi";
+        /** Links. */
+        public static final String LINKS = "links";
+        /** Link relation. */
+        public static final String LINK_REL = "rel";
+        /** Link target address. */
+        public static final String LINK_HREF = "href";
+        /** Language of the link target resource. */
+        public static final String LINK_HREFLANG = "hreflang";
+        /** Link type. */
+        public static final String LINK_TYPE = "type";
+        /** Publication state. */
+        public static final String STATE = "state";
+        /** Comment. */
+        public static final String COMMENT = "comment";
+        /** Volume. */        
+        public static final String VOLUME = "volume";
+        /** Issue. */
+        public static final String ISSUE = "issue";
+        /** Journal / periodical. */
+        public static final String JOURNAL = "journal";
+        /** Topics. */
+        public static final String TOPICS = "topics";
+        /** Name - generic, used for journal name, person name, etc. */
+        public static final String NAME = "name";
+        /** NPI-specific series. */
+        public static final String NPI_SERIES = "np_series";
+        /** Series. */
+        public static final String SERIES = "series";
+        /** Series number. */
+        public static final String SERIES_NO = "series_no";
+        /** Pages - page interval, from page to page. */
+        public static final String PAGES = "pages";
+        /** Page count - total number of pages. */
+        public static final String PAGE_COUNT = "page_count";
+        /** People – authors, editors, translators, etc. */
+        public static final String PEOPLE = "people";
+        /** First name. */
+        public static final String FNAME = "first_name";
+        /** Last name. */
+        public static final String LNAME = "last_name";
+        /** Roles. */
+        public static final String ROLES = "roles";
+        /** Email. */
+        public static final String EMAIL = "email";
+        /** Contributor ID (currently the email). */
+        public static final String CONTRIB_ID = "people.email";
+        /** Contributor role. */
+        public static final String CONTRIB_ROLE = "people.roles";
+        /** Organization. */
+        public static final String ORG = "organisation";
+        /** Organizations. */
+        public static final String ORGS = "organisations";
+        /** Organizations ID. */
+        public static final String ORGS_ID = "organisations.id";
+        /** Research stations associated with the publication. */
+        public static final String STATIONS = "research_stations";
+        /** Programmes associated with the publication. */
+        public static final String PROGRAMMES = "programme";
+        /** Location. */
+        public static final String LOCATION = "location";
+        /** Conference. */
+        public static final String CONF = "conference";
+        /** Conference name. */
+        public static final String CONF_NAME = "name";
+        /** Conference place. */
+        public static final String CONF_PLACE = "place";
+        /** Conference country. */
+        public static final String CONF_COUNTRY = "country";
+        /** Conference dates. */
+        public static final String CONF_DATES = "dates";
+        /** ISBN identifier. */
+        public static final String ISBN = "isbn";
+        /** ISSN identifier. */
+        public static final String ISSN = "issn";
+        /** Supplement (?). */
+        public static final String SUPPLEMENT = "suppl";
+        /** Article number (?). */
+        public static final String ARTICLE_NUMBER = "art_no";
+        /** Draft state. (Applies to the entry, not the publication.) */
+        public static final String DRAFT = "draft";
+    }
+    
+    /**
+     * JSON key: DOI.
+     * @deprecated Use {@link Key#DOI} instead.
+     * 
+     */
+    public static final String JSON_KEY_DOI             = Key.DOI;
+    /** 
+     * JSON key: Publication type. 
+     * @deprecated Use {@link Key#TYPE} instead.
+     */
+    public static final String JSON_KEY_TYPE            = Key.TYPE;
+    /** 
+     * JSON key: Publication language. 
+     * @deprecated Use {@link Key#LANGUAGE} instead.
+     */
+    public static final String JSON_KEY_LANGUAGE        = Key.LANGUAGE;
+    /**
+     * JSON key: Publication state.
+     * @deprecated Use {@link Key#STATE} instead.
+     */
+    public static final String JSON_KEY_STATE           = Key.STATE;
+    /**
+     * JSON key: Comment.
+     * @deprecated Use {@link Key#COMMENT} instead.
+     */
+    public static final String JSON_KEY_COMMENT         = Key.COMMENT;
+    /**
+     * JSON key: Volume.
+     * @deprecated Use {@link Key#VOLUME} instead.
+     */
+    public static final String JSON_KEY_VOLUME          = Key.VOLUME;
+    /**
+     * JSON key: Issue.
+     * @deprecated Use {@link Key#ISSUE} instead.
+     */
+    public static final String JSON_KEY_ISSUE           = Key.ISSUE;
+    /**
+     * JSON key: Journal in which the publication appeared.
+     * @deprecated Use {@link Key#JOURNAL} instead.
+     */
+    public static final String JSON_KEY_JOURNAL         = Key.JOURNAL;
+    /**
+     * JSON key: Topics that apply to the publications.
+     * @deprecated Use {@link Key#TOPICS} instead.
+     */
+    public static final String JSON_KEY_TOPICS          = Key.TOPICS;
+    /**
+     * JSON key: Name (generic: journal name, person name etc.).
+     * @deprecated Use {@link Key#NAME} instead.
+     */
+    public static final String JSON_KEY_NAME            = Key.NAME;
+    /**
+     * JSON key: NPI series.
+     * @deprecated Use {@link Key#NPI_SERIES} instead.
+     */
+    public static final String JSON_KEY_NPI_SERIES      = Key.NPI_SERIES;
+    /**
+     * JSON key: Series.
+     * @deprecated Use {@link Key#SERIES} instead.
+     */
+    public static final String JSON_KEY_SERIES          = Key.SERIES;
+    /**
+     * JSON key: Series no.
+     * @deprecated Use {@link Key#SERIES_NO} instead.
+     */
+    public static final String JSON_KEY_SERIES_NO       = Key.SERIES_NO;
+    /**
+     * JSON key: Pages.
+     * @deprecated Use {@link Key#PAGES} instead.
+     */
+    public static final String JSON_KEY_PAGES           = Key.PAGES;
+    /** 
+     * JSON key: Page count. 
+     * @deprecated Use {@link Key#PAGE_COUNT} instead.
+     */
+    public static final String JSON_KEY_PAGE_COUNT      = Key.PAGE_COUNT;
+    /** 
+     * JSON key: People. 
+     * @deprecated Use {@link Key#PEOPLE} instead.
+     */
+    public static final String JSON_KEY_PEOPLE          = Key.PEOPLE;
+    /** 
+     * JSON key: First name. 
+     * @deprecated Use {@link Key#FNAME} instead.
+     */
+    public static final String JSON_KEY_FNAME           = Key.FNAME;
+    /** 
+     * JSON key: Last name. 
+     * @deprecated Use {@link Key#LNAME} instead.
+     */
+    public static final String JSON_KEY_LNAME           = Key.LNAME;
+    /** 
+     * JSON key: Roles. 
+     * @deprecated Use {@link Key#ROLES} instead.
+     */
+    public static final String JSON_KEY_ROLES           = Key.ROLES;
+    /** 
+     * JSON key: Email. 
+     * @deprecated Use {@link Key#EMAIL} instead.
+     */
+    public static final String JSON_KEY_EMAIL           = Key.EMAIL;
+    /**
+     * JSON key: Contributor ID (currently the email).
+     * @deprecated Use {@link Key#CONTRIB_ID} instead.
+     * 
+     */
+    public static final String JSON_KEY_CONTRIB_ID      = Key.CONTRIB_ID;
+    /**
+     * JSON key: Contributor role.
+     * @deprecated Use {@link Key#CONTRIB_ROLE} instead.
+     */
+    public static final String JSON_KEY_CONTRIB_ROLE    = Key.CONTRIB_ROLE;
+    /**
+     * JSON key: Organization.
+     * @deprecated Use {@link Key#ORG} instead.
+     */
+    public static final String JSON_KEY_ORG             = Key.ORG;
+    /**
+     * JSON key: Organizations.
+     * @deprecated Use {@link Key#ORGS} instead.
+     */
+    public static final String JSON_KEY_ORGS            = Key.ORGS;
+    /**
+     * JSON key: Organizations ID.
+     * @deprecated Use {@link Key#ORGS_ID} instead.
+     */
+    public static final String JSON_KEY_ORGS_ID         = Key.ORGS_ID;
+    /**
+     * JSON key: Research stations associated with the publication.
+     * @deprecated Use {@link Key#STATIONS} instead.
+     */
+    public static final String JSON_KEY_STATIONS        = Key.STATIONS;
+    /**
+     * JSON key: Programmes associated with the publication.
+     * @deprecated Use {@link Key#PROGRAMMES} instead.
+     */
+    public static final String JSON_KEY_PROGRAMMES      = Key.PROGRAMMES;
+    /**
+     * JSON key: Location.
+     * @deprecated Use {@link Key#LOCATION} instead.
+     */
+    public static final String JSON_KEY_LOCATION        = Key.LOCATION;
+    /**
+     * JSON key: Conference.
+     * @deprecated Use {@link Key#CONF} instead.
+     */
+    public static final String JSON_KEY_CONF            = Key.CONF;
+    /**
+     * JSON key: Conference name.
+     * @deprecated Use {@link Key#CONF_NAME} instead.
+     */
+    public static final String JSON_KEY_CONF_NAME       = Key.CONF_NAME;
+    /**
+     * JSON key: Conference place.
+     * @deprecated Use {@link Key#CONF_PLACE} instead.
+     */
+    public static final String JSON_KEY_CONF_PLACE      = Key.CONF_PLACE;
+    /**
+     * JSON key: Conference country.
+     * @deprecated Use {@link Key#CONF_COUNTRY} instead.
+     */
+    public static final String JSON_KEY_CONF_COUNTRY    = Key.CONF_COUNTRY;
+    /**
+     * JSON key: Conference dates.
+     * @deprecated Use {@link Key#CONF_DATES} instead.
+     */
+    public static final String JSON_KEY_CONF_DATES      = Key.CONF_DATES;
+    /**
+     * JSON key: ISBN identifier.
+     * @deprecated Use {@link Key#ISBN} instead.
+     */
+    public static final String JSON_KEY_ISBN            = Key.ISBN;
+    /**
+     * JSON key: ISSN identifier.
+     * @deprecated Use {@link Key#ISSN} instead.
+     */
+    public static final String JSON_KEY_ISSN            = Key.ISSN;
+    /**
+     * JSON key: Supplement (?).
+     * @deprecated Use {@link Key#SUPPLEMENT} instead.
+     */
+    public static final String JSON_KEY_SUPPLEMENT      = Key.SUPPLEMENT;
+    /**
+     * JSON key: Article number (?).
+     * @deprecated Use {@link Key#ARTICLE_NUMBER} instead.
+     */
+    public static final String JSON_KEY_ARICLE_NUMBER   = Key.ARTICLE_NUMBER;
+    /**
+     * JSON key: Draft state. (Applies to the entry, not the publication.)
+     * @deprecated Use {@link Key#DRAFT} instead.
+     */
+    public static final String JSON_KEY_DRAFT           = Key.DRAFT;
+    
+    public class Val extends APIEntry.Val {
+        /** Pre-defined JSON value: Used on entries that are NOT flagged as drafts. */
+        public static final String DRAFT_FALSE = "no";
+        /** Pre-defined JSON value: Used on entries that are flagged as drafts. */
+        public static final String DRAFT_TRUE = "yes";
+        /** Pre-defined JSON value: link rel "DOI". */
+        public static final String LINK_DOI = "doi";
+        /** Pre-defined JSON value: link rel "parent". */
+        public static final String LINK_PARENT = "parent";
+        /** Pre-defined JSON value: "related". */
+        public static final String LINK_RELATED = "related";
+        /** Pre-defined JSON value: link rel "XREF_DOI". */
+        public static final String LINK_XREF_DOI = "xref_doi";
+        /** Pre-defined JSON value: NPI organizational id. */
+        public static final String ORG_NPI = "npolar.no";
+        /** Pre-defined JSON value: role "author". */
+        public static final String ROLE_AUTHOR = "author";
+        /** Pre-defined JSON value: role "co-author". */
+        public static final String ROLE_COAUTHOR = "co-author";
+        /** Pre-defined JSON value: role "editor". */
+        public static final String ROLE_EDITOR = "editor";
+        /** Pre-defined JSON value: role "publisher". */
+        public static final String ROLE_ORIGINATOR = "originator";
+        /** Pre-defined JSON value: role "publisher". */
+        public static final String ROLE_PUBLISHER = "publisher";
+        /** Pre-defined JSON value: role "publisher". */
+        public static final String ROLE_RESOURCE_PROVIDER = "resourceProvider";
+        /** Pre-defined JSON value: role "publisher". */
+        public static final String ROLE_FUNDER = "funder";
+        /** Pre-defined JSON value: role "translator". */
+        public static final String ROLE_TRANSLATOR = "translator";
+        /** Pre-defined JSON value: role "advisor". */
+        public static final String ROLE_ADVISOR = "advisor";
+        /** Pre-defined JSON value: role "correspondent". */
+        public static final String ROLE_CORRESPONDENT = "correspondent";
+        /** Pre-defined JSON value: state "accepted". */
+        public static final String STATE_ACCEPTED = "accepted";
+        /** Pre-defined JSON value: state "published". */
+        public static final String STATE_PUBLISHED = "published";
+        /** Pre-defined JSON value: state "submitted". */
+        public static final String STATE_SUBMITTED = "submitted";
+    }
+
+    /** 
+     * Pre-defined JSON value: state "submitted". 
+     * @deprecated Use {@link Val#STATE_SUBMITTED} instead.
+     */
+    public static final String JSON_VAL_STATE_SUBMITTED = Val.STATE_SUBMITTED;
+    /** 
+     * Pre-defined JSON value: state "accepted". 
+     * @deprecated Use {@link Val#STATE_ACCEPTED} instead.
+     */
+    public static final String JSON_VAL_STATE_ACCEPTED  = Val.STATE_ACCEPTED;
+    /** 
+     * Pre-defined JSON value: state "published". 
+     * @deprecated Use {@link Val#STATE_PUBLISHED} instead.
+     */
+    public static final String JSON_VAL_STATE_PUBLISHED = Val.STATE_PUBLISHED;
+    /** 
+     * Pre-defined JSON value: "related". 
+     * @deprecated Use {@link Val#LINK_RELATED} instead.
+     */
+    public static final String JSON_VAL_LINK_RELATED    = Val.LINK_RELATED;
+    /** 
+     * Pre-defined JSON value: link rel "DOI". 
+     * @deprecated Use {@link Val#LINK_DOI} instead.
+     */
+    public static final String JSON_VAL_LINK_DOI        = Val.LINK_DOI;
+    /** 
+     * Pre-defined JSON value: link rel "XREF_DOI". 
+     * @deprecated Use {@link Val#LINK_XREF_DOI} instead.
+     */
+    public static final String JSON_VAL_LINK_XREF_DOI   = Val.LINK_XREF_DOI;
+    /** 
+     * Pre-defined JSON value: link rel "parent". 
+     * @deprecated Use {@link Val#LINK_PARENT} instead.
+     */
+    public static final String JSON_VAL_LINK_PARENT     = Val.LINK_PARENT;
+    /**
+     * Pre-defined JSON value: role "author". 
+     * @deprecated Use {@link Val#ROLE_AUTHOR} instead.
+     */
+    public static final String JSON_VAL_ROLE_AUTHOR     = Val.ROLE_AUTHOR;
+    /**
+     * Pre-defined JSON value: role "co-author". 
+     * @deprecated Use {@link Val#ROLE_COAUTHOR} instead.
+     */
+    public static final String JSON_VAL_ROLE_COAUTHOR   = Val.ROLE_COAUTHOR;
+    /**
+     * Pre-defined JSON value: role "editor". 
+     * @deprecated Use {@link Val#ROLE_EDITOR} instead.
+     */
+    public static final String JSON_VAL_ROLE_EDITOR     = Val.ROLE_EDITOR;
+    /**
+     * Pre-defined JSON value: role "translator". 
+     * @deprecated Use {@link Val#ROLE_TRANSLATOR} instead.
+     */
+    public static final String JSON_VAL_ROLE_TRANSLATOR = Val.ROLE_TRANSLATOR;
+    /**
+     * Pre-defined JSON value: role "publisher". 
+     * @deprecated Use {@link Val#ROLE_PUBLISHER} instead.
+     */
+    public static final String JSON_VAL_ROLE_PUBLISHER  = Val.ROLE_PUBLISHER;
+    /**
+     * Pre-defined JSON value: NPI organizational id. 
+     * @deprecated Use {@link Val#ORG_NPI} instead.
+     */
+    public static final String JSON_VAL_ORG_NPI         = Val.ORG_NPI;
+    /** 
+     * Pre-defined JSON value: Used on entries that are flagged as drafts. 
+     * @deprecated Use {@link Val#DRAFT_TRUE} instead.
+     */
+    public static final String JSON_VAL_DRAFT_TRUE      = Val.DRAFT_TRUE;
+    /** 
+     * Pre-defined JSON value: Used on entries that are NOT flagged as drafts. 
+     * @deprecated Use {@link Val#DRAFT_FALSE} instead.
+     */
+    public static final String JSON_VAL_DRAFT_FALSE     = Val.DRAFT_FALSE;
+    
+    /**
+     * The date format pattern used in the JSON.
+     * @deprecated The pattern will vary, and must be determined by evaluating {@link #JSON_KEY_PUB_TIME}.
+     */
     public static final String DATE_FORMAT_JSON         = "yyyy-MM-dd";
     /** The base URL for publication links. */
     public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
@@ -162,40 +517,140 @@ public class Publication implements APIEntryInterface {
     
     //public static final String DEFAULT_PROCEEDINGS_JOURNAL = "Book of abstracts";
     
+    /**
+     * Valid publication types.
+     */
+    public enum Type {
+        PEER_REVIEWED("peer-reviewed")
+        ,EDITORIAL("editorial")
+        ,REVIEW("review") 
+        ,CORRECTION("correction")
+        ,BOOK("book")
+        ,MAP("map")
+        ,POSTER("poster")
+        ,REPORT("report")
+        ,ABSTRACT("abstract")
+        ,PHD("phd")
+        ,MASTER("master")
+        ,PROCEEDINGS("proceedings")
+        ,POPULAR("popular")
+        ,IN_BOOK("in-book")
+        ,IN_REPORT("in-report")
+        ,OTHER("other")
+        ,UNDEFINED("undefined")
+        ;
+        
+        private String typeString = "other";
+        
+        Type(String typeString) {
+            this.typeString = typeString;
+        }
+        
+        /**
+         * Gets the Type variant that is associated with the given type string.
+         * 
+         * @param typeStr The type string.
+         * @return The Type variant that is associated with the given pattern string, or {@link Type#UNDEFINED} if none.
+         */
+        public static Type forString(String typeStr) {
+            for (Type t : values()) {
+                if (typeStr.toLowerCase().equals(t.toString()))
+                    return t;
+            }
+            return Type.UNDEFINED;
+        }
+        
+        @Override
+        public String toString() {
+            return this.typeString;
+        }
+        /*
+        @Override
+        public final boolean equals (Object obj) {
+            if (!(obj instanceof Type))
+                return false;
+            if (obj == this)
+                return true;
+            Type rhs = (Type) obj;
+            return rhs.typeString.equals(this.typeString);
+        }
+        //*/
+    };
     
-    
-    /** The pre-defined keyword for identifying peer-reviewed publications. */
-    public static final String TYPE_PEER_REVIEWED = "peer-reviewed";
-    /** The pre-defined keyword for identifying editorials. */
-    public static final String TYPE_EDITORIAL = "editorial";
-    /** The pre-defined keyword for identifying reviews. */
-    public static final String TYPE_REVIEW = "review";
-    /** The pre-defined keyword for identifying corrections. */
-    public static final String TYPE_CORRECTION = "correction";
-    /** The pre-defined keyword for identifying books. */
-    public static final String TYPE_BOOK = "book";
+    /** 
+     * The pre-defined keyword for identifying peer-reviewed publications. 
+     * @deprecated Use {@link Type#PEER_REVIEWED} instead.
+     */
+    public static final String TYPE_PEER_REVIEWED = Type.PEER_REVIEWED.toString();
+    /** 
+     * The pre-defined keyword for identifying editorials. 
+     * @deprecated Use {@link Type#EDITORIAL} instead.
+     */
+    public static final String TYPE_EDITORIAL = Type.EDITORIAL.toString();
+    /** 
+     * The pre-defined keyword for identifying reviews. 
+     * @deprecated Use {@link Type#REVIEW} instead.
+     */
+    public static final String TYPE_REVIEW = Type.REVIEW.toString();
+    /** 
+     * The pre-defined keyword for identifying corrections. 
+     * @deprecated Use {@link Type#CORRECTION} instead.
+     */
+    public static final String TYPE_CORRECTION = Type.CORRECTION.toString();
+    /** 
+     * The pre-defined keyword for identifying books. 
+     * @deprecated Use {@link Type#BOOK} instead.
+     */
+    public static final String TYPE_BOOK = Type.BOOK.toString();
     /** The pre-defined keyword for identifying book chapters. */
     //public static final String TYPE_BOOK_CHAPTER = "book-chapter";
-    /** The pre-defined keyword for identifying maps. */
-    public static final String TYPE_MAP = "map";
-    /** The pre-defined keyword for identifying posters. */
-    public static final String TYPE_POSTER = "poster";
-    /** The pre-defined keyword for identifying reports. */
-    public static final String TYPE_REPORT = "report";
-    /** The pre-defined keyword for identifying report series contributions. */
+    /** 
+     * The pre-defined keyword for identifying maps. 
+     * @deprecated Use {@link Type#MAP} instead.
+     */
+    public static final String TYPE_MAP = Type.MAP.toString();
+    /** 
+     * The pre-defined keyword for identifying posters. 
+     * @deprecated Use {@link Type#POSTER} instead.
+     */
+    public static final String TYPE_POSTER = Type.POSTER.toString();
+    /** 
+     * The pre-defined keyword for identifying reports. 
+     * @deprecated Use {@link Type#REPORT} instead.
+     */
+    public static final String TYPE_REPORT = Type.REPORT.toString();
+    /**The pre-defined keyword for identifying report series contributions. */
     //public static final String TYPE_REPORT_SERIES_CONTRIBUTION = "report-series-contrib";
-    /** The pre-defined keyword for identifying abstracts. */
-    public static final String TYPE_ABSTRACT = "abstract";
-    /** The pre-defined keyword for identifying PhD theses. */
-    public static final String TYPE_PHD = "phd";
-    /** The pre-defined keyword for identifying Master theses. */
-    public static final String TYPE_MASTER = "master";
-    /** The pre-defined keyword for identifying proceedings. */
-    public static final String TYPE_PROCEEDINGS = "proceedings";
-    /** The pre-defined keyword for identifying popular science publications. */
-    public static final String TYPE_POPULAR = "popular";
-    /** The pre-defined keyword for identifying other publications. */
-    public static final String TYPE_OTHER = "other";
+    /** 
+     * The pre-defined keyword for identifying abstracts. 
+     * @deprecated Use {@link Type#ABSTRACT} instead.
+     */
+    public static final String TYPE_ABSTRACT = Type.ABSTRACT.toString();
+    /** 
+     * The pre-defined keyword for identifying PhD theses. 
+     * @deprecated Use {@link Type#PHD} instead.
+     */
+    public static final String TYPE_PHD = Type.PHD.toString();
+    /** 
+     * The pre-defined keyword for identifying Master theses. 
+     * @deprecated Use {@link Type#MASTER} instead.
+     */
+    public static final String TYPE_MASTER = Type.MASTER.toString();
+    /** 
+     * The pre-defined keyword for identifying proceedings. 
+     * @deprecated Use {@link Type#PROCEEDINGS} instead.
+     */
+    public static final String TYPE_PROCEEDINGS = Type.PROCEEDINGS.toString();
+    /** 
+     * The pre-defined keyword for identifying popular science publications. 
+     * @deprecated Use {@link Type#POPULAR} instead.
+     */
+    public static final String TYPE_POPULAR = Type.POPULAR.toString();
+    /** 
+     * The pre-defined keyword for identifying other publications. 
+     * @deprecated Use {@link Type#OTHER} instead.
+     */
+    public static final String TYPE_OTHER = Type.OTHER.toString();
     
     /** Identifier constant for reference string partial: author(s). */
     public static final int CITE_PART_AUTHORS = 0;
@@ -204,7 +659,7 @@ public class Publication implements APIEntryInterface {
     /** Identifier constant for reference string partial: translator(s). */
     public static final int CITE_PART_TRANSLATORS = 2;
     
-    /** The supported publication time patterns. */
+    /** The supported timestamp patterns for {@link #JSON_KEY_PUB_TIME}. Higher index in this array = higher timestamp accuracy. */
     public static final String[] PATTERNS_PUB_TIME = { "yyyy", "yyyy-MM", "yyyy-MM-dd" };
     
     // Class members
@@ -228,11 +683,12 @@ public class Publication implements APIEntryInterface {
     protected String pageStart = "";
     protected String pageEnd = "";
     protected String pageCount = "";
+    protected String articleNo = "";
     //protected String pages = "";
     protected String doi = "";
     protected String id = "";
     protected String link = "";
-    protected String type = "";
+    protected Type type = Type.UNDEFINED;
     protected String language = "";
     protected String state = "";
     protected String comment = "";
@@ -312,19 +768,21 @@ public class Publication implements APIEntryInterface {
         
         ////////////////////////////////////////////////////////////////////////
         // All the non-complex stuff
-        try { title     = o.getString(JSON_KEY_TITLE).trim(); } catch (Exception e) { title = labels.getString(Labels.LABEL_DEFAULT_TITLE_0); }
+        try { title     = o.getString(Key.TITLE).trim(); } catch (Exception e) { title = labels.getString(Labels.LABEL_DEFAULT_TITLE_0); }
         //try { pubYear   = o.getString(JSON_KEY_PUBYEAR); if (pubYear.equalsIgnoreCase("0")) pubYear = ""; } catch (Exception e) { }
         //try { pubDate   = new SimpleDateFormat(DATE_FORMAT_JSON).parse(o.getString(JSON_KEY_PUBDATE)); } catch (Exception e) { }
-        try { id        = o.getString(JSON_KEY_ID); } catch (Exception e) { }
-        try { type      = o.getString(JSON_KEY_TYPE); } catch (Exception e) { }
-        try { language  = o.getString(JSON_KEY_LANGUAGE); } catch (Exception e) { }
-        try { state     = o.getString(JSON_KEY_STATE); } catch (Exception e) { } 
-        try { volume    = o.getString(JSON_KEY_VOLUME); } catch (Exception e) { }
-        try { issue     = o.getString(JSON_KEY_ISSUE); } catch (Exception e) { }
-        try { pageCount = o.getString(JSON_KEY_PAGE_COUNT); } catch (Exception e) { }
-        try { comment   = o.getString(JSON_KEY_COMMENT); } catch (Exception e) { }
-        try { links     = o.getJSONArray(JSON_KEY_LINKS); } catch (Exception e) { }
-        try { topics    = o.getJSONArray(JSON_KEY_TOPICS); } catch (Exception e) { }
+        try { id        = o.getString(Key.ID); } catch (Exception e) { }//o.getString(JSON_KEY_ID); } catch (Exception e) { }
+        try { type      = Type.forString(o.getString(Key.TYPE)); } catch (Exception e) { }
+        //try { type      = o.getString(Key.TYPE); } catch (Exception e) { }
+        try { language  = o.getString(Key.LANGUAGE); } catch (Exception e) { }
+        try { state     = o.getString(Key.STATE); } catch (Exception e) { } 
+        try { volume    = o.getString(Key.VOLUME); } catch (Exception e) { }
+        try { issue     = o.getString(Key.ISSUE); } catch (Exception e) { }
+        try { articleNo = o.getString(Key.ARTICLE_NUMBER); } catch (Exception e) { }
+        try { pageCount = o.getString(Key.PAGE_COUNT); } catch (Exception e) { }
+        try { comment   = o.getString(Key.COMMENT); } catch (Exception e) { }
+        try { links     = o.getJSONArray(Key.LINKS); } catch (Exception e) { }
+        try { topics    = o.getJSONArray(Key.TOPICS); } catch (Exception e) { }
         
         ////////////////////////////////////////////////////////////////////////
         // Publish time: year OR month of year OR full date
@@ -340,7 +798,7 @@ public class Publication implements APIEntryInterface {
                 publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
             }
             */
-            String publishTimeString = o.getString(JSON_KEY_PUB_TIME);
+            String publishTimeString = o.getString(Key.PUB_TIME);
             int publishTimeStringLength = publishTimeString.length();
             if (publishTimeStringLength == 10) { // yyyy-MM-dd
                 publishTimePattern = PATTERNS_PUB_TIME[2];
@@ -355,9 +813,9 @@ public class Publication implements APIEntryInterface {
             publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
         }
         try { 
-            publishTime = new SimpleDateFormat(publishTimePattern).parse(o.getString(JSON_KEY_PUB_TIME));
+            publishTime = new SimpleDateFormat(publishTimePattern).parse(o.getString(Key.PUB_TIME));
         } catch (Exception e) {
-            System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+            //System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
             if (LOG.isErrorEnabled()) {
                 LOG.error("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
             }
@@ -365,16 +823,16 @@ public class Publication implements APIEntryInterface {
         try {
             pubYear = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale).format(publishTime);
         } catch (Exception e) {
-            System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
+            //System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
             if (LOG.isErrorEnabled()) {
                 LOG.error("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
             }
         } finally {
             if (pubYear == null || pubYear.isEmpty()) {
                 try {
-                    pubYear = o.getString(JSON_KEY_PUB_TIME).substring(0, 4);
+                    pubYear = o.getString(Key.PUB_TIME).substring(0, 4);
                 } catch (Exception e) {
-                    System.out.println("Fallback routine for determining publish year failed. Publication ID was " + this.id);
+                    //System.out.println("Fallback routine for determining publish year failed. Publication ID was " + this.id);
                     if (LOG.isErrorEnabled()) {
                         LOG.error("Fallback routine for determining publish year failed. Publication ID was " + this.id);
                     }
@@ -384,25 +842,25 @@ public class Publication implements APIEntryInterface {
         
         ////////////////////////////////////////////////////////////////////////
         // Publisher
-        if (o.has(JSON_KEY_ORGS)) {
+        if (o.has(Key.ORGS)) {
             try {
-                JSONArray orgs = o.getJSONArray(JSON_KEY_ORGS);
+                JSONArray orgs = o.getJSONArray(Key.ORGS);
                 for (int i = 0; i < orgs.length(); i++) { // For each organisation in organisations
                     JSONObject org = orgs.getJSONObject(i);
-                    if (org.has(JSON_KEY_ROLES)) {
-                        JSONArray roles = org.getJSONArray(JSON_KEY_ROLES);
+                    if (org.has(Key.ROLES)) {
+                        JSONArray roles = org.getJSONArray(Key.ROLES);
                         for (int j = 0; j < roles.length(); j++) {
                             String role = roles.getString(j);
-                            if (role.equals(JSON_VAL_ROLE_PUBLISHER)) { // This is a publisher
+                            if (role.equals(Val.ROLE_PUBLISHER)) { // This is a publisher
                                 try {
                                     /*
-                                    publisher += (publisher.isEmpty() ? "" : ", ") + org.getString(JSON_KEY_NAME).trim(); // Add the publisher name, if any
-                                    publisherLocation = org.getString(JSON_KEY_LOCATION).trim(); // Get the publisher location, if any
+                                    publisher += (publisher.isEmpty() ? "" : ", ") + org.getString(Key.NAME).trim(); // Add the publisher name, if any
+                                    publisherLocation = org.getString(Key.LOCATION).trim(); // Get the publisher location, if any
                                     publisher += (publisher.isEmpty() ? "" : ", ") + publisherLocation; // Add the publisher location
                                     */
                                     publisher += (publisher.isEmpty() ? "" : ", ");
                                     try {
-                                        publisherLocation = org.getString(JSON_KEY_LOCATION).trim(); // Get the publisher location, if any
+                                        publisherLocation = org.getString(Key.LOCATION).trim(); // Get the publisher location, if any
                                         if (!publisherLocation.isEmpty())
                                             publisher += mappings.getMapping(publisherLocation); // Add the publisher location
                                     } catch (Exception pe) {
@@ -410,7 +868,7 @@ public class Publication implements APIEntryInterface {
                                     }
                                     
                                     try {
-                                        String publisherName = org.getString(JSON_KEY_NAME).trim(); // Add the publisher name, if any
+                                        String publisherName = org.getString(Key.NAME).trim(); // Add the publisher name, if any
                                         if (!publisherName.isEmpty())
                                             publisher += (publisherLocation.isEmpty() ? "" : ": ") + mappings.getMapping(publisherName); // Add the publisher name
                                     } catch (Exception pe) {
@@ -426,14 +884,14 @@ public class Publication implements APIEntryInterface {
         
         ////////////////////////////////////////////////////////////////////////
         // People
-        if (o.has(JSON_KEY_PEOPLE)) {
+        if (o.has(Key.PEOPLE)) {
             try {
-                JSONArray persons = o.getJSONArray(JSON_KEY_PEOPLE);
+                JSONArray persons = o.getJSONArray(Key.PEOPLE);
                 authorsAndEditors = new PersonCollection(persons, displayLocale);
                 // The list above may now contain translators and/or co-authors. 
                 // If so, split those out into separate lists:
-                translators = authorsAndEditors.getByRoleOnly(JSON_VAL_ROLE_TRANSLATOR);
-                coAuthors = authorsAndEditors.getByRoleOnly(JSON_VAL_ROLE_COAUTHOR);
+                translators = authorsAndEditors.getByRoleOnly(Val.ROLE_TRANSLATOR);
+                coAuthors = authorsAndEditors.getByRoleOnly(Val.ROLE_COAUTHOR);
                 authorsAndEditors.removeAll(translators);
                 authorsAndEditors.removeAll(coAuthors);
             } catch (Exception e) { }
@@ -443,7 +901,7 @@ public class Publication implements APIEntryInterface {
         // Pages
         JSONArray pagesArr = null;
         try {
-            pagesArr = o.getJSONArray(JSON_KEY_PAGES);
+            pagesArr = o.getJSONArray(Key.PAGES);
             if (pagesArr.length() == 2) {
                 pageStart = pagesArr.getString(0).trim();
                 pageEnd = pagesArr.getString(1).trim();
@@ -454,25 +912,25 @@ public class Publication implements APIEntryInterface {
         // Journal
         JSONObject journalObj = null;
         try {
-            journalObj = o.getJSONObject(JSON_KEY_JOURNAL);
-            try { journalName = journalObj.getString(JSON_KEY_NAME).trim(); } catch (Exception e) { }
-            if (journalObj.has(JSON_KEY_NPI_SERIES) || journalObj.has(JSON_KEY_SERIES)) {
+            journalObj = o.getJSONObject(Key.JOURNAL);
+            try { journalName = journalObj.getString(Key.NAME).trim(); } catch (Exception e) { }
+            if (journalObj.has(Key.NPI_SERIES) || journalObj.has(Key.SERIES)) {
                 try { 
-                    journalSeries = journalObj.getString(JSON_KEY_SERIES).trim(); // If there is a "normal" series, use that.
+                    journalSeries = journalObj.getString(Key.SERIES).trim(); // If there is a "normal" series, use that.
                 } catch (Exception e) {
                     try {
-                        journalSeries = journalObj.getString(JSON_KEY_NPI_SERIES).trim(); // If not, use the NPI series.
+                        journalSeries = journalObj.getString(Key.NPI_SERIES).trim(); // If not, use the NPI series.
                     } catch (Exception ee) {
                     }
                 }
-                if (journalObj.has(JSON_KEY_SERIES_NO)) {
-                    journalSeriesNo = journalObj.getString(JSON_KEY_SERIES_NO).trim();
+                if (journalObj.has(Key.SERIES_NO)) {
+                    journalSeriesNo = journalObj.getString(Key.SERIES_NO).trim();
                 }
             }
-            /*if (journalObj.has(JSON_KEY_NPI_SERIES)) {
-                journalSeries = journalObj.getString(JSON_KEY_NPI_SERIES).trim();
-                if (journalObj.has(JSON_KEY_SERIES_NO)) {
-                    journalSeriesNo = journalObj.getString(JSON_KEY_SERIES_NO).trim();
+            /*if (journalObj.has(Key.NPI_SERIES)) {
+                journalSeries = journalObj.getString(Key.NPI_SERIES).trim();
+                if (journalObj.has(Key.SERIES_NO)) {
+                    journalSeriesNo = journalObj.getString(Key.SERIES_NO).trim();
                 }
             }*/
         } catch (Exception e) { 
@@ -481,22 +939,30 @@ public class Publication implements APIEntryInterface {
         
         ////////////////////////////////////////////////////////////////////////
         // DOI
+        // New routine - should work for all that have DOI
         try {
-            for (int i = 0; i < links.length(); i++) {
-                JSONObject linkObj = links.getJSONObject(i);
-                try {
-                    if (linkObj.getString(JSON_KEY_LINK_REL).equalsIgnoreCase(JSON_VAL_LINK_DOI)) {
-                        doi = extractDoi(linkObj.getString(JSON_KEY_LINK_HREF));//doi = linkObj.getString(JSON_KEY_LINK_HREF).replace(URL_DOI_BASE, "");
-                        //break;
-                    }
-                    else if (linkObj.getString(JSON_KEY_LINK_REL).equalsIgnoreCase(JSON_VAL_LINK_XREF_DOI)) {
-                        if (doi == null || doi.isEmpty())
-                            doi = extractDoi(linkObj.getString(JSON_KEY_LINK_HREF));//doi = linkObj.getString(JSON_KEY_LINK_HREF).replace(URL_DOI_BASE, "");
-                    }                      
-                } catch (Exception doie) { }
-            }
-        } catch (Exception e) { }
-        
+            //doi = o.getString(Key.DOI); 
+            doi = o.getString(Key.DOI);
+            //System.out.println("Got DOI " + doi);
+        } catch (Exception e) {}
+        // Old routine - just in case
+        if (getDOI().isEmpty()) {
+            try {
+                for (int i = 0; i < links.length(); i++) {
+                    JSONObject linkObj = links.getJSONObject(i);
+                    try {
+                        if (linkObj.getString(Key.LINK_REL).equalsIgnoreCase(Val.LINK_DOI)) {
+                            doi = extractDoi(linkObj.getString(Key.LINK_HREF));//doi = linkObj.getString(Key.LINK_HREF).replace(URL_DOI_BASE, "");
+                            //break;
+                        }
+                        else if (linkObj.getString(Key.LINK_REL).equalsIgnoreCase(Val.LINK_XREF_DOI)) {
+                            if (doi == null || doi.isEmpty())
+                                doi = extractDoi(linkObj.getString(Key.LINK_HREF));//doi = linkObj.getString(Key.LINK_HREF).replace(URL_DOI_BASE, "");
+                        }                      
+                    } catch (Exception doie) { }
+                }
+            } catch (Exception e) { }
+        }
         
         ////////////////////////////////////////////////////////////////////////
         // Parent publication
@@ -505,8 +971,8 @@ public class Publication implements APIEntryInterface {
                 for (int i = 0; i < links.length(); i++) {
                     JSONObject linkObj = links.getJSONObject(i);
                     try {
-                        if (JSON_VAL_LINK_PARENT.equalsIgnoreCase(linkObj.getString(JSON_KEY_LINK_REL))) { // if (this link's "rel" says "parent")
-                            parentUrl = linkObj.getString(JSON_KEY_LINK_HREF);
+                        if (Val.LINK_PARENT.equalsIgnoreCase(linkObj.getString(Key.LINK_REL))) { // if (this link's "rel" says "parent")
+                            parentUrl = linkObj.getString(Key.LINK_HREF);
                             parentId = parentUrl.substring(parentUrl.lastIndexOf("/")+1);
                             
                             if (parentId.contains("%")) {
@@ -515,7 +981,7 @@ public class Publication implements APIEntryInterface {
 
                             //System.out.println(this.getTitle() + " - found parent link: " + parentUrl + " - ID: " + parentId);
 
-                            parent = new PublicationService(displayLocale).getPublication(parentId);
+                            parent = new PublicationService(displayLocale).get(parentId);
                             
                             //System.out.println(this.getTitle() + " - added parent: " + parent.getTitle() + " - " + parent.getId());
                             break;
@@ -534,15 +1000,15 @@ public class Publication implements APIEntryInterface {
         // Conference
         String s = "";
         try { 
-            conference = o.getJSONObject(JSON_KEY_CONF);
-            try { confName = conference.getString(JSON_KEY_CONF_NAME).trim(); } catch (Exception e) { }
-            try { confPlace = conference.getString(JSON_KEY_CONF_PLACE).trim(); } catch (Exception e) { }
-            //try { confCountry = getMappedString(conference.getString(JSON_KEY_CONF_COUNTRY).trim()); } catch (Exception e) { }
-            try { confCountry = mappings.getMapping(conference.getString(JSON_KEY_CONF_COUNTRY).trim()); } catch (Exception e) { }
+            conference = o.getJSONObject(Key.CONF);
+            try { confName = conference.getString(Key.CONF_NAME).trim(); } catch (Exception e) { }
+            try { confPlace = conference.getString(Key.CONF_PLACE).trim(); } catch (Exception e) { }
+            //try { confCountry = getMappedString(conference.getString(Key.CONF_COUNTRY).trim()); } catch (Exception e) { }
+            try { confCountry = mappings.getMapping(conference.getString(Key.CONF_COUNTRY).trim()); } catch (Exception e) { }
             
-            if (conference.has(JSON_KEY_CONF_DATES)) {
+            if (conference.has(Key.CONF_DATES)) {
                 try {
-                    JSONArray dates = conference.getJSONArray(JSON_KEY_CONF_DATES);
+                    JSONArray dates = conference.getJSONArray(Key.CONF_DATES);
                     if (dates != null) {
                         try {
                             SimpleDateFormat dfSource = new SimpleDateFormat(DATE_FORMAT_JSON);
@@ -575,7 +1041,7 @@ public class Publication implements APIEntryInterface {
         // Journal modification needed?
         if (getJournal().trim().isEmpty()) { // No journal 
             if (!getConference().isEmpty() // conference info exists
-                    && getType().equals(TYPE_PROCEEDINGS) // AND type is "proceedings"
+                    && getType().equals(Type.PROCEEDINGS) // AND type is "proceedings"
                     && !getPages().isEmpty()) { // AND start/end pages exist
                 // Assume the "journal" is the book of abstracts
                 journalName = labels.getString(Labels.LABEL_DEFAULT_PROCEEDINGS_JOURNAL_0);// DEFAULT_PROCEEDINGS_JOURNAL;
@@ -697,8 +1163,9 @@ public class Publication implements APIEntryInterface {
      * Gets the type for this publication.
      * 
      * @return The type for this publication, or an empty string if none.
+     * @see Type
      */
-    public String getType() { return type; }
+    public Type getType() { return type; }
     
     /**
      * Gets the state for this publication.
@@ -717,7 +1184,7 @@ public class Publication implements APIEntryInterface {
      * @see #getType() 
      */
     @Override
-    public String getGroupName() { return getType(); }
+    public String getGroupName() { return getType().toString(); }
     
     /**
      * Gets the volume for this publication, if any.
@@ -732,6 +1199,13 @@ public class Publication implements APIEntryInterface {
      * @return The issue for this publication, or an empty string if none.
      */
     public String getIssue() { return issue; }
+    
+    /**
+     * Gets the article number for this publication, if any.
+     * 
+     * @return The article number for this publication, or an empty string if none.
+     */
+    public String getArticleNumber() { return articleNo; }
     
     /**
      * Gets the links for this publication, if any.
@@ -828,19 +1302,40 @@ public class Publication implements APIEntryInterface {
     }
     
     /**
+     * Gets a flag indicating whether or not this publication is of the given type.
+     * 
+     * @param type The type to test against, e.g. {@link Type#REPORT}.
+     * 
+     * @return True if this publication is of the given type, false if not.
+     * @see #isType(java.lang.String) 
+     */
+    public boolean isType(Type type) {
+        return this.type.equals(type);
+        //return this.type != null && this.type.toString().equalsIgnoreCase(type); 
+        //return !this.type.isEmpty() && this.type.equalsIgnoreCase(type); 
+    }
+    
+    /**
      * Gets a flag indicating whether or not this publication is of the given type. 
      * <p>
      * The type match is not case sensitive.
      * 
+     * @param typeString The type to test against, e.g. "report".
+     * 
      * @return True if this publication is of the given type, false if not.
+     * @see #isType(no.npolar.data.api.Publication.Type) 
      */
-    public boolean isType(String type) { return !this.type.isEmpty() && this.type.equalsIgnoreCase(type); }
+    public boolean isType(String typeString) {
+        return this.type.equals(Type.forString(typeString));
+    }
     
     /**
      * Gets a flag indicating whether or not this publication's state matches the 
      * given state.
      * <p>
-     * The match is not case sensitive.
+ The forString is not case sensitive.
+     * 
+     * @param state The state string to test against, e.g. "published".
      * 
      * @return True if this publication's state matches the given state, false if not.
      */
@@ -878,10 +1373,12 @@ public class Publication implements APIEntryInterface {
      * @return True if this publication is a part-contribution to another publication, false if not.
      */
     public boolean isPartContribution() {
-        if (hasParent())
+        if (hasParent() || type == Type.IN_BOOK || type == Type.IN_REPORT)
             return true;
+        
         //return type.equals(TYPE_BOOK_CHAPTER) || type.equals(TYPE_REPORT_SERIES_CONTRIBUTION);
-        if (type.equalsIgnoreCase(TYPE_REPORT) || type.equalsIgnoreCase(TYPE_BOOK)) {  // Do this only if the type is currently "report" or "book"
+        if (type == Type.REPORT || type == Type.BOOK) {  // Do this only if the type is currently "report" or "book"
+        //if (type.equalsIgnoreCase(TYPE_REPORT) || type.equalsIgnoreCase(TYPE_BOOK)) {  // Do this only if the type is currently "report" or "book"
             if (!getAuthors().isEmpty()) { // Require that there are authors
                 if (!getJournal().isEmpty()) { // Require a "journal" (that is, a book or a report series title)
                     if (!getPageStart().isEmpty() && !getPageEnd().isEmpty()) { // Require a start page and an end page
@@ -1001,7 +1498,7 @@ public class Publication implements APIEntryInterface {
      * @see #getPeopleStringByRole(java.lang.String) 
      */
     public String getAuthors() {
-        return getPeopleStringByRole(JSON_VAL_ROLE_AUTHOR);
+        return getPeopleStringByRole(Val.ROLE_AUTHOR);
     }
     
     /**
@@ -1011,7 +1508,7 @@ public class Publication implements APIEntryInterface {
      * @see #getPeopleStringByRole(java.lang.String) 
      */
     public String getEditors() {
-        return getPeopleStringByRole(JSON_VAL_ROLE_EDITOR);
+        return getPeopleStringByRole(Val.ROLE_EDITOR);
     }
     
     /**
@@ -1084,7 +1581,7 @@ public class Publication implements APIEntryInterface {
     /**
      * Gets the complete names string for all contributors to this publication that
      * are assigned the given role.
-     * @param role The role to match against, for example {@link #JSON_VAL_ROLE_AUTHOR}.
+     * @param role The role to forString against, for example {@link #Val.ROLE_AUTHOR}.
      * @return The complete names string for all contributors to this publication that are assigned the given role, or an empty string if none.
      */
     public String getPeopleStringByRole(String role) {
@@ -1105,7 +1602,7 @@ public class Publication implements APIEntryInterface {
      * Gets the complete list of contributors to this publication that are 
      * assigned the given role.
      * 
-     * @param role The role to match against, for example {@link #JSON_VAL_ROLE_AUTHOR}.
+     * @param role The role to forString against, for example {@link #Val.ROLE_AUTHOR}.
      * @return The complete list of contributors to this publication that are assigned the given role, or an empty list if none.
      */
     public List<PublicationContributor> getPeopleByRole(String role) {
@@ -1126,7 +1623,7 @@ public class Publication implements APIEntryInterface {
         String s = "";
         if (elementId == CITE_PART_EDITORS) {
             if (!getEditors().isEmpty())
-                s += getEditors() + " (" + labels.getString(getPeopleByRole(JSON_VAL_ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ")";
+                s += getEditors() + " (" + labels.getString(getPeopleByRole(Val.ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + ")";
         }
         else if (elementId == CITE_PART_AUTHORS) {
             if (!getAuthors().isEmpty()) 
@@ -1234,13 +1731,13 @@ public class Publication implements APIEntryInterface {
             
             
             if (!pubYear.isEmpty() || !getPubDate().isEmpty()) {
-                if (isType(Publication.TYPE_POPULAR) || isType(Publication.TYPE_OTHER))
+                if (isType(Publication.Type.POPULAR) || isType(Publication.Type.OTHER))
                     s += " " + (!getPubDate().isEmpty() ? getPubDate() : pubYear) + "."; // Date takes precedence over year
                 else 
                     s += " " + pubYear + "."; // Ignore date, use year
             }
             
-            if (!this.isState(JSON_VAL_STATE_PUBLISHED)) {
+            if (!this.isState(Val.STATE_PUBLISHED)) {
                 s += " <em>(" + labels.getString(Labels.PUB_STATE_PREFIX_0.concat(getState())) + ")</em>";
             }
             
@@ -1274,7 +1771,7 @@ public class Publication implements APIEntryInterface {
                     String editorsStr = getEditors();
                     // Parent publication editors
                     if (!editorsStr.isEmpty()) {
-                        s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.JSON_VAL_ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + "): ";
+                        s += editorsStr + " (" + labels.getString(getPeopleByRole(Publication.Val.ROLE_EDITOR).size() > 1 ? Labels.PUB_REF_EDITORS_0 : Labels.PUB_REF_EDITOR_0).toLowerCase() + "): ";
                     }
                 }
                 
@@ -1330,7 +1827,7 @@ public class Publication implements APIEntryInterface {
             if (hasParent() && !s.endsWith("</a>"))
                 s += "</a>";
             
-            if (!hasParent() && (isType(Publication.TYPE_BOOK) || isType(Publication.TYPE_REPORT))) {
+            if (!hasParent() && (isType(Publication.Type.BOOK) || isType(Publication.Type.REPORT))) {
                 if (s.endsWith(".."))
                     s = s.substring(0, s.length()-1);
                 
@@ -1341,13 +1838,15 @@ public class Publication implements APIEntryInterface {
             }
             
             // Page / page span (where this publication appears in the journal/periodical/...)
-            if (!getPages().isEmpty() && !(hasParent() || isPartContribution())) {
-                // Remove trailing "." and possibly also whitespace
-                s = s.trim();
-                if (s.endsWith("."))
-                    s = s.substring(0, s.length()-1);
-                
-                s += ":&nbsp;" + getPages() + ".";
+            if (!(hasParent() || isPartContribution())) {
+                if (!getPages().isEmpty() || !getArticleNumber().isEmpty()) {
+                    // Remove trailing "." and possibly also whitespace
+                    s = s.trim();
+                    if (s.endsWith("."))
+                        s = s.substring(0, s.length()-1);
+                    
+                    s += ":&nbsp;" + (getPages().isEmpty() ? getArticleNumber() : getPages()) + ".";
+                }
             }
             
             //s += ".";
