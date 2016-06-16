@@ -563,7 +563,7 @@ public class APIUtil {
                 continue;
             }
             String[] values = params.get(key); // e.g. get the parameter value(s) for "facets"
-            s += key + "=" + APIService.combine(APIService.Delimiter.AND, values) + (i.hasNext() ? "&" : "");
+            s += (s.isEmpty() ? "" : "&") + key + "=" + APIService.combine(APIService.Delimiter.AND, values);
         }
         return s;
     }
@@ -602,6 +602,8 @@ public class APIUtil {
      * If no markdown is found, the given string is returned unmodified. The 
      * returned string will be wrapped in a paragraph tag.
      * 
+     * @param s The (possibly) markdown-formatted string.
+     * @return The given string with markdown translated to HTML.
      * @see #markdownToHtml(java.lang.String, boolean) 
      */
     public static String markdownToHtml(String s) {
@@ -646,7 +648,7 @@ public class APIUtil {
     /**
      * Simplified filter for returning the property identified by the given
      * name, as read from the first object in the given array that also has a 
-     * matching "lang" property.
+     * matching <code>lang</code> property.
      * <p>
      * The array is processed in incremental steps of 1, starting at index 0.
      * 
