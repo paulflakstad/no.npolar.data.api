@@ -15,6 +15,8 @@ import org.opencms.util.CmsStringUtil;
  * More or less just a wrapper for the ArrayList that holds the SearchFilterSet 
  * instances, created to make sorting and getting individual filter sets by name 
  * easier.
+ * <p>
+ * ToDo: Year filtering + toggle filter's visibility (see publications JSP)
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
@@ -178,63 +180,118 @@ public class SearchFilterSets /*extends ArrayList<SearchFilterSet>*/ {
         Collections.sort(sets, comp);
     }
     
+    /**
+     * Gets the widget component representing this filter set.
+     * <p>
+     * For use in an existing filtering section (which typically provides 
+     * toggling, wrappers, etc.).
+     * 
+     * @param cms An initialized CMS action element, needed to construct valid links.
+     * @param labels Used for translations of filter texts, by calling {@link ResourceBundle#getString(java.lang.String)}, passing the filter text.
+     * @return  the widget component representing this filter set.
+     */
+    public String toHtml(CmsJspActionElement cms, ResourceBundle labels) {
+        String s = "";
+        try {
+            if (!this.isEmpty()) {
+                Iterator<SearchFilterSet> iFilterSets = this.iterator();
+                s += "<div class=\"layout-group quadruple layout-group--quadruple filter-widget\">";
+                //s += "<div class=\"boxes\">";
+                while (iFilterSets.hasNext()) {
+                    SearchFilterSet filterSet = iFilterSets.next();
+                    List<SearchFilter> filters = filterSet.getFilters();
+
+                    if (filters != null) {
+                        s += "<div class=\"layout-box filter-set\">";
+                        s += "<h3 class=\"filters-heading filter-set__heading\">";
+                        s += filterSet.getTitle(cms.getRequestContext().getLocale());
+                        s += "<span class=\"filter__num-matches\"> (" + filterSet.size() + ")</span>";
+                        s += "</h3>";
+                        s += "<ul class=\"filter-set__filters\">";
+                        try {
+                            // Iterate through the filters in this set
+                            Iterator<SearchFilter> iFilters = filters.iterator();
+                            while (iFilters.hasNext()) {
+                                SearchFilter filter = iFilters.next();
+                                // The visible filter text (initialize this as the term)
+                                String filterText = filter.getTerm();
+
+                                // Try to fetch a better (and localized) text for the filter
+                                try {
+                                    filterText = labels.getString( filterSet.labelKeyFor(filter) );
+                                } catch (Exception skip) {}
+
+                                // The filter
+                                s += "<li><a href=\"" + cms.link(cms.getRequestContext().getUri() + "?" + CmsStringUtil.escapeHtml(filter.getUrlPartParameters())) + "\""
+                                                    + " class=\"filter" + (filter.isActive() ? " filter--active" : "") + "\""
+                                                    + " rel=\"nofollow\""
+                                                    + ">" 
+                                                    //+ (filter.isActive() ? "<span style=\"background:red; border-radius:3px; color:white; padding:0 0.3em;\" class=\"remove-filter\">X</span> " : "")
+                                                    + filterText
+                                                    + "<span class=\"filter__num-matches\"> (" + filter.getCount() + ")</span>"
+                                                + "</a></li>";
+                            }
+                        } catch (Exception filterE) {
+                            s += "<!-- " + filterE.getMessage() + " -->";
+                        }
+                        s += "</ul>";
+                        s += "</div>"; // .filter-set
+                    }
+                }
+                //s += "</div>";
+                s += "</div>"; // .layout-group
+            }
+        } catch (Exception e) {
+            s += "<!-- Error constructing filters: " + e.getMessage() + " -->";
+        }
+        return s;   
+    }
+    
+    /**
+     * Gets the HTML to start a toggleable filtering section.
+     * 
+     * @param togglerText The text to display on the toggler, e.g. "Filters".
+     * @return  the HTML to end a toggleable filtering section.
+     * @see #getFiltersWrapperHtmlEnd() 
+     */
+    public String getFiltersWrapperHtmlStart(String togglerText) {
+        return "\n<div class=\"search-panel__filters\">" 
+                + "\n<a class=\"toggler toggler--filters-toggle\" href=\"#\" tabindex=\"0\">" + togglerText + "</a>"
+                + "\n<div class=\"toggleable toggleable--filters\">";
+        /*return "\n<div class=\"search-widget search-widget--filters\">" 
+                + "\n<a class=\"cta cta--filters-toggle\" tabindex=\"0\">" + togglerText + "</a>"
+                + "\n<div class=\"filters-wrapper\">";*/
+    }
+    
+    /**
+     * Gets the HTML to end a toggleable filtering section.
+     * 
+     * @return  the HTML to end a toggleable filtering section.
+     * @see #getFiltersWrapperHtmlStart(java.lang.String) 
+     */
+    public String getFiltersWrapperHtmlEnd() {
+        return "\n</div>" // .toggleable
+                + "\n</div>"; // .search-panel__filters
+        /*return "\n</div>" // .filters-wrapper
+                + "\n</div>"; // .search-widget--filters*/
+    }
+    
+    /**
+     * Gets the complete HTML for a toggleable filtering section, including the 
+     * wrappers, toggler and filters, ready to use.
+     * 
+     * @param togglerText The text to display on the toggler, e.g. "Filters".
+     * @param cms An initialized CMS action element, needed to construct valid links.
+     * @param labels Used for translations of filter texts, by calling {@link ResourceBundle#getString(java.lang.String)}, passing the filter text.
+     * @return the complete HTML for a toggleable filtering section, ready to use.
+     * @see #toHtml(org.opencms.jsp.CmsJspActionElement, java.util.ResourceBundle) 
+     */
     public String toHtml(String togglerText, CmsJspActionElement cms, ResourceBundle labels) {
         String s = "";
         try {
-            s += "<div class=\"search-widget search-widget--filters\">" 
-                + "<a class=\"cta cta--filters-toggle\" tabindex=\"0\">" + togglerText + "</a>"
-                + "<div class=\"filters-wrapper\">";
-                    
-                    if (!this.isEmpty()) {
-                        Iterator<SearchFilterSet> iFilterSets = this.iterator();
-                        s += "<div class=\"layout-group quadruple layout-group--quadruple\">";
-                        //s += "<div class=\"boxes\">";
-                        while (iFilterSets.hasNext()) {
-                            SearchFilterSet filterSet = iFilterSets.next();
-                            List<SearchFilter> filters = filterSet.getFilters();
-                            
-                            if (filters != null) {
-                                s += "<div class=\"layout-box filter-set\">";
-                                s += "<h3 class=\"filters-heading filter-set__heading\">";
-                                s += filterSet.getTitle(cms.getRequestContext().getLocale());
-                                s += "<span class=\"filter__num-matches\"> (" + filterSet.size() + ")</span>";
-                                s += "</h3>";
-                                s += "<ul class=\"filter-set__filters\">";
-                                try {
-                                    // Iterate through the filters in this set
-                                    Iterator<SearchFilter> iFilters = filters.iterator();
-                                    while (iFilters.hasNext()) {
-                                        SearchFilter filter = iFilters.next();
-                                        // The visible filter text (initialize this as the term)
-                                        String filterText = filter.getTerm();
-                                        
-                                        // Try to fetch a better (and localized) text for the filter
-                                        try {
-                                            filterText = labels.getString( filterSet.labelKeyFor(filter) );
-                                        } catch (Exception skip) {}
-                                        
-                                        // The filter
-                                        s += "<li><a href=\"" + cms.link(cms.getRequestContext().getUri() + "?" + CmsStringUtil.escapeHtml(filter.getUrlPartParameters())) + "\""
-                                                            + " class=\"filter" + (filter.isActive() ? " filter--active" : "") + "\""
-                                                            + ">" 
-                                                            //+ (filter.isActive() ? "<span style=\"background:red; border-radius:3px; color:white; padding:0 0.3em;\" class=\"remove-filter\">X</span> " : "")
-                                                            + filterText
-                                                            + "<span class=\"filter__num-matches\"> (" + filter.getCount() + ")</span>"
-                                                        + "</a></li>";
-                                    }
-                                } catch (Exception filterE) {
-                                    s += "<!-- " + filterE.getMessage() + " -->";
-                                }
-                                s += "</ul>";
-                                s += "</div>";
-                            }
-                        }
-                        //s += "</div>";
-                        s += "</div>";
-                    }
-                    
-                s += "</div>";
-            s += "</div>";
+            s += getFiltersWrapperHtmlStart(togglerText);
+            s += toHtml(cms, labels);
+            s += getFiltersWrapperHtmlEnd();
         } catch (Exception e) {
             s += "<!-- Error constructing filters: " + e.getMessage() + " -->";
         }
