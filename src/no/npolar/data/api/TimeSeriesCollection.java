@@ -278,6 +278,7 @@ public class TimeSeriesCollection {
         try {
             //this.allSeriesByTime.put(timestamp, null);
             allTimestamps.add(timestamp);
+            //System.out.println("Added " + timestamp + " to time series collection (" + allTimestamps.size() + " timestamps total now)");
         }catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Unable to add empty data point to collection '" + this.getTitle() + "'.", e);

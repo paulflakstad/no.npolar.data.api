@@ -203,6 +203,7 @@ public class HighchartsChart {
             Iterator<TimeSeriesTimestamp> itr = timeSeriesCollection.getTimeMarkerIterator();
             while (itr.hasNext()) {
                 year = Integer.valueOf(itr.next().toString());
+                //System.out.println("Found time marker: " + year);
                 if (prevYear != Integer.MAX_VALUE) {
                     if (year - prevYear < smallestInterval) {
                         smallestInterval = year - prevYear;
@@ -210,9 +211,13 @@ public class HighchartsChart {
                 }
                 prevYear = year;
             }
+            //System.out.println("Smallest interval: " + smallestInterval);
             
             year = Integer.MIN_VALUE;
             prevYear = Integer.MAX_VALUE;
+            
+            // Map out which time markers are "missing", and store these in a list
+            List<TimeSeriesTimestamp> missing = new ArrayList();
             //Map<TimeSeriesTimestamp, TimeSeriesDataPoint[]> dataToAdd = new HashMap<TimeSeriesTimestamp, TimeSeriesDataPoint[]>();
             
             itr = timeSeriesCollection.getTimeMarkerIterator();
@@ -223,14 +228,20 @@ public class HighchartsChart {
                 if (prevYear != Integer.MAX_VALUE) {
                     while (year - prevYear > smallestInterval) {
                         prevYear = prevYear + smallestInterval;
-                        //System.out.println("Adding missing year: " + prevYear);
                         //dataToAdd.put(new TimeSeriesTimestamp(year), null);
-                        timeSeriesCollection.setEmptyOnTimestamp(new TimeSeriesTimestamp(year));
+                        missing.add(new TimeSeriesTimestamp(prevYear));
                     }
                 }
                 prevYear = year;
             }
+            
+            // Add the "missing" time markers
             //timeSeriesCollection.addDataPoints(dataToAdd);
+            if (!missing.isEmpty()) {
+                for (TimeSeriesTimestamp missingTimestamp : missing) {
+                    timeSeriesCollection.setEmptyOnTimestamp(missingTimestamp);
+                }
+            }
         } catch (Exception e) {
             // Non-yearly time marker format
             //System.out.println("CRASH! Error was: " + e.getMessage());
