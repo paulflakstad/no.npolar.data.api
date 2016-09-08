@@ -60,7 +60,36 @@ public class PublicationContributor {
             }
 
             // NPI affiliate?
-            try { if (contributor.getString(Publication.Key.ORG).equalsIgnoreCase(Publication.Val.ORG_NPI)) isNPIContributor = true; } catch (Exception e) {}
+            try { 
+                isNPIContributor = contributor.getString(Publication.Key.ORG).equalsIgnoreCase(Publication.Val.ORG_NPI);
+            } catch (Exception e) {}
+            
+            
+            // ToDo: Remove this hack
+            // BEGIN HACK
+            // This hack is here to amend erroneous entries.
+            //
+            // Amend entries that should have organisation = "npolar.no" but 
+            // istead have organisation = "NPI", or similar.
+            try {
+                if (!isNPIContributor) {
+                    if (organisation != null && !organisation.trim().isEmpty()) {
+                        if (organisation.matches("^(?i)(NP(I)?|Norsk Polarinstitutt|Norwegian Polar Institute)")) {
+                            isNPIContributor = true;
+                        }
+                    }
+                }
+            } catch (Exception e) {}
+            // Try to amend missing ID on NPI contributors
+            try {
+                if (isNPIContributor) { 
+                    if (id == null || id.isEmpty()) {
+                        // No guarantees - just a best guess.
+                        id = APIUtil.toURLFriendlyForm(fName + " " + lName + "@npolar.no");
+                    }
+                }
+            } catch (Exception e) {}
+            // END HACK
         } catch (Exception e) { }
     }
 
