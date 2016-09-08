@@ -746,7 +746,12 @@ public class Publication extends APIEntry implements APIEntryInterface {
         this.displayLocale = loc;
         if (this.displayLocale == null)
             this.displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
-        init();
+        // If the JSON object is null or the ID is missing, this is no good
+        // (Added this check in attempt to avoid logging of errors suspected
+        // to be rooted in API downtime/error, which does occur now and then.)
+        if (this.o != null && this.o.has(Key.ID)) {
+            init();
+        }
     }
     
     /**
