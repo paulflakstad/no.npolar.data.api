@@ -695,4 +695,78 @@ public class APIUtil {
         // Return default
         return new SimpleDateFormat(APIEntry.TimestampPattern.TIME.toString());
     }
+    
+    /**
+     * Converts the given string to an "URL-friendly" string consisting only 
+     * of lowercase letters in the a-z range, numbers, and periods (dots).
+     * 
+     * @param s The string to make "URL-friendly"
+     * @return the given string, converted to an "URL-friendly" form.
+     * @see http://spanish.typeit.org/
+     */
+    public static String toURLFriendlyForm(String s) {
+        s = s.toLowerCase();
+        
+        String regex = "(æ|å|à|á|ä|â|ā|ã|ă|ą)";
+        s = s.replaceAll(regex, "a");
+        
+        regex = "(ç|č)";
+        s = s.replaceAll(regex, "c");
+        
+        regex = "(ď)";
+        s = s.replaceAll(regex, "d");
+        
+        regex = "(è|é|ê|ě|ë|ē|ę)";
+        s = s.replaceAll(regex, "e");
+        
+        regex = "(ğ)";
+        s = s.replaceAll(regex, "g");
+        
+        regex = "(ì|ı|í|î|ï|ī)";
+        s = s.replaceAll(regex, "i");
+        
+        regex = "(ɫ|ł)";
+        s = s.replaceAll(regex, "l");
+        
+        regex = "(ñ|ƞ|ň|ń)";
+        s = s.replaceAll(regex, "n");
+        
+        regex = "(ø|ö|ó|ò|ő|õ|ô|ō)";
+        s = s.replaceAll(regex, "o");
+        
+        regex = "(ř)";
+        s = s.replaceAll(regex, "r");
+        
+        regex = "(š|ş|ș|ś)";
+        s = s.replaceAll(regex, "s");
+        
+        regex = "(ť|ţ|ț)";
+        s = s.replaceAll(regex, "t");
+        
+        regex = "(ù|ú|û|ü|ů|ű|ū)";
+        s = s.replaceAll(regex, "u");
+        
+        regex = "(ŵ|ẅ|ẃ|ẁ)";
+        s = s.replaceAll(regex, "w");
+        
+        regex = "(ÿ|ý|ỳ|ÿ)";
+        s = s.replaceAll(regex, "y");
+        
+        regex = "(ž|ź|ż)";
+        s = s.replaceAll(regex, "z");
+        
+        regex = "(ß)";
+        s = s.replaceAll(regex, "ss");
+        
+        regex = "(þ|ð)";
+        s = s.replaceAll(regex, "th");
+        
+        regex = "(\\s|-|–|—|,)";
+        s = s.replaceAll(regex, ".");
+        
+        regex = "('|`|’|´)";
+        s = s.replaceAll(regex, "");
+        
+        return s;
+    }
 }
