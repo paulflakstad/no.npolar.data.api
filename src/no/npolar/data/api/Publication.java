@@ -822,31 +822,37 @@ public class Publication extends APIEntry implements APIEntryInterface {
         } catch (Exception e) { 
             publishTimeFormat = new SimpleDateFormat(PATTERNS_PUB_TIME[0], displayLocale);
         }
-        try { 
-            publishTime = publishTimeFormat.parse(o.getString(Key.PUB_TIME));
-        } catch (Exception e) {
-            //System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
-            if (LOG.isErrorEnabled()) {
-                LOG.error("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+        String publishTimeRaw = null;
+        try { publishTimeRaw = o.getString(Key.PUB_TIME); } catch (Exception ignore) {}
+        if (publishTimeRaw != null) {
+            try { 
+
+            } catch (Exception e) {
+                //System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+                if (LOG.isErrorEnabled()) {
+                    LOG.error("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+                }
             }
-        }
-        try {
-            pubYear = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale).format(publishTime);
-        } catch (Exception e) {
-            //System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
-            if (LOG.isErrorEnabled()) {
-                LOG.error("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
-            }
-        } finally {
-            if (pubYear == null || pubYear.isEmpty()) {
-                try {
-                    pubYear = o.getString(Key.PUB_TIME).substring(0, 4);
-                } catch (Exception e) {
-                    //System.out.println("Fallback routine for determining publish year failed. Publication ID was " + this.id);
-                    if (LOG.isErrorEnabled()) {
-                        LOG.error("Fallback routine for determining publish year failed. Publication ID was " + this.id);
+            try {
+            } catch (Exception e) {
+                //System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
+                if (LOG.isErrorEnabled()) {
+                    LOG.error("Unable to determine publish year. Bad publish time format '" + publishTimeRaw  + "'? Publication ID was " + this.id);
+                }
+            } finally {
+                if (pubYear == null || pubYear.isEmpty()) {
+                    try {
+                    } catch (Exception e) {
+                        //System.out.println("Fallback routine for determining publish year failed. Publication ID was " + this.id);
+                        if (LOG.isErrorEnabled()) {
+                            LOG.error("Fallback routine for determining publish year failed. Publication ID was " + this.id);
+                        }
                     }
                 }
+            }
+        } else {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Publication with ID " + this.id + " is missing required publish time.");
             }
         }
         
