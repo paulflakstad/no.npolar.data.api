@@ -790,8 +790,8 @@ public class Publication extends APIEntry implements APIEntryInterface {
         try { topics    = o.getJSONArray(Key.TOPICS); } catch (Exception e) { }
         
         ////////////////////////////////////////////////////////////////////////
-        // Publish time: year OR month of year OR full date
-        String publishTimePattern = PATTERNS_PUB_TIME[0];
+        // Publish time: Should be year OR month of year OR full date
+        //String publishTimePattern = PATTERNS_PUB_TIME[0]; // Initially, use year
         try { 
             /*
             String publishTimeFormatStr = o.getString(JSON_KEY_PUB_ACCURACY);
@@ -803,6 +803,10 @@ public class Publication extends APIEntry implements APIEntryInterface {
                 publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
             }
             */
+            
+            publishTimeFormat = APIUtil.getTimestampFormat(o.getString(Key.PUB_TIME));
+            //publishTimePattern = publishTimeFormat.toPattern();
+            /*
             String publishTimeString = o.getString(Key.PUB_TIME);
             int publishTimeStringLength = publishTimeString.length();
             if (publishTimeStringLength == 10) { // yyyy-MM-dd
@@ -814,11 +818,12 @@ public class Publication extends APIEntry implements APIEntryInterface {
             } else if (publishTimeStringLength == 4) { // yyyy
                 publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
             }
+            //*/
         } catch (Exception e) { 
-            publishTimeFormat = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEAR_0), displayLocale);
+            publishTimeFormat = new SimpleDateFormat(PATTERNS_PUB_TIME[0], displayLocale);
         }
         try { 
-            publishTime = new SimpleDateFormat(publishTimePattern).parse(o.getString(Key.PUB_TIME));
+            publishTime = publishTimeFormat.parse(o.getString(Key.PUB_TIME));
         } catch (Exception e) {
             //System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
             if (LOG.isErrorEnabled()) {
@@ -1097,7 +1102,21 @@ public class Publication extends APIEntry implements APIEntryInterface {
      * @return The title for this publication.
      */
     @Override
-    public String getTitle() { return title; }
+    public String getTitle() { return title.trim(); }
+    
+    /**
+     * Gets the "closed" title, that is, appended a period at the end - but only
+     * if necessary.
+     * <p>
+     * If the title already ends with a one of the characters [?.!], it is 
+     * considered already closed and no period will be appended.
+     * 
+     * @return The "closed" title.
+     */
+    public String getTitleClosed() { 
+        String t = getTitle();
+        return t.concat(t.matches(".*(\\?|\\.|\\!)$") ? "" : "."); 
+    }
     
     /**
      * Gets the URL for this publication, within the context of the given 
@@ -1211,6 +1230,13 @@ public class Publication extends APIEntry implements APIEntryInterface {
      * @return The article number for this publication, or an empty string if none.
      */
     public String getArticleNumber() { return articleNo; }
+    
+    /**
+     * Gets the language for this publication, if any.
+     * 
+     * @return The language for this publication, or an empty string if none.
+     */
+    public String getLanguage() { return language; }
     
     /**
      * Gets the links for this publication, if any.
@@ -1702,6 +1728,74 @@ public class Publication extends APIEntry implements APIEntryInterface {
      */
     public String cite() {
         return this.toString();
+    }
+    
+    /**
+     * Gets HTML for this publication, intended for listings etc.
+     * 
+     * @param attrClass Extra classes to apply. Provide empty string or <code>null</code> if no additional class should be applied.
+     * @param asListItem If <code>true</code>, a <code>li</code> element is used as wrapper. Otherwise, a <code>span</code> is used.
+     * @param includeTypeTag If <code>true</code>, the first element will be a <code>span</code> defining the publication type.
+     * @return 
+     */
+    public String toHtml(String attrClass, boolean asListItem, boolean includeTypeTag) {
+        String type = getType().toString();
+        String s = "";
+        s += "<" + (asListItem ? "li" : "span")
+                + " class=\"publication publication--" + type
+                + (attrClass != null && !attrClass.isEmpty() ? " ".concat(attrClass) : "")
+                + "\">"
+                + (includeTypeTag ? "<span class=\"publication__type publication__type--" + type+" tag\">" 
+                    + labels.getString(Labels.PUB_TYPE_PREFIX_0.concat(type)) + "</span>" : "")
+                + "<a"
+                    + " class=\"publication__title\""
+                    + " href=\"" + URL_PUBLINK_BASE.replaceAll("^http(s)?:", "") + id + "\""
+                    + " lang=\"" + getLanguage() + "\""
+                + ">"
+                + getTitleClosed()
+                + "</a>"
+                + "<span class=\"publication__details\">"
+                + " ("
+                ;
+        
+        int i = 0;
+        List<PublicationContributor> contributors = getPeople();
+        Iterator<PublicationContributor> iContributors = contributors.iterator();
+        while (iContributors.hasNext()) {
+            PublicationContributor contributor = iContributors.next();
+            i++;
+            if (contributors.size() == 2) { 
+                if (i == 2) {
+                    s += " &amp; ";
+                }
+            } else if (contributors.size() == 3) {
+                if (i == 2) {
+                    s += ", ";
+                } else if (i == 3) {
+                    s += " &amp; ";
+                }   
+            } else if (contributors.size() > 3) {
+                if (i == 2) {
+                    s += " et al.";
+                    break;
+                }
+            }
+            s += contributor.getLastName();
+        }
+        
+        if (i > 0) {
+            s += " ";
+        }
+        
+        s +=  getPubYear();
+        
+        s += ")";
+        
+        s += "</span>";
+        s += "</" + (asListItem ? "li" : "span") + ">";
+        
+        
+        return s;
     }
     
     /**
