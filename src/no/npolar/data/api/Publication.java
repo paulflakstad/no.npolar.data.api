@@ -827,6 +827,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
         if (publishTimeRaw != null) {
             try { 
 
+                publishTime = publishTimeFormat.parse(publishTimeRaw);
             } catch (Exception e) {
                 //System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
                 if (LOG.isErrorEnabled()) {
@@ -834,6 +835,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
                 }
             }
             try {
+                pubYear = new SimpleDateFormat(PATTERNS_PUB_TIME[0], displayLocale).format(publishTime);
             } catch (Exception e) {
                 //System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
                 if (LOG.isErrorEnabled()) {
@@ -842,6 +844,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
             } finally {
                 if (pubYear == null || pubYear.isEmpty()) {
                     try {
+                        pubYear = publishTimeRaw.substring(0, 4);
                     } catch (Exception e) {
                         //System.out.println("Fallback routine for determining publish year failed. Publication ID was " + this.id);
                         if (LOG.isErrorEnabled()) {
