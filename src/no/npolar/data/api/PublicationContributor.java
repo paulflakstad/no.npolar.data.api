@@ -22,9 +22,21 @@ public class PublicationContributor {
     private String lName = "";
     private boolean isNPIContributor = false;
     private List<String> roles = null;
-
+    
     protected ResourceBundle labels = null;
     protected Locale displayLocale = null;
+    
+    /** 
+     * Regular expression pattern form matching anything that strongly resembles 
+     * anything that should interpreted as "the Norwegian Polar Institute".
+     */
+    public static final String REGEX_PATTERN_NPI =
+            // Match (case-insensitive) any typical form ...
+            // (e.g. "NPI" or "Norsk Polarinstitutt", etc.)
+            "^(?i)((NP(I)?|Norsk Polarinstitutt|Norsk Polar Institutt|Norwegian Polar Institute)$)"
+            // ... or any typical form, followed by a comma, semi-colon, or space
+            // (e.g. "Norwegian Polar Institute; Fram Centre; Tromsø; Norway"
+            + "|(NP(I)?|Norsk Polarinstitutt|Norsk Polar Institutt|Norwegian Polar Institute)(,|;|\\s).*";
     
     /**
      * Constructs a new instance, based on the given JSON object.
@@ -64,33 +76,71 @@ public class PublicationContributor {
                 isNPIContributor = contributor.getString(Publication.Key.ORG).equalsIgnoreCase(Publication.Val.ORG_NPI);
             } catch (Exception e) {}
             
-            
-            // ToDo: Remove this hack
-            // BEGIN HACK
-            // This hack is here to amend erroneous entries.
-            //
-            // Amend entries that should have organisation = "npolar.no" but 
-            // istead have organisation = "NPI", or similar.
-            try {
-                if (!isNPIContributor) {
-                    if (organisation != null && !organisation.trim().isEmpty()) {
-                        if (organisation.matches("^(?i)(NP(I)?|Norsk Polarinstitutt|Norwegian Polar Institute)")) {
-                            isNPIContributor = true;
-                        }
-                    }
-                }
-            } catch (Exception e) {}
-            // Try to amend missing ID on NPI contributors
-            try {
-                if (isNPIContributor) { 
-                    if (id == null || id.isEmpty()) {
-                        // No guarantees - just a best guess.
-                        id = APIUtil.toURLFriendlyForm(fName + " " + lName + "@npolar.no");
-                    }
-                }
-            } catch (Exception e) {}
-            // END HACK
+            amendFlaws();
         } catch (Exception e) { }
+    }
+    
+    /**
+     * Tries to amend flaws on contributor affiliated with the Polar Institute.
+     * <p>
+     * This is a hack that aims to amend bad user input in two key fields:
+     * <ul>
+     * <li>if "organisation" is something we can assume should be interpreted as 
+     * "Norwegian Polar Institute", but not the expected "npolar.no", we set the 
+     * {@link #isNPIContributor} flag to <code>true</code>.</li>
+     * <li>if the ID is missing, AND this is an NPI-affiliated contributor, we
+     * make a best guess, based on the name, and set it as ID.</li>
+     * </ul>
+     * 
+     * @see #REGEX_PATTERN_NPI
+     */
+    private void amendFlaws() {
+        // This hack was implemented in response to the discovery of an unknown
+        // number of publications containing bad data, input by users who did
+        // not know how to fill out necessary fields.
+        //
+        // First, check for organisation = "npolar.no" errors (these will 
+        // istead have organisation = "NPI", or similar - see the regex pattern)
+        try {
+            if (!isNPIContributor) {
+                if (organisation != null && !organisation.trim().isEmpty()) {
+                    if (organisation.matches(REGEX_PATTERN_NPI)) {
+                        isNPIContributor = true;
+                    }
+                }
+            }
+        } catch (Exception ignore) {}
+        
+        // Next, try to amend missing ID
+        // (But only if this is an NPI contributor)
+        try {
+            if (isNPIContributor && (id == null || id.isEmpty())) {
+                // No guarantee this ID will be correct - just a best guess
+                id = getNameURLFriendly().concat("@" + "npolar.no");
+            }
+        } catch (Exception ignore) {}
+    }
+    
+    /**
+     * Gets the contributor's name, in an URL-friendly form.
+     * <p>
+     * The returned string will be in the form "[first name].[last name]".
+     * 
+     * @return the contributor's name, in an URL-friendly form.
+     */
+    public String getNameURLFriendly() {
+        return APIUtil.toURLFriendlyForm(getName());
+    }
+    
+    /**
+     * Gets the contributor's name.
+     * <p>
+     * The returned string will be in the form "[first name] [last name]".
+     * 
+     * @return the contributor's name.
+     */
+    public String getName() {
+        return getFirstName().concat(" ").concat(getLastName());
     }
 
     /**
