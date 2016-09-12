@@ -61,10 +61,10 @@ public class PublicationContributor {
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
         try {
-            try { id = contributor.getString(Publication.Key.ID); } catch (Exception e) { }
-            try { organisation = contributor.getString(Publication.Key.ORG); } catch (Exception e) { }
-            try { fName = contributor.getString(Publication.Key.FNAME); } catch (Exception e) { fName = ""; }
-            try { lName = contributor.getString(Publication.Key.LNAME); } catch (Exception e) { lName = ""; }
+            try { id = contributor.getString(Publication.Key.ID).trim(); } catch (Exception e) { }
+            try { organisation = contributor.getString(Publication.Key.ORG).trim(); } catch (Exception e) { }
+            try { fName = contributor.getString(Publication.Key.FNAME).trim(); } catch (Exception e) { fName = ""; }
+            try { lName = contributor.getString(Publication.Key.LNAME).trim(); } catch (Exception e) { lName = ""; }
 
             // Evaluate the person's role(s)
             JSONArray rolesArr = null;
