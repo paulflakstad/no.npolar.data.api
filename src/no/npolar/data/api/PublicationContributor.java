@@ -16,14 +16,22 @@ import org.opencms.json.JSONObject;
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class PublicationContributor {
+    /** Holds the contributor's ID (typically an email address). */
     private String id = null;
+    /** Holds the contributor's organisation(s). */
     private String organisation = "";
+    /** Holds the contributor's first name. */
     private String fName = "";
+    /** Holds the contributor's last name. */
     private String lName = "";
+    /** Flag indicating if this contributor is affiliated with the Polar Institute. */
     private boolean isNPIContributor = false;
+    /** Holds the contributor's roles. */
     private List<String> roles = null;
     
+    /** Translations etc. */
     protected ResourceBundle labels = null;
+    /** Holds the currently preferred display locale. */
     protected Locale displayLocale = null;
     
     /** 
@@ -42,6 +50,7 @@ public class PublicationContributor {
      * Constructs a new instance, based on the given JSON object.
      * 
      * @param contributor The JSON object to use when constructing this instance.
+     * @param loc The preferred locale to use for any output.
      */
     public PublicationContributor(JSONObject contributor, final Locale loc) {
         this.displayLocale = loc;
