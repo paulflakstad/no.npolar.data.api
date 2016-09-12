@@ -112,11 +112,9 @@ public class PublicationContributor {
         // First, check for organisation = "npolar.no" errors (these will 
         // istead have organisation = "NPI", or similar - see the regex pattern)
         try {
-            if (!isNPIContributor) {
-                if (organisation != null && !organisation.trim().isEmpty()) {
-                    if (organisation.matches(REGEX_PATTERN_NPI)) {
-                        isNPIContributor = true;
-                    }
+            if (!isNPIContributor() && hasOrganisation()) {
+                if (getOrganisation().matches(REGEX_PATTERN_NPI)) {
+                    isNPIContributor = true;
                 }
             }
         } catch (Exception ignore) {}
@@ -124,22 +122,11 @@ public class PublicationContributor {
         // Next, try to amend missing ID
         // (But only if this is an NPI contributor)
         try {
-            if (isNPIContributor && (id == null || id.isEmpty())) {
+            if (isNPIContributor() && !hasID()) {
                 // No guarantee this ID will be correct - just a best guess
                 id = getNameURLFriendly().concat("@" + "npolar.no");
             }
         } catch (Exception ignore) {}
-    }
-    
-    /**
-     * Gets the contributor's name, in an URL-friendly form.
-     * <p>
-     * The returned string will be in the form "[first name].[last name]".
-     * 
-     * @return the contributor's name, in an URL-friendly form.
-     */
-    public String getNameURLFriendly() {
-        return APIUtil.toURLFriendlyForm(getName());
     }
     
     /**
@@ -149,17 +136,6 @@ public class PublicationContributor {
      */
     public String getOrganisation() {
         return organisation;
-    }
-    
-    /**
-     * Gets the contributor's name.
-     * <p>
-     * The returned string will be in the form "[first name] [last name]".
-     * 
-     * @return the contributor's name.
-     */
-    public String getName() {
-        return getFirstName().concat(" ").concat(getLastName());
     }
 
     /**
@@ -182,6 +158,28 @@ public class PublicationContributor {
      * @return The last name for this contributor.
      */
     public String getLastName() { return lName; }
+    
+    /**
+     * Gets the contributor's name.
+     * <p>
+     * The returned string will be in the form "[first name] [last name]".
+     * 
+     * @return the contributor's name.
+     */
+    public String getName() {
+        return getFirstName().concat(" ").concat(getLastName());
+    }
+    
+    /**
+     * Gets the contributor's name, in an URL-friendly form.
+     * <p>
+     * The returned string will be in the form "[first name].[last name]".
+     * 
+     * @return the contributor's name, in an URL-friendly form.
+     */
+    public String getNameURLFriendly() {
+        return APIUtil.toURLFriendlyForm(getName());
+    }
 
     /**
      * Determines whether or not this contribution was made on behalf of the NPI.
@@ -199,6 +197,15 @@ public class PublicationContributor {
      */
     public boolean hasOrganisation() {
         return organisation != null && !getOrganisation().isEmpty();
+    }
+    
+    /**
+     * Checks if this contributor has an ID set.
+     * 
+     * @return <code>true</code> if this contributor has an ID set, <code>false</code> if not.
+     */
+    public boolean hasID() {
+        return id != null && !id.isEmpty();
     }
 
     /**
@@ -265,12 +272,18 @@ public class PublicationContributor {
 
     /**
      * Gets a string representation of this contributor.
+     * <p>
+     * The returned string will be of the form: 
+     * <ul>
+     * <li>"[first name] [last name]", OR</li>
+     * <li>"[first name] [last name] (editor)" (if this contributor is an editor)</li>
+     * </ul>
      * 
      * @return The string representation of this contributor.
      */
     @Override
     public String toString() {
-        return fName + " " + lName + (hasRole(Publication.Val.ROLE_EDITOR) ? " (" + labels.getString(Labels.PUB_REF_EDITOR_0) + ")" : "");
+        return getName() + (hasRole(Publication.Val.ROLE_EDITOR) ? " (" + labels.getString(Labels.PUB_REF_EDITOR_0) + ")" : "");
     }
 
     /**
