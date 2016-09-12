@@ -761,6 +761,12 @@ public class APIUtil {
         regex = "(þ|ð)";
         s = s.replaceAll(regex, "th");
         
+        // Remove all periods followed by a space, to avoid two consecutive 
+        // periods (e.g. if the given string was "Kit M. Kovacs")
+        s = s.replaceAll("\\.\\s", " ");
+        // Remove trailing period (e.g. if the given string was "Kit M.")
+        s = s.replaceAll("\\.$", "");
+        
         regex = "(\\s|-|–|—|,)";
         s = s.replaceAll(regex, ".");
         
