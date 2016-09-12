@@ -191,6 +191,15 @@ public class PublicationContributor {
     public boolean isNPIContributor() {
         return isNPIContributor;
     }
+    
+    /**
+     * Checks if this contributor has an organisation set.
+     * 
+     * @return <code>true</code> if this contributor has an organisation set, <code>false</code> if not.
+     */
+    public boolean hasOrganisation() {
+        return organisation != null && !getOrganisation().isEmpty();
+    }
 
     /**
      * Checks if this contributor is assigned the given role.
