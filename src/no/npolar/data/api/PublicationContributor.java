@@ -143,6 +143,15 @@ public class PublicationContributor {
     }
     
     /**
+     * Gets the contributor's organisation, if any.
+     * 
+     * @return the contributor's organisation, or an empty string if none.
+     */
+    public String getOrganisation() {
+        return organisation;
+    }
+    
+    /**
      * Gets the contributor's name.
      * <p>
      * The returned string will be in the form "[first name] [last name]".
