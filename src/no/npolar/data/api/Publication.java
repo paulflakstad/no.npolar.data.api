@@ -831,7 +831,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
             } catch (Exception e) {
                 //System.out.println("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
                 if (LOG.isErrorEnabled()) {
-                    LOG.error("Unexpected format on publish time, no suitable parser available. Publication ID was " + this.id);
+                    LOG.error("Unexpected format on publish time '" + publishTimeRaw  + "', no suitable parser available. Publication ID was " + this.id);
                 }
             }
             try {
@@ -839,7 +839,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
             } catch (Exception e) {
                 //System.out.println("Unable to determine publish year. Bad publish time format? Publication ID was " + this.id);
                 if (LOG.isErrorEnabled()) {
-                    LOG.error("Unable to determine publish year. Bad publish time format '" + publishTimeRaw  + "'? Publication ID was " + this.id);
+                    LOG.error("Unable to determine publish year for '" + publishTimeRaw  + "'. Bad publish time format? Publication ID was " + this.id);
                 }
             } finally {
                 if (pubYear == null || pubYear.isEmpty()) {
