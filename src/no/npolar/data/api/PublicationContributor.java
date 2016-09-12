@@ -54,8 +54,9 @@ public class PublicationContributor {
      */
     public PublicationContributor(JSONObject contributor, final Locale loc) {
         this.displayLocale = loc;
-        if (displayLocale == null)
+        if (displayLocale == null) {
             displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
+        }
         
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
@@ -213,10 +214,12 @@ public class PublicationContributor {
      * @return The list of roles for this contributor, including the given role.
      */
     protected final List<String> addRole(String role) {
-        if (roles == null)
+        if (roles == null) {
             roles = new ArrayList<String>(1);
-        if (!roles.contains(role))
+        }
+        if (!roles.contains(role)) {
             roles.add(role);
+        }
         return roles;
     }
 
@@ -229,8 +232,9 @@ public class PublicationContributor {
      */
     public List<String> addRoles(List<String> roles) {
         Iterator<String> i = roles.iterator();
-        while (i.hasNext()) 
+        while (i.hasNext()) {
             this.addRole(i.next());
+        }
         return roles;
     }
 
@@ -261,28 +265,32 @@ public class PublicationContributor {
     public String toHtml(boolean specifyEditorRole, boolean fullName) {
         String s = "";
 
-        if (isNPIContributor)
+        if (isNPIContributor) {
             s += "<span class=\"pub-contributor-npi\">";
+        }
         
         if (fullName) {
-            if (!fName.isEmpty() && !lName.isEmpty())
+            if (!fName.isEmpty() && !lName.isEmpty()) {
                 s += fName + " " + lName;
-            else {
+            } else {
                 s += fName + lName; // One of the two, or both, is empty
             }
         }
         else {
-            if (!fName.isEmpty() && !lName.isEmpty())
+            if (!fName.isEmpty() && !lName.isEmpty()) {
                 s += lName + ",&nbsp;" + APIUtil.getInitials(fName);
-            else
+            } else {
                 s += lName + APIUtil.getInitials(fName);
+            }
         }
 
-        if (this.hasRole(Publication.Val.ROLE_EDITOR) && specifyEditorRole)
+        if (this.hasRole(Publication.Val.ROLE_EDITOR) && specifyEditorRole) {
             s += " (" + labels.getString(Labels.PUB_REF_EDITOR_0) + ")";
+        }
 
-        if (isNPIContributor)
+        if (isNPIContributor) {
             s += "</span>";
+        }
 
         return s;
     }
