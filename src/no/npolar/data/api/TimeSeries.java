@@ -1219,7 +1219,17 @@ public class TimeSeries implements APIEntryInterface {
     public JSONObject getAPIStructure() { return apiStructure; }
     
     /**
-     * @return The timestamp accuracy level. 
+     * Gets the accuracy level for the timestamps in this time series.
+     * <p>
+     * The accuracy levels are defined in {@link TimeSeriesTimestamp}, in its
+     * TYPE_XXX members.
+     * 
+     * @return The timestamp accuracy level, e.g. {@link TimeSeriesTimestamp#TYPE_YEAR}.
+     * @see TimeSeriesTimestamp#TYPE_TIME
+     * @see TimeSeriesTimestamp#TYPE_DATE
+     * @see TimeSeriesTimestamp#TYPE_MONTH
+     * @see TimeSeriesTimestamp#TYPE_YEAR
+     * @see TimeSeriesTimestamp#TYPE_LITERAL
      */
     public int getDateTimeAccuracy() { return timestampsType; }
     //public String getDateTimeAccuracy() { return dateTimeAccuracy; }
