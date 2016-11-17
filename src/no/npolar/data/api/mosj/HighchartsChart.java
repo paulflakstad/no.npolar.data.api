@@ -949,13 +949,20 @@ public class HighchartsChart {
                             s += "[null,null]";
                         }
                     }
+                    if (iTimeMark.hasNext()) {
+                        s += ", ";
+                    }
                 } catch (Exception e) {
                     // No data for our particular time series at this time marker 
-                    s += "null";
+                    if (!this.containsDateSeries()) {
+                        s += "null";
+                        if (iTimeMark.hasNext()) {
+                            s += ", ";
+                        }
+                    } else {
+                        // xAxis has type:datetime => just skip this one
+                    }
                 }
-
-                if (iTimeMark.hasNext())
-                    s += ", ";
             }
         }
         long b = System.currentTimeMillis();
