@@ -35,16 +35,35 @@ public class PublicationContributor {
     protected Locale displayLocale = null;
     
     /** 
-     * Regular expression pattern form matching anything that strongly resembles 
-     * anything that should interpreted as "the Norwegian Polar Institute".
+     * Regular expression pattern for matching anything that strongly resembles 
+     * anything that should be interpreted as "Norwegian Polar Institute", 
+     * somewhere in the test string.
+     * <p>
+     * Intended usage: <code>yourString.matches(REGEX_PATTERN_NPI)</code>
+     * <p>
+     * For example, the following test strings will match:
+     * <ul>
+     *  <li>NPI</li>
+     *  <li>NP</li>
+     *  <li>AWI, NPI</li>
+     *  <li>AWI;NPI;NASA</li>
+     *  <li>Norwegian Polar Institute</li>
+     *  <li>Norwegian Polar Institute and NASA</li>
+     * </ul>
+     * 
+     * @see #isNPIContributor() 
      */
     public static final String REGEX_PATTERN_NPI =
-            // Match (case-insensitive) any typical form ...
-            // (e.g. "NPI" or "Norsk Polarinstitutt", etc.)
-            "^(?i)((NP(I)?|Norsk Polarinstitutt|Norsk Polar Institutt|Norwegian Polar Institute)$)"
-            // ... or any typical form, followed by a comma, semi-colon, or space
-            // (e.g. "Norwegian Polar Institute; Fram Centre; Tromsø; Norway"
-            + "|(NP(I)?|Norsk Polarinstitutt|Norsk Polar Institutt|Norwegian Polar Institute)(,|;|\\s).*";
+            // Start at the beginning, and use case-insensitive matching
+            "^(?i)"
+            // Require that the "interesting bit" is preceded by a delimiter 
+            // character, if it's not at the start of the string
+            + "(.*(,|;|\\s))?"
+            // The interesting bit
+            + "(NP(I)?|Norsk Polar(\\s)?institutt|Norwegian Polar Institute)"
+            // Require that the "interesting bit" is at the end, or directly 
+            // followed by a delimiter character
+            + "($|(,|;|\\s).*)";
     
     /**
      * Constructs a new instance, based on the given JSON object.
