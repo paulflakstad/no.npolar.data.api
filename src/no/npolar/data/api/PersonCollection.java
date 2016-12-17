@@ -8,9 +8,12 @@ import org.opencms.json.JSONArray;
 import org.opencms.json.JSONObject;
 
 /**
- * Helper class: Publication contributors.
+ * Helper class for {@link Publication} contributors.
  * <p>
- * Typically, these are actual persons, but may also be institutions / organizations.
+ * Typically, a contributor is a person, but may also be an institution or 
+ * organization.
+ * <p>
+ * ToDo: Rename class to PublicationContributorCollection
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute <flakstad at npolar.no>
  */

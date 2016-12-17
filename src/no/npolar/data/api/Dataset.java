@@ -55,7 +55,7 @@ public class Dataset extends APIEntry {
     /** Localization resource bundle. */
     protected ResourceBundle labels = null;
     
-    public class Key extends APIEntry.Key {
+    public static class Key extends APIEntry.Key {
         /** Progress status. */
         public static final String PROGRESS = "progress";
         public static final String TOPICS_ISO = "iso_topics";
@@ -131,7 +131,7 @@ public class Dataset extends APIEntry {
         public static final String LOCATION = "location";
     }
     
-    public class Val extends APIEntry.Val {
+    public static class Val extends APIEntry.Val {
         public static final String PROGRESS_ONGOING = "ongoing";
         public static final String PROGRESS_COMPLETE = "complete";
         public static final String PROGRESS_PLANNED = "planned";

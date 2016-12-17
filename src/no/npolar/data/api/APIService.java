@@ -8,7 +8,7 @@ import java.net.URL;
 import java.util.HashMap;
 //import no.npolar.util.CmsAgent;
 import java.util.Iterator;
-import java.util.List;
+//import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -19,12 +19,16 @@ import org.opencms.json.JSONObject;
 
 
 /**
- * Base class for accessing the Norwegian Polar Institute Data Centre web services.
+ * Base class for accessing the Norwegian Polar Institute Data Centre API / web
+ * service.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public abstract class APIService implements APIServiceInterface {
     
+    /**
+     * Keys (names) commonly used in responses for query-type requests.
+     */
     public class Key {
         public static final String FEED = "feed";
         public static final String OPENSEARCH = "opensearch";
@@ -44,6 +48,9 @@ public abstract class APIService implements APIServiceInterface {
         public static final String FACETS = "facets";
     }
     
+    /**
+     * Parameters that are commonly used in standard requests.
+     */
     public class Param {
         /** Request parameter: The query string. */
         public static final String QUERY = "q";
@@ -67,6 +74,9 @@ public abstract class APIService implements APIServiceInterface {
         public static final String MOD_FILTER = "filter-";
     }
     
+    /**
+     * Parameter values that are pre-defined by the API.
+     */
     public class ParamVal {
         /** Request parameter value: JSON format. */
         public static final String FORMAT_JSON = "json";
@@ -225,7 +235,7 @@ public abstract class APIService implements APIServiceInterface {
     public static final String PARAM_VAL_PREFIX_REVERSE = ParamVal.PREFIX_REVERSE;
     
     /**
-     * Valid delimiters for combining multiple fields or multiple field values.
+     * Delimiters used for combining multiple fields, or multiple field values.
      */
     public enum Delimiter { 
         AND(",")
@@ -238,6 +248,12 @@ public abstract class APIService implements APIServiceInterface {
         Delimiter(String s) {
             this.s = s;
         }
+        
+        /**
+         * Returns this delimiter as a string.
+         * 
+         * @return This delimiter as a string.
+         */
         @Override
         public String toString() {
             return this.s;
@@ -249,7 +265,7 @@ public abstract class APIService implements APIServiceInterface {
     //public static final int DELIM_AND = 1;
     //public static final int DELIM_INTERVAL = 2;
     
-    /** The protocol to use when accessing the service. */
+    /** The (default) protocol to use when accessing the service. */
     public static final String SERVICE_PROTOCOL = "http";
     /** The domain name to use when accessing the service (programmatically). */
     public static final String SERVICE_DOMAIN_NAME = "api.npolar.no";
@@ -268,31 +284,34 @@ public abstract class APIService implements APIServiceInterface {
     protected Map<String, String[]> apiParams = new HashMap<String, String[]>();
     
     /** 
-     * The default / hidden parameters to use when accessing the service. 
+     * The default/hidden parameters to use when accessing the service. 
      * <p>
      * These are parameters that the user shouldn't see, nor be able to override 
-     * by modifying or adding parameters in the URL manually.
+     * by modifying or adding parameters in the URL.
      * <p>
-     * Typical examples of default parameters:
+     * Examples of default parameters may be:
      * <ul>
      * <li><code>not-draft=yes</code></li>
      * <li><code>facets=topic,type</code></li>
      * </ul>
      * <p>
-     * Not to be confused with <strong>unmodifiable parameters</strong>. They are 
-     * different: Default parameters <em>could</em> potentially be modified, while 
-     * unmodifiable parameters are those that must <strong>never</strong> be 
-     * modified (typically because that would cause the entire client to break 
-     * - for example the <code>format=json</code> parameter).
+     * Not to be confused with <strong>unmodifiable parameters</strong>, which 
+     * are different. Default parameters <em>could</em> potentially be modified, 
+     * for example programmatically in a JSP. By contrast, <em>unmodifiable</em> 
+     * parameters are those that <strong>cannot</strong> be modified (typically 
+     * because that would cause the entire client to break - like, for example, 
+     * the <code>format=json</code> parameter).
      * <p>
-     * <strong>Default parameters</strong> are set for each use-case (e.g. a 
-     * publication list on a web page), and <strong>Unmodifiable 
-     * parameters</strong> are set for each service (e.g. the publication 
-     * service).
+     * The default parameters are normally set for a specific <em>use case</em>, 
+     * e.g. a publication list on a web page. The unmodifiable parameters are 
+     * set for each <em>service</em>, e.g. the publication service.
      */
     protected Map<String, String[]> defaultParams = null;//new HashMap<String, String[]>();
     
-    /** The unmodifiable parameters, required for the service to behave predictably and without fundamental errors. */
+    /** 
+     * The unmodifiable parameters, required for the service to behave 
+     * predictably and without fundamental errors. 
+     */
     protected Map<String, String[]> unmodifiableParams = null;
     
     /** The total number of entries in the last fetch. */
@@ -301,23 +320,23 @@ public abstract class APIService implements APIServiceInterface {
     protected String pageUriNext = null;
     /** The "Previous page" URI, as provided by the service. */
     protected String pageUriPrev = null;
-    /** The first page no, as provided by the service. */
+    /** The first page number, as provided by the service. */
     protected int indexNoFirstPageItem = -1;
-    /** The last page no, as provided by the service. */
+    /** The last page number, as provided by the service. */
     protected int indexNoLastPageItem = -1;
     /** The number of items per page, as provided by the service. */
     protected int itemsPerPage = -1;
-    /** The index of the first item, as provided by the service. */
+    /** The index of the first item in this fetch, as provided by the service. */
     protected int startIndex = -1;
     /** The "self" URI, as provided by the service. */
     protected String self = null;
     
     /** The (last) query, as provided by the service. */
     protected String query = null;
-    /** The (last) query search time, as provided by the service. */
+    /** The (last) query's search time, as provided by the service. */
     protected int querySearchTime = -1;
     
-    /** Container for entries. */
+    /** Container for "raw" entries. */
     protected JSONArray entries = null;
     
     /** Flag indicating whether or not any user-activated filters are applied. */
@@ -337,9 +356,10 @@ public abstract class APIService implements APIServiceInterface {
     
     /** Container for filter sets. */
     protected SearchFilterSets filterSets = null;
+    
     /**
-     * Base constructor, initializes the list of preset (unmodifiable / default)
-     * parameters shared across all services.
+     * Base constructor: Initializes the list of preset (unmodifiable + default)
+     * parameters shared across all services, and sets the default locale.
      * <p>
      * The child service class is responsible for adding its own (additional) 
      * preset parameters.
@@ -348,7 +368,26 @@ public abstract class APIService implements APIServiceInterface {
      * @see #initDefaultParameters() 
      */
     public APIService() {
-        initUnmodifiableParameters();
+        this(null);
+    }
+    
+    /**
+     * Base constructor: Initializes the list of preset (unmodifiable + default)
+     * parameters shared across all services, and sets the given locale.
+     * <p>
+     * The child service class is responsible for adding its own (additional) 
+     * preset parameters.
+     * 
+     * @param displayLocale The locale to use when generating strings for screen view. 
+     *  If <code>null</code>, the {@link APIService#DEFAULT_LOCALE_NAME default locale} is used.
+     * @see #initUnmodifiableParameters() 
+     * @see #initDefaultParameters() 
+     */
+    public APIService(Locale displayLocale) {
+        this.displayLocale = displayLocale  == null ? new Locale(DEFAULT_LOCALE_NAME) : displayLocale;
+        // Call up the private init methods
+        // (the child class should duplicate this process, if necessary)
+        initUnmodifiableParameters(); 
         initDefaultParameters();
     }
     
@@ -373,18 +412,49 @@ public abstract class APIService implements APIServiceInterface {
             defaultParams = new HashMap<String, String[]>(0);
         }
     }
-    
+    /**
+     * Performs a query request, using the currently configured parameters.
+     * <p>
+     * Internally, this method invokes {@link #doQuery(java.util.Map)}, passing
+     * the map of parameters (see {@link #getParameters()}.
+     * <p>
+     * The query results are stored, and any entries are available via 
+     * {@link #getEntries()} after this method has completed.
+     * 
+     * @return The updated instance, holding the query results. (Entries available via {@link #getEntries()}.)
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
+     */
     public APIServiceInterface doQuery() 
             throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
         return doQuery(apiParams);
     }
     
     /**
+     * Queries the service using the given parameters.
+     * <p>
+     * The query results are stored, and any entries are available via 
+     * {@link #getEntries()} after this method has completed.
+     * 
+     * @param params The parameters to use in the query.
+     * @return APIServiceInterface The updated instance, holding the query results. (Entries available via {@link #getEntries()}.)
      * @see APIServiceInterface#doQuery(java.util.Map) 
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
      */
     @Override
     public APIServiceInterface doQuery(Map<String, String[]> params) 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         
         // Make sure default parameters are set
         //params = addDefaultParameters(params);
@@ -393,11 +463,11 @@ public abstract class APIService implements APIServiceInterface {
         
         addParameters(params);
         
-        serviceUrl = getServiceBaseURL().concat("?").concat( prepareParameters(params) );
+        serviceUrl = getServiceBaseURL().concat("?").concat( prepareParameters() );
         
         //System.out.println("doQuery using " + getParameterString(params) );
         // We're expecting a response in JSON format
-        String jsonFeed = httpResponseAsString(serviceUrl);
+        String jsonFeed = APIUtil.httpResponseAsString(serviceUrl);
         JSONObject json = new JSONObject(jsonFeed).getJSONObject(Key.FEED);
         
         try { 
@@ -508,14 +578,23 @@ public abstract class APIService implements APIServiceInterface {
     
     /**
      * @see APIServiceInterface#doRead(java.lang.String) 
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
      */
     @Override
     public JSONObject doRead(String id) 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         
         serviceUrl = getServiceBaseURL().concat(id);
         // We're expecting a response in JSON format
-        String jsonFeed = httpResponseAsString(serviceUrl);
+        String jsonFeed = APIUtil.httpResponseAsString(serviceUrl);
         try {
             return new JSONObject(jsonFeed);
         } catch (Exception e) {
@@ -543,9 +622,13 @@ public abstract class APIService implements APIServiceInterface {
      * @see APIServiceInterface#doRead(java.lang.String) 
      */
     public JSONObject doRead(String id, String baseUrl)
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         serviceUrl = baseUrl.concat(id);
-        String jsonFeed = httpResponseAsString(serviceUrl);
+        String jsonFeed = APIUtil.httpResponseAsString(serviceUrl);
         try {
             return new JSONObject(jsonFeed);
         } catch (Exception e) {
@@ -674,7 +757,8 @@ public abstract class APIService implements APIServiceInterface {
         if (params.isEmpty()) {
             return "";
         }
-        Iterator<String> iPresetParamKeys = getPresetParameters().keySet().iterator(); // get keys for defaults and unmodifiables
+        // get keys for defaults and unmodifiables
+        Iterator<String> iPresetParamKeys = getPresetParameters().keySet().iterator();
         while (iPresetParamKeys.hasNext()) {
             params.remove(iPresetParamKeys.next());
         }
@@ -683,53 +767,32 @@ public abstract class APIService implements APIServiceInterface {
         } catch (Exception e) {
             return "";
         }
-        /*
-        String queryString = APIUtil.getQueryString(uri);
-        if (queryString.isEmpty()) {
-            return "";
-        }
-        
-        Iterator<String> iPresetParamKeys = getPresetParameters().keySet().iterator(); // get keys for defaults and unmodifiables
-        while (iPresetParamKeys.hasNext()) {
-            String presetParamName = iPresetParamKeys.next();
-            String[] uriAndParams = uri.split("\\?");
-            Map<String, String> params = APIUtil.getParametersInQueryString(uri);
-            //Map<String, List<String>> params = APIUtil.getParametersInQueryString(uri);
-            params.remove(presetParamName);
-            uri = uriAndParams[0] + "?" + APIUtil.getParameterString(params);
-        }
-        try {
-            return uri.split("\\?")[1];
-        } catch (Exception e) {
-            return "";
-        }
-        */
     }
     
     
     /**
-     * Adds the given and the default parameters to the set of parameters and
-     * converts the String representation of those parameters, ready to append
-     * to the service URL.
-     * <p>
-     * Any existing parameters are deleted.
+     * Gets a string holding <em>all</em> parameters, ready to append to the 
+     * service URI.
      * 
-     * @return The complete set of parameters, consisting of the given + default parameters.
+     * @return All configured parameters, ready to append to the service URI.
+     * @see #getMasterParameterMap() 
      */
-    protected String prepareParameters(Map<String, String[]> params) {
+    protected String prepareParameters() {
+    //protected String prepareParameters(Map<String, String[]> params) {
         //apiParams.clear();
         return getParameterString(getMasterParameterMap());
     }
     
     /**
-     * Gets a single map that contains ALL parameters, including (ordered by
-     * priority):
+     * Gets a single map that contains <em>all</em> parameters, including 
+     * (ordered by priority):
      * <ol>
      * <li>Unmodifiable parameters</li>
      * <li>Default parameters</li>
      * <li>Variable / user-defined parameters</li>
      * </ol>
-     * @return 
+     * 
+     * @return A single map that contains <em>all</em> parameters.
      */
     protected Map<String, String[]> getMasterParameterMap() {
         // order is important here! (we don't want to overwrite the defaults / unmodifiables)
@@ -740,7 +803,7 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
-     * Removes all parameters currently set.
+     * Removes all freely modifiable parameters currently set.
      * <p>
      * Default and unmodifiable parameters are not cleared.
      * 
@@ -753,8 +816,17 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
+     * Safely adds a key-value-paired query parameter to the list of freely 
+     * modifiable parameters.
+     * <p>
+     * Will not override any existing default or unmodifiable parameters.
+     * 
+     * @param key The parameter key.
+     * @param val The parameter value.
+     * @return This instance, updated.
      * @see #addParameter(java.lang.String, no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...) 
      */
+    @Override
     public APIServiceInterface addParameter(String key, String val) {
         return addParameter(key, null, val);
     }
@@ -763,8 +835,7 @@ public abstract class APIService implements APIServiceInterface {
      * Safely adds a key-value-paired query parameter to the list of freely 
      * modifiable parameters.
      * <p>
-     * The given parameter will not be added if it already exists as a default 
-     * or unmodifiable parameter.
+     * Will not override any existing default or unmodifiable parameters.
      * 
      * @param key The parameter key.
      * @param value The parameter value, see {@link APIService#toParamVal(no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...)} for complex variants.
@@ -773,6 +844,7 @@ public abstract class APIService implements APIServiceInterface {
      * @return This instance, updated.
      * @see #addParameter(java.lang.String, java.lang.String) 
      */
+    @Override
     public APIServiceInterface addParameter(String key, Delimiter del, String value, String ... moreValues) {
         makeParameter(key, toParamVal(del, value, moreValues));
         //apiParams.put(key, toParamVal(del, value, moreValues));
@@ -812,11 +884,10 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
-     * Adds a filter parameter, that instructs the service to require the given 
-     * value on the given field.
+     * Adds a filter parameter, instructing the service that we require the 
+     * given value on the specific given field.
      * <p>
-     * Any preexisting default or unmodifiable filter parameters will not be
-     * overridden.
+     * Will not override any existing default or unmodifiable filter parameters.
      * 
      * @param fieldName The field name e.g. "people.roles".
      * @param val The field value, e.g. "author|editor".
@@ -830,16 +901,15 @@ public abstract class APIService implements APIServiceInterface {
     }
     
      /**
-     * Adds a filter to instruct the service that we require the given value on 
-     * the specific given field.
+     * Adds a filter parameter, instructing the service that we require the 
+     * given value or values on the specific given field.
      * <p>
-     * Any preexisting default or unmodifiable filter parameters will not be
-     * overridden.
+     * Will not override any existing default or unmodifiable filter parameters.
      * 
      * @param key The field name e.g. "people.roles".
      * @param del The delimiter to use, see {@link Delimiter}, when combining multiple values.
-     * @param value The field value, e.g. "author|editor".
-     * @param moreValues Optional additional field value(s).
+     * @param value The (first) field value, e.g. "author".
+     * @param moreValues Optional additional field value(s), e.g. "editor", "translator".
      * @return This instance, updated.
      * @see APIService#combine(no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...)
      * @see #addParameter(java.lang.String, java.lang.String) 
@@ -851,16 +921,41 @@ public abstract class APIService implements APIServiceInterface {
         //return this;
     }
     
+    /**
+     * Adds a filter parameter, instructing the service that we require the 
+     * given value on the specific given field, as a default parameter.
+     * <p>
+     * Will override any existing default parameter, but not an unmodifiable.
+     * 
+     * @param fieldName The field name e.g. "people.roles".
+     * @param val The field value, e.g. "author|editor".
+     * @return This instance, updated.
+     * @see APIService#combine(no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...)
+     * @see #addParameter(java.lang.String, java.lang.String) 
+     */
+    @Override
+    public APIServiceInterface addDefaultFilter(String fieldName, String val) {
+        return addDefaultParameter(modFilter(fieldName), val);
+    }
     
-
-
-    //
-    // ToDo: add addDefaultFilter() methods, equivalent to as addDefaultParameter()
-    //
-    
-    
-    
-    
+     /**
+     * Adds a filter to instruct the service that we require the given value or 
+     * values on the specific given field, as a default parameter.
+     * <p>
+     * Will override any existing default parameter, but not an unmodifiable.
+     * 
+     * @param key The field name e.g. "people.roles".
+     * @param del The delimiter to use, see {@link Delimiter}, when combining multiple values.
+     * @param value The (first) field value, e.g. "author".
+     * @param moreValues Optional additional field value(s), e.g. "editor", "translator".
+     * @return This instance, updated.
+     * @see APIService#combine(no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...)
+     * @see #addParameter(java.lang.String, java.lang.String) 
+     */
+    @Override
+    public APIServiceInterface addDefaultFilter(String key, Delimiter del, String value, String ... moreValues) {
+        return addDefaultParameter(modFilter(key), del, value, moreValues);
+    }    
     
     /**
      * Sets the default parameters to use when querying the service.
@@ -868,7 +963,7 @@ public abstract class APIService implements APIServiceInterface {
      * @param defaults The default parameters to use when querying the service.
      * @return This instance, updated.
      * @see #defaultParams
-     * @deprecated Probably more convenient to use one of the addDefaultParameter(...) methods instead.
+     * @deprecated Use one of the addDefaultParameter(...) methods instead.
      */
     public APIServiceInterface setDefaultParameters(Map<String, String[]> defaults) {
         defaultParams.putAll(defaults);
@@ -884,7 +979,7 @@ public abstract class APIService implements APIServiceInterface {
      * @return This interface, updated with the given default parameter.
      * @see APIService#setDefaultParameters(java.util.Map) 
      * @see APIService#defaultParams
-     * @deprecated Probably more convenient to use one of the other addDefaultParameter(...) methods instead.
+     * @deprecated Use one of the other addDefaultParameter(...) methods instead.
      */
     public APIServiceInterface addDefaultParameter(String key, String[] values) {
         makeDefaultParameter(key, values);
@@ -918,10 +1013,22 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
+     * Safely adds the given parameter to the list of <strong>default</strong> 
+     * parameters.
+     * <p>
+     * The given parameter will not be added if it already exists as an 
+     * unmodifiable parameter.
+     * <p>
+     * If added safely, any preexisting duplicate key in the list of freely 
+     * modifiable parameters will be removed.
+     * 
+     * @param key The parameter key.
+     * @param value The parameter value. See {@link APIService#toParamVal(no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...)} for complex variants.
+     * @return This instance, updated.
      * @see #addDefaultParameter(java.lang.String, no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...) 
      */
+    @Override
     public APIServiceInterface addDefaultParameter(String key, String value) {
-        //defaultParams.put(key, toParamVal(value));
         return addDefaultParameter(key, null, value);
     }
     
@@ -1002,7 +1109,7 @@ public abstract class APIService implements APIServiceInterface {
      * parameters.
      * 
      * @param params The parameters to add.
-     * @return The complete set of parameters, including the given parameters.
+     * @return The updated map of freely modifiable parameters.
      * 
      * @see #addDefaultParameter(java.lang.String, java.lang.String) 
      * @see #addDefaultParameter(java.lang.String, no.npolar.data.api.APIService.Delimiter, java.lang.String, java.lang.String...) 
@@ -1015,7 +1122,7 @@ public abstract class APIService implements APIServiceInterface {
                 makeParameter(key, params.get(key));
             }
         }
-        return apiParams;
+        return getParameters();
     }
     
     /**
@@ -1036,8 +1143,15 @@ public abstract class APIService implements APIServiceInterface {
      * @return The parameters that are "visible" to the end user.
      * @see #getDefaultParameters() 
      * @see #getUnmodifiableParameters() 
+     * @deprecated (Methinks. Needs usage check in website JSPs.)
      */
     public Map<String, String[]> getVisibleParameters(){
+        // ToDo:
+        // The processing here was previously necessary, but should now be 
+        // redundant, because apiParams should now hold ONLY the freely 
+        // modifiable (= visible) parameters -> we can probably just return
+        // getParameters() instead.
+        
         Map<String, String[]> temp = new HashMap<String, String[]>();
         temp.putAll(apiParams);
         
@@ -1163,14 +1277,13 @@ public abstract class APIService implements APIServiceInterface {
         return s;
     }
     
-    /**
+    /*
      * Requests the given URL and returns the response as a String.
      * 
      * @param url The URL to request.
      * @return The response, as a string.
      * @throws MalformedURLException
      * @throws IOException
-     */
     protected String httpResponseAsString(String url) 
             throws MalformedURLException, IOException {
         
@@ -1183,7 +1296,7 @@ public abstract class APIService implements APIServiceInterface {
         in.close();
 
         return s.toString();
-    }
+    }*/
     
     /**
      * @see APIServiceInterface#getLastServiceURL() 
@@ -1235,13 +1348,17 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
-     * Puts all the given 1-N strings in an array of 1 string - delimited by the
-     * given delimiter if multiple strings were given - ready to pass to the API.
+     * Converts all the given 1-N strings to a single string, with the values 
+     * delimited by the given delimiter, and returns that string wrapped in a 
+     * single-celled array - ready to pass to the API.
+     * <p>
+     * If the delimiter is <code>null</code>, only the first value is used.
      * 
      * @param delimiter The delimiter to use, see {@link Delimiter}, when combining multiple values.
      * @param value The first parameter value.
      * @param moreValues Optional additional parameter values.
      * @return An array containing 1 string, which holds the given parameter value(s), separated by the given delimiter (if multiple).
+     * @see #toParamVal(java.lang.String) 
      */
     public static String[] toParamVal(Delimiter delimiter, String value, String ... moreValues) {
         // NOTE: we *always* return an array (for reasons that escape me) with just 1 value
@@ -1260,42 +1377,51 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
-     * Puts all the given 1-N strings in an array of 1 string - delimited by the
-     * given delimiter if multiple strings were given - ready to pass to the API.
+     * Returns the given string wrapped in a single-celled array - ready to pass 
+     * to the API.
      * 
      * @param value The parameter value.
-     * @return An array containing 1 string, which holds the given parameter value.
+     * @return An single-celled array containing the given parameter value.
      * @see #toParamVal(java.lang.String, java.lang.String, java.lang.String...) 
      */
     public static String[] toParamVal(String value) {
-        return toParamVal(Delimiter.AND, value);
+        return toParamVal(null, value);
     }
     
     /**
      * Combines the given strings into one, separated by the given delimiter.
+     * <p>
+     * If the delimiter is <code>null</code>, only the first string is returned.
      * 
-     * @param delimiter The delimiter to use, see {@link Delimiter}, when combining multiple values.
+     * @param delimiter The delimiter to use, see {@link Delimiter}, when combining multiple values. Can be <code>null</code>.
      * @param string The first parameter value.
      * @param moreStrings Optional additional parameter values.
      * @return The given string(s) combined into one.
      */
     public static String combine(Delimiter delimiter, String string, String ... moreStrings) {
         String combined = string;
-        for (String s : moreStrings) {
-            combined += delimiter + s;
+        if (delimiter != null) {
+            for (String s : moreStrings) {
+                combined += delimiter + s;
+            }
         }
         return combined;
     }
     
     /**
      * Combines the given strings into one, separated by the given delimiter.
+     * <p>
+     * If the delimiter is <code>null</code>, only the first string is returned.
      * 
-     * @param delimiter The delimiter to use, see {@link Delimiter}, when combining multiple values.
+     * @param delimiter The delimiter to use, see {@link Delimiter}, when combining multiple values. Can be <code>null</code>.
      * @param strings One or more strings.
      * @return All given strings combined into one.
      */
     public static String combine(Delimiter delimiter, String[] strings) {
         String combined = "";
+        if (delimiter == null) {
+            try { combined = strings[0]; } catch (Exception e) {} finally { return combined; }
+        }
         for (String s : strings) {
             combined += (!combined.isEmpty() ? delimiter : "") + s;
         }

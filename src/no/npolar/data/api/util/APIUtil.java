@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import no.npolar.data.api.APIEntry;
+import no.npolar.data.api.APIEntry.TimestampPattern;
 import no.npolar.data.api.APIService;
 import org.opencms.json.JSONArray;
 import org.apache.commons.lang.StringUtils;
@@ -22,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.markdown4j.Markdown4jProcessor;
 import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
+import static no.npolar.data.api.APIEntry.Key.LANG_GENERIC;
 
 /**
  * Norwegian Polar Institute Data Centre API utilities.
@@ -629,8 +631,8 @@ public class APIUtil {
      * locale.
      * 
      * @param s The language string to test (e.g. "no").
-     * @param matchLocale The language it must match to evaluate to true.
-     * @return True if the given language string matches the language of the given locale, false if not.
+     * @param matchLocale The language it must match to evaluate to <code>true</code>.
+     * @return <code>true</code> if the given language string matches the language of the given locale, <code>false</code> if not.
      */
     public static boolean matchLanguage(String s, Locale matchLocale) {
         if (s == null || s.isEmpty())
@@ -646,17 +648,48 @@ public class APIUtil {
     }
     
     /**
+     * Determines if the given locale represents some kind of Norwegian.
+     * 
+     * @param locale the locale to evaluate.
+     * @return <code>true</code> if the given locale represents some kind of Norwegian, <code>false</code> if not.
+     */
+    public static boolean localeIsNorwegian(Locale locale) {
+        try {
+            return locale.toLanguageTag().startsWith("no") 
+                    || locale.toLanguageTag().startsWith("nb") 
+                    || locale.toLanguageTag().startsWith("nn");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Determines if the given locale represents some kind of English.
+     * 
+     * @param locale the locale to evaluate.
+     * @return <code>true</code> if the given locale represents some kind of English, <code>false</code> if not.
+     */
+    public static boolean localeIsEnglish(Locale locale) {
+        try {
+            return locale.toLanguageTag().startsWith("en");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
      * Simplified filter for returning the property identified by the given
      * name, as read from the first object in the given array that also has a 
-     * matching <code>lang</code> property.
+     * matching {@link LANG_GENERIC} property.
      * <p>
-     * The array is processed in incremental steps of 1, starting at index 0.
+     * Array iteration starts at index 0.
      * 
-     * @param jarr The array that contains the objects to evaluate.
-     * @param name The object property to evaluate.
+     * @param jarr An array of all objects to evaluate. Each object must be a {@link JSONObject}.
+     * @param name The name of the object's string property that we want the value of.
      * @param locale Identifies the language to match against.
-     * @return The named property of the first encountered object that matched the given language.
+     * @return The string value read from the named property of the first object that matched the given language, or <code>null</code> if none.
      * @throws JSONException In case anything goes wrong in the JSON parsing.
+     * @see no.npolar.data.api.APIEntry.Key#LANG_GENERIC
      */
     public static String getStringByLocale(JSONArray jarr, String name, Locale locale) throws JSONException {
         if (jarr == null || jarr.length() < 1)
@@ -664,9 +697,9 @@ public class APIUtil {
         
         for (int i = 0; i < jarr.length(); i++) {
             JSONObject o = jarr.getJSONObject(i);
-            if (!o.has("lang") || !o.has(name))
+            if (!o.has(LANG_GENERIC) || !o.has(name))
                 continue; // Missing either "lang" or <name> property, nothing to do ...
-            String lang = o.getString("lang");
+            String lang = o.getString(LANG_GENERIC);
             if (matchLanguage(lang, locale)) { 
                 //System.out.println("TS object: " + o.toString());
                 return o.getString(name); // We have a match
@@ -676,16 +709,50 @@ public class APIUtil {
         return null; // No match
     }
     
+    
+    
+    /**
+     * Gets the string values of the named property, as read from each object in 
+     * the given array that also has a matching {@link LANG_GENERIC} property.
+     * <p>
+     * Array iteration starts at index 0.
+     * 
+     * @param jarr An array of all objects to evaluate. Each object must be a {@link JSONObject}.
+     * @param name The name of the object's string property that we want the value of.
+     * @param locale Identifies the language to match against.
+     * @return A list of strings, read from the named property of every object that matched the given language, or an empty list if none.
+     * @throws JSONException In case anything goes wrong in the JSON parsing.
+     * @see APIEntry.Key#LANG_GENERIC
+     */
+    public static List<String> getStringsByLocale(JSONArray jarr, String name, Locale locale) throws JSONException {
+        
+        List<String> matches = new ArrayList<String>(2);
+        
+        if (jarr != null) {
+            for (int i = 0; i < jarr.length(); i++) {
+                JSONObject o = jarr.getJSONObject(i);
+                if (!o.has(LANG_GENERIC) || !o.has(name)) {
+                    continue; // Missing either "lang" or <name> property
+                }
+                String lang = o.getString(LANG_GENERIC);
+                if (matchLanguage(lang, locale)) {
+                    matches.add(o.getString(name)); // We have a match - add it
+                }
+            }
+        }
+        return matches; // No match
+    }
+    
     /**
      * Gets the date format for the given timestamp, if the timestamp follows a
-     * pattern defined in {@link APIEntry.TimestampPattern}.
+     * pattern defined in {@link TimestampPattern}.
      * 
      * @param timestamp The timestamp, e.g. "2016-01-01" or "2015".
      * @return A date format that fits the given timestamp, and can be used to format/parse it.
-     * @see APIEntry.TimestampPattern
+     * @see TimestampPattern
      */
     public static SimpleDateFormat getTimestampFormat(String timestamp) {
-        for (APIEntry.TimestampPattern t : APIEntry.TimestampPattern.values()) {
+        for (TimestampPattern t : TimestampPattern.values()) {
             try {
                 SimpleDateFormat f = new SimpleDateFormat(t.toString());
                 f.parse(timestamp);
@@ -693,7 +760,7 @@ public class APIUtil {
             } catch (Exception e) {}
         }
         // Return default
-        return new SimpleDateFormat(APIEntry.TimestampPattern.TIME.toString());
+        return new SimpleDateFormat(TimestampPattern.TIME.toString());
     }
     
     /**

@@ -19,7 +19,7 @@ import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.poi.hpsf.Thumbnail;
+//import org.apache.poi.hpsf.Thumbnail;
 
 /**
  * Represents a single project entry, as read from the Norwegian Polar 
@@ -33,7 +33,7 @@ import org.apache.poi.hpsf.Thumbnail;
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class Project extends APIEntry implements APIEntryInterface {
+public class Project extends APIEntry /*implements APIEntryInterface*/ {
 
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(Project.class);
@@ -41,7 +41,7 @@ public class Project extends APIEntry implements APIEntryInterface {
     /**
      * System keys / field names.
      */
-    public class Key extends APIEntry.Key {
+    public static class Key extends APIEntry.Key {
         public static final String WORKSPACE     = "workspace";
         public static final String WEBSITE_FLAG  = "website";
         public static final String TITLE         = "title";
@@ -89,7 +89,7 @@ public class Project extends APIEntry implements APIEntryInterface {
     /**
      * Pre-defined system values.
      */
-    public class Val extends APIEntry.Val {
+    public static class Val extends APIEntry.Val {
         public static final String PROJECT_LEADER = "projectLeader";
         public static final String PROJECT_PARTICIPANT = "projectParticipant";
 
@@ -119,8 +119,8 @@ public class Project extends APIEntry implements APIEntryInterface {
      * @deprecated There is no longer a single timestamp pattern, see {@link APIEntry.TimestampPattern}.
      */
     public static final String DATE_FORMAT_PATTERN_JSON = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    /** The base URL for publication links. */
-    public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
+    //** The base URL for publication links. */
+    //public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
     /** The default title, used if title is missing. */
     public static final String DEFAULT_TITLE            = "Unknown title";
     /** The default locale to use when generating strings meant for viewing. */
@@ -144,15 +144,15 @@ public class Project extends APIEntry implements APIEntryInterface {
     /** Project state name: Completed. */
     public static final String STATE_NAME_COMPLETED = "project_state_completed";
     
-    /** The backing JSON that describes the project. */
-    private JSONObject o = null;
-    /** The locale to use when generating strings meant for viewing. (Important especially for date formats etc.) */
-    private Locale displayLocale = null;
+    //** The backing JSON that describes the project. */
+    //private JSONObject o = null;
+    //** The locale to use when generating strings meant for viewing. (Important especially for date formats etc.) */
+    //private Locale displayLocale = null;
     /** Mapper for string translations. */
     private Mapper mappings = null;
     
     // Class members
-    private String id = "";
+    //private String id = "";
     private String title = "";
     private String titleAbbrev = "";
     private String npiId = "";
@@ -215,11 +215,13 @@ public class Project extends APIEntry implements APIEntryInterface {
      * @param loc The locale to use. If null, the {@link APIService#DEFAULT_LOCALE_NAME default locale} is used.
      */
     public Project(JSONObject projectObject, Locale loc) {
+        super(projectObject, loc);
+        /*
         this.o = projectObject;
         this.displayLocale = loc;
         if (displayLocale == null)
             this.displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
-        
+        //*/
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
         this.dfOutput = new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_0), displayLocale);
@@ -244,7 +246,7 @@ public class Project extends APIEntry implements APIEntryInterface {
         
         ////////////////////////////////////////////////////////////////////////
         // Simple stuff
-        try { id = o.getString(Key.ID); } catch (Exception e) { id = null; }
+        //try { id = o.getString(Key.ID); } catch (Exception e) { id = null; }
         try { title = o.getString(Key.TITLE); } catch (Exception e) { title = DEFAULT_TITLE; }
         try { titleAbbrev = o.getString(Key.ABBREV_TITLE); } catch (Exception e) { }
         try { npiId = o.getString(Key.NPI_ID); } catch (Exception e) { }
@@ -616,14 +618,6 @@ public class Project extends APIEntry implements APIEntryInterface {
     }
 
     /**
-     * @return the project ID.
-     */
-    @Override
-    public String getId() {
-        return id;
-    }
-
-    /**
      * @return the NPI project ID.
      */
     public String getNpiId() {
@@ -813,12 +807,6 @@ public class Project extends APIEntry implements APIEntryInterface {
         }
         return service.getServiceBaseURL() + this.getId();
     }
-    
-    /**
-     * @see APIEntryInterface#getJSON()
-     */
-    @Override
-    public JSONObject getJSON() { return this.o; }
     
     
     

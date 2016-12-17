@@ -31,7 +31,12 @@ public class Topic {
     public final String getLabel() { return label; }
     /** @return the localized label for this topic (if any). */
     public final String getLabel(Locale locale) { 
-        return ResourceBundle.getBundle(Labels.getBundleName(), locale).getString(Labels.TOPIC_PREFIX_0.concat(id)); 
+        try {
+            return ResourceBundle.getBundle(Labels.getBundleName(), locale).getString(Labels.TOPIC_PREFIX_0.concat(id)); 
+        } catch (Exception e) {
+            // No translation available (!)
+            return id; 
+        }
     }
     /**
      * Gets a string representation, consisting of the ID.

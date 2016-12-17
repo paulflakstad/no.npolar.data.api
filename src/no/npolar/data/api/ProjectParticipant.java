@@ -33,7 +33,7 @@ public class ProjectParticipant {
     /**
      * Sets the organization.
      * 
-     * @param inst The organization.
+     * @param org The organization.
      */
     public void setOrganization(String org) { this.org = org; }
     /**
@@ -105,7 +105,7 @@ public class ProjectParticipant {
      * The returned string is HTML code. It contains the name, and the 
      * organization info. If a URI has been set, the outer wrapper is a link.
      * 
-     * @param m The mapper.
+     * @param cms An initialized CMS action element.
      * @return This instance, as a string in HTML format.
      * @deprecated Use {@link #toString(no.npolar.data.api.util.Mapper)} instead.
      */

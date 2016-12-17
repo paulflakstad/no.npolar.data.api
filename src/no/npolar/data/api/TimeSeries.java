@@ -35,7 +35,7 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class TimeSeries implements APIEntryInterface {
+public class TimeSeries extends APIEntry/*implements APIEntryInterface*/ {
     // Date format parts
     //public static final String DATE_FORMAT_UNIX_YEAR = "%Y";
     //public static final String DATE_FORMAT_UNIX_MONTH = "%m";
@@ -49,14 +49,14 @@ public class TimeSeries implements APIEntryInterface {
     ///** Pattern that matches "ISO date" dates. Used by the API. */
     //public static final String PATTERN_ISODATE_API = "yyyy-MM-dd";
     
-    /** The ID for this time series, as read from the API. */
-    private String id = null;
-    /** The complete time series data, as read from the API. */
-    private JSONObject apiStructure = null;
+    //** The ID for this time series, as read from the API. */
+    //private String id = null;
+    //** The complete time series data, as read from the API. */
+    //private JSONObject apiStructure = null;
     ///** A string representing the timestamp accuracy, one of DATE_FORMAT_UNIX_XXXXX constants - or, in exceptional cases, the literal value as read from the API (e.g. '2007/2008'). */
     //private String dateTimeAccuracy = null;
-    /** Preferred locale to use when getting language-specific data. */
-    private Locale displayLocale = null;
+    ///** Preferred locale to use when getting language-specific data. */
+    //private Locale displayLocale = null;
     /** The unit for the data in this time series. */
     private TimeSeriesDataUnit unit = null;
     ///** The data points in this time series. */
@@ -219,13 +219,17 @@ public class TimeSeries implements APIEntryInterface {
      * @throws InstantiationException 
      */
     public TimeSeries(JSONObject o, Locale displayLocale) throws InstantiationException {
-        apiStructure = o;
-        this.displayLocale = displayLocale;
+        super(o, displayLocale);
+        //apiStructure = o;
+        //this.displayLocale = displayLocale;
         //labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         //dataPoints = new ArrayList<TimeSeriesDataPoint>();
         //dataPoints = new TreeSet<TimeSeriesDataPoint>(TimeSeriesDataPoint.COMPARE_TIMESTAMP);
+        if (this.id == null) {
+            throw new InstantiationException("Error attempting to create timeseries instance from JSON object: ID was null.");
+        }
         try {
-            id = apiStructure.getString(API_KEY_ID);
+            //id = apiStructure.getString(API_KEY_ID);
             //try { dateTimeAccuracy = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
             // Update settings
             setUnit();
@@ -252,7 +256,7 @@ public class TimeSeries implements APIEntryInterface {
      * @throws InstantiationException 
      */
     public TimeSeries(TimeSeries other) throws InstantiationException {
-        this(other.apiStructure, other.displayLocale);
+        this(other.getJSON(), other.getDisplayLocale());
     }
     
     /**
@@ -269,7 +273,7 @@ public class TimeSeries implements APIEntryInterface {
             String unitLong = "";
             
             // Value unit/symbol (e.g. "mm") should be allowed missing (= indicates absolute number of something)
-            try { unitShort = apiStructure.getJSONObject(API_KEY_UNIT).getString(API_KEY_UNIT_SYMBOL); } catch (Exception e) {}
+            try { unitShort = o.getJSONObject(API_KEY_UNIT).getString(API_KEY_UNIT_SYMBOL); } catch (Exception e) {}
             // Value description/label (e.g. "Precipitation") should always be present ...
             try { unitLong = getLabelFor(API_KEY_POINT_VAL); } catch (Exception e) { }
                         
@@ -542,11 +546,11 @@ public class TimeSeries implements APIEntryInterface {
      * @return the label for the given variable, or itself, if no label could be resolved.
      */
     private String getLabelFor(String variableName) {
-        if (variableName == null || !(apiStructure.has(API_KEY_LABELS) || DEFAULT_LABEL_KEYS.containsKey(variableName))) {
+        if (variableName == null || !(o.has(API_KEY_LABELS) || DEFAULT_LABEL_KEYS.containsKey(variableName))) {
             return variableName;
         }
         try {
-            JSONArray labelsArr = apiStructure.getJSONArray(API_KEY_LABELS);
+            JSONArray labelsArr = o.getJSONArray(API_KEY_LABELS);
             for (int i = 0; i < labelsArr.length(); i++) {
                 JSONObject labelObj = labelsArr.getJSONObject(i);
                 if (labelObj.getString(API_KEY_LABELS_LABEL_FOR).equals(variableName)) {
@@ -582,7 +586,7 @@ public class TimeSeries implements APIEntryInterface {
     public String getTitle(Locale loc) {
         
         try {
-            return APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_TITLES), API_KEY_TITLE, loc);
+            return APIUtil.getStringByLocale(o.getJSONArray(API_KEY_TITLES), API_KEY_TITLE, loc);
         } catch (JSONException e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error reading title of time series '" + this.getId() + "'.", e);
@@ -609,7 +613,7 @@ public class TimeSeries implements APIEntryInterface {
     public String getLabel(Locale loc) {
         try {
             //System.out.println("TS label is " + APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_TITLES), API_KEY_TITLE_LABEL, loc));
-            return APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_TITLES), API_KEY_TITLE_LABEL, loc);
+            return APIUtil.getStringByLocale(o.getJSONArray(API_KEY_TITLES), API_KEY_TITLE_LABEL, loc);
         } catch (Exception e) {
             return getTitle(loc);
         }
@@ -707,7 +711,7 @@ public class TimeSeries implements APIEntryInterface {
      * @throws JSONException 
      */
     private TimeSeries initDataPoints() throws JSONException {
-        JSONArray dataPointsJSONArr = apiStructure.getJSONArray(API_KEY_DATA_POINTS);
+        JSONArray dataPointsJSONArr = o.getJSONArray(API_KEY_DATA_POINTS);
         //if (dataPointsJSONArr.length() > 0) {
             //dataPoints = new ArrayList<TimeSeriesDataPoint>();
             //dataPoints = new TreeSet<TimeSeriesDataPoint>(TimeSeriesDataPoint.COMPARE_TIMESTAMP);
@@ -1207,16 +1211,10 @@ public class TimeSeries implements APIEntryInterface {
     */
     
     /**
-     * @return The ID of this time series. 
-     */
-    @Override
-    public String getId() { return id; }
-    
-    /**
      * @return The JSON object that reflects how this time series is represented by the service. 
      * @deprecated Replaced by the interface-defined {@link #getJSON()} method (which is identical).
      */
-    public JSONObject getAPIStructure() { return apiStructure; }
+    public JSONObject getAPIStructure() { return o; }
     
     /**
      * Gets the accuracy level for the timestamps in this time series.
@@ -1359,10 +1357,4 @@ public class TimeSeries implements APIEntryInterface {
         this.timestampFormat = new SimpleDateFormat(TimeSeriesTimestamp.PATTERN_TIME_STANDARD, displayLocale);
         return this;
     }*/
-    
-    /**
-     * @see APIEntryInterface#getJSON()
-     */
-    @Override
-    public JSONObject getJSON() { return this.apiStructure; }
 }

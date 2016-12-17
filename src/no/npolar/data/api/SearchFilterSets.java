@@ -256,8 +256,16 @@ public class SearchFilterSets /*extends ArrayList<SearchFilterSet>*/ {
      */
     public String getFiltersWrapperHtmlStart(String togglerText) {
         return "\n<div class=\"search-panel__filters\">" 
-                + "\n<a class=\"toggler toggler--filters-toggle\" href=\"#\" tabindex=\"0\">" + togglerText + "</a>"
-                + "\n<div class=\"toggleable toggleable--filters\">";
+                + "\n<a"
+                    + " aria-controls=\"search-filters\""
+                    + " class=\"toggler toggler--filters-toggle\""
+                    + " href=\"#search-filters\""
+                    + " tabindex=\"0\""
+                + ">" + togglerText + "</a>"
+                + "\n<div"
+                    + " class=\"toggleable toggleable--filters\""
+                    + " id=\"search-filters\""
+                + ">";
         /*return "\n<div class=\"search-widget search-widget--filters\">" 
                 + "\n<a class=\"cta cta--filters-toggle\" tabindex=\"0\">" + togglerText + "</a>"
                 + "\n<div class=\"filters-wrapper\">";*/

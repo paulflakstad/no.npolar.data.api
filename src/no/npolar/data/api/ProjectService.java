@@ -21,7 +21,7 @@ import org.opencms.json.JSONException;
 public class ProjectService extends APIService {
     
     /** The logger. */
-    private static final Log LOG = LogFactory.getLog(MOSJService.class);
+    private static final Log LOG = LogFactory.getLog(ProjectService.class);
     
     /** The URL path to use when accessing the service. */
     protected static final String SERVICE_PATH = "project/";
@@ -33,11 +33,11 @@ public class ProjectService extends APIService {
      * 
      * @param loc The locale to use when generating strings for screen view. If null, the {@link APIService#DEFAULT_LOCALE_NAME default locale} is used.
      */
-    public ProjectService(Locale loc) {
-        this.displayLocale = loc;
+    public ProjectService(Locale loc) {        
+        super(loc);
+        /*this.displayLocale = loc;
         if (displayLocale == null)
-            this.displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
-        
+            this.displayLocale = new Locale(DEFAULT_LOCALE_NAME);*/
         initPresetParameters();
     }
     
@@ -50,6 +50,7 @@ public class ProjectService extends APIService {
      * @param id The project ID.
      * @return the project object, or null if no such project could be created.
      */
+    @Override
     public Project get(String id) {
         try {
             return new Project(doRead(id), displayLocale);
@@ -94,12 +95,12 @@ public class ProjectService extends APIService {
         GroupedCollection<Project> gc = new GroupedCollection<Project>();
         gc.setOrder(order);
         
-        JSONArray projectEntries = doQuery(getParameters()).getEntries();
+        doQuery();
         
-        if (projectEntries != null) {
-            for (int i = 0; i < projectEntries.length(); i++) {
+        if (entries != null) {
+            for (int i = 0; i < entries.length(); i++) {
                 try {
-                    gc.add(new Project(projectEntries.getJSONObject(i), displayLocale));
+                    gc.add(new Project(entries.getJSONObject(i), displayLocale));
                 } catch (Exception e) {
                     throw new InstantiationException("Error when trying to create projects list: " + e.getMessage());
                 }
@@ -136,12 +137,12 @@ public class ProjectService extends APIService {
         
         addParameters(params);
         
-        JSONArray projectEntries = doQuery(apiParams).getEntries();
+        doQuery();
         
-        if (projectEntries != null) {
-            for (int i = 0; i < projectEntries.length(); i++) {
+        if (entries != null) {
+            for (int i = 0; i < entries.length(); i++) {
                 /*try {*/
-                    list.add(new Project(projectEntries.getJSONObject(i), displayLocale));
+                    list.add(new Project(entries.getJSONObject(i), displayLocale));
                 /*} catch (Exception e) {
                     throw new InstantiationException("Error when trying to create publications list: " + e.getMessage());
                 }*/

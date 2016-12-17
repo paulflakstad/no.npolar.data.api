@@ -8,7 +8,7 @@ import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONObject;
 
 /**
- * Represents a facet filter.
+ * Represents a search filter, aka facet filter.
  * <p>
  * This implementation's counterpart can be found in the "facets" field in 
  * service's JSON responses. A search filter is basically a 
@@ -31,18 +31,36 @@ public class SearchFilter {
     
     private Map<String, String> params = null;
     
-    /** JSON key: Term. */
+    public static class Key extends APIEntry.Key {
+        /** JSON key: Term. */
+        public static final String TERM = "term";
+        /** JSON key: Count. */
+        public static final String COUNT = "count";
+        /** JSON key: URI. */
+        public static final String URI = "uri";
+    }
+    
+    /** 
+     * JSON key: Term. 
+     * @deprecated 
+     */
     public final String JSON_KEY_TERM = "term";
-    /** JSON key: Count. */
+    /** 
+     * JSON key: Count. 
+     * @deprecated 
+     */
     public final String JSON_KEY_COUNT = "count";
-    /** JSON key: URI. */
+    /** 
+     * JSON key: URI. 
+     * @deprecated 
+     */
     public final String JSON_KEY_URI = "uri";
     
     /** The prefix used on names of parameters that are used for filtering. */
-    public static final String PARAM_NAME_PREFIX = "filter-";
+    public static final String PARAM_NAME_PREFIX = APIService.Param.MOD_FILTER; // "filter-";
     
     /** Pattern used to create/normalize timestamps, in order to use them as filter values. */
-    public static final String PATTERN_DATETIME_FILTER = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // e.g. 1871-06-01T12:00:00Z
+    public static final String PATTERN_DATETIME_FILTER = APIEntry.TimestampPattern.TIME.toString(); // "yyyy-MM-dd'T'HH:mm:ss'Z'" => e.g. 1871-06-01T12:00:00Z
     
     /**
      * Creates a new filter for the given field, based on the given details.
@@ -54,7 +72,8 @@ public class SearchFilter {
      */
     public SearchFilter(String filterField, String term, int count, String uri) {
         if (filterField == null || term == null || count < 0 || uri == null) {
-            throw new NullPointerException("Invalid constructor argument(s). Term and URI must be not null, and count must be non-negative.");
+            throw new NullPointerException("Invalid constructor argument(s)."
+                    + " Term and URI must be not null, and count must be non-negative.");
         }
         this.filterField = filterField;
         this.term = term;
@@ -76,11 +95,12 @@ public class SearchFilter {
             if (filterField == null)
                 throw new NullPointerException("A filter field is required when creating filters.");
             
-            this.term = filterObject.getString(JSON_KEY_TERM);
-            this.count = filterObject.getInt(JSON_KEY_COUNT);
-            this.uri = filterObject.getString(JSON_KEY_URI);
+            this.term = filterObject.getString(Key.TERM);
+            this.count = filterObject.getInt(Key.COUNT);
+            this.uri = filterObject.getString(Key.URI);
         } catch (Exception e) {
-            throw new NullPointerException("Invalid JSON object. Term and URI must be not null, and count must be non-negative.");
+            throw new NullPointerException("Invalid JSON object."
+                    + " Term and URI must be not null, and count must be non-negative.");
         }
         
         init();
@@ -100,8 +120,8 @@ public class SearchFilter {
             if (filterField == null)
                 throw new NullPointerException("A filter field is required when creating filters.");
             
-            this.term = filterObject.getString(JSON_KEY_TERM);
-            this.count = filterObject.getInt(JSON_KEY_COUNT);
+            this.term = filterObject.getString(Key.TERM);
+            this.count = filterObject.getInt(Key.COUNT);
             
             //
             // NOTE: examples in the next two comments (about serviceUri & uri)
@@ -120,11 +140,12 @@ public class SearchFilter {
             // The (non-active) filter for enabling "ecology" will contain "filter-topics=marine,biology,ecology" 
             // The (active) filter for disabling "marine" will contain "filter-topics=biology"
             // The (active) filter for disabling "biology" will contain "filter-topics=marine"
-            this.uri = filterObject.getString(JSON_KEY_URI); 
+            this.uri = filterObject.getString(Key.URI); 
             
             
         } catch (Exception e) {
-            throw new NullPointerException("Invalid JSON object. Term and URI must be not null, and count must be non-negative.");
+            throw new NullPointerException("Invalid JSON object."
+                    + " Term and URI must be not null, and count must be non-negative.");
         }
         
         //System.out.println("Created filter: " + filterField + "." + term + (isActive ? " (ACTIVE)" : ""));
@@ -139,8 +160,8 @@ public class SearchFilter {
     private void init() {
         this.params = APIUtil.getParametersInQueryString(uri);
         // ALL filters should have start=0, force this
-        //removeParam("start");
-        addParam("start", "0");
+        //removeParam(APIService.Param.START_AT);
+        addParam(APIService.Param.START_AT, "0");
         //uri = uri + "&start=0";
         
         // Evaluate state: is this filter currently active?
@@ -318,15 +339,32 @@ public class SearchFilter {
      * Gets an HTML representation of this filter.
      * 
      * @return An HTML representation of this filter.
+     * @see #toHtml(java.lang.String, java.lang.String) 
      */
     public String toHtml() {
+        return toHtml(null, "filter--active");
+    }
+    
+    /**
+     * Gets an HTML representation of this filter, using the given class name 
+     * (if any) and additionally an appended "active" class name (if any) if the
+     * filter is active.
+     * 
+     * @param className The regular class name, e.g. "filter".
+     * @param classNameActive The "active" class name, e.g. "filter--active".
+     * @return An HTML representation of this filter, ready to use.
+     */
+    public String toHtml(String className, String classNameActive) {
+        String cn = className == null ? "" : className;
+        String cna = classNameActive == null ? "" : classNameActive;
+        
         // ToDo: Make this an add / remove filter, based on the current uri
-        String s = "";
-        s += "<a" 
-                + (isActive() ? " class=\"filter--active\"" : "")
+        
+        return 
+                "<a"
+                + " class=\"" + (cn + (isActive() ? (" "+cna) : "")).trim() + "\""
                 + " href=\"" + uri + "\">"
                     + term
-                + "</a>";
-        return s;
+                + "</a>";    
     }
 }

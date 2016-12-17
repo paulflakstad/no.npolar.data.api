@@ -58,7 +58,11 @@ public interface APIServiceInterface {
      * @return APIServiceInterface The updated instance, holding the query results. (Entries available via {@link #getEntries()}.)
      */
     public APIServiceInterface doQuery(Map<String, String[]> params)
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException;
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException;
     
     /**
      * Reads a single entry from the service using the given ID.
@@ -67,7 +71,11 @@ public interface APIServiceInterface {
      * @return The JSON object describing the single entry, or null if no such entry could be found.
      */
     public JSONObject doRead(String id)
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException;
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException;
     
     /**
      * Returns all (if any) entries retrieved in the last executed query.
@@ -94,6 +102,7 @@ public interface APIServiceInterface {
     /**
      * Gets a single entry, identified by the given ID.
      * 
+     * @param <T> Any instance that is some kind of {@link APIEntry}.
      * @param id The ID.
      * @return A single entry. 
      */
@@ -102,6 +111,10 @@ public interface APIServiceInterface {
     // Filtering narrows results by excluding stuff
     public APIServiceInterface addFilter(String fieldName, String val);
     public APIServiceInterface addFilter(String key, APIService.Delimiter del, String value, String ... moreValues);
+    
+    // Filters as default parameters (shortcuts)
+    public APIServiceInterface addDefaultFilter(String fieldName, String val);
+    public APIServiceInterface addDefaultFilter(String key, APIService.Delimiter del, String value, String ... moreValues);
     
     // Generic parameters, use for anything
     public APIServiceInterface addParameter(String key, String val);

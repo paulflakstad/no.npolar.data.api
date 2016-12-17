@@ -10,12 +10,15 @@ import org.opencms.json.JSONObject;
  * <li>a publication</li>
  * <li>a time series</li>
  * <li>a project</li>
+ * <li>a dataset</li>
+ * <li>a person</li>
  * <li>...</li>
  * </ul>
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public interface APIEntryInterface {
+    
     /**
      * Gets the name of the group in which the entry belongs. 
      * <p>
@@ -30,6 +33,7 @@ public interface APIEntryInterface {
      * @return The entry's group name, if any.
      */
     public String getGroupName();
+    
     /**
      * Gets the title for the entry.
      * <p> For localized entries, this method should return the title in an 
@@ -39,6 +43,7 @@ public interface APIEntryInterface {
      * @return The entry's title.
      */
     public String getTitle();
+    
     /**
      * Gets the full URL for the entry, within the context of the given service. 
      * <p>
@@ -51,10 +56,11 @@ public interface APIEntryInterface {
      * @return The entry's full URL.
      */
     public String getURL(APIServiceInterface service);
+    
     /**
      * Gets the ID for the entry.
      * <p>
-     * The ID uniquely identifies the entry within the API.
+     * The ID that uniquely identifies the entry within the API.
      * 
      * @return The entry's ID.
      */

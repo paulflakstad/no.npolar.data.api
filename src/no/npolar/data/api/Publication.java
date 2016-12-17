@@ -1,6 +1,5 @@
 package no.npolar.data.api;
 
-import com.google.gwt.aria.client.Roles;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,6 +20,7 @@ import org.opencms.json.JSONObject;
 import org.opencms.util.CmsHtmlExtractor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.opencms.util.CmsStringUtil;
 
 /**
  * Represents a single publication entry, as read from the Norwegian Polar 
@@ -33,12 +33,12 @@ import org.apache.commons.logging.LogFactory;
  * @see https://data.npolar.no/publications/
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class Publication extends APIEntry implements APIEntryInterface {
+public class Publication extends APIEntry /*implements APIEntryInterface*/ {
 
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(Publication.class);
-    /** The JSON object that this instance is built from. */
-    private JSONObject o = null;
+    //** The JSON object that this instance is built from. */
+    //private JSONObject o = null;
     
     /**
      * JSON key: Publication title.
@@ -96,7 +96,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
      */
     public static final String JSON_KEY_ID              = Key.ID;
     
-    public class Key extends APIEntry.Key {
+    public static class Key extends APIEntry.Key {
         /** Publication title. */
         public static final String TITLE = "title";
         /** Publication type. */
@@ -382,7 +382,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
      */
     public static final String JSON_KEY_DRAFT           = Key.DRAFT;
     
-    public class Val extends APIEntry.Val {
+    public static class Val extends APIEntry.Val {
         /** Pre-defined JSON value: Used on entries that are NOT flagged as drafts. */
         public static final String DRAFT_FALSE = "no";
         /** Pre-defined JSON value: Used on entries that are flagged as drafts. */
@@ -507,7 +507,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
      */
     public static final String DATE_FORMAT_JSON         = "yyyy-MM-dd";
     /** The base URL for publication links. */
-    public static final String URL_PUBLINK_BASE         = "http://data.npolar.no/publication/";
+    public static final String URL_PUBLINK_BASE         = "https://data.npolar.no/publication/";
     /** The base URL for DOI links. */
     public static final String URL_DOI_BASE             = "http://dx.doi.org/";
     /** Non-breaking space HTML. */
@@ -686,7 +686,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
     protected String articleNo = "";
     //protected String pages = "";
     protected String doi = "";
-    protected String id = "";
+    //protected String id = "";
     protected String link = "";
     protected Type type = Type.UNDEFINED;
     protected String language = "";
@@ -701,8 +701,8 @@ public class Publication extends APIEntry implements APIEntryInterface {
     protected JSONObject conference = null;
     protected JSONArray links = null;
     protected JSONArray topics = null;
-    /** The locale to use when generating strings meant for viewing. (Important especially for date formats etc.) */
-    protected Locale displayLocale = null;
+    //** The locale to use when generating strings meant for viewing. (Important especially for date formats etc.) */
+    //protected Locale displayLocale = null;
     /** Collection to hold authors and editors for this publication. */
     protected PersonCollection authorsAndEditors = null;
     /** List to hold translators of this publication. */
@@ -742,10 +742,11 @@ public class Publication extends APIEntry implements APIEntryInterface {
      * @param loc The locale to use when generating strings for screen view. If null, the default locale (English) is used.
      */
     public Publication(JSONObject pubObject, Locale loc) {
-        this.o = pubObject;
-        this.displayLocale = loc;
-        if (this.displayLocale == null)
-            this.displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
+        super(pubObject, loc);
+        //this.o = pubObject;
+        //this.displayLocale = loc;
+        //if (this.displayLocale == null)
+        //    this.displayLocale = new Locale(APIService.DEFAULT_LOCALE_NAME);
         // If the JSON object is null or the ID is missing, this is no good
         // (Added this check in attempt to avoid logging of errors suspected
         // to be rooted in API downtime/error, which does occur now and then.)
@@ -776,7 +777,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
         try { title     = o.getString(Key.TITLE).trim(); } catch (Exception e) { title = labels.getString(Labels.LABEL_DEFAULT_TITLE_0); }
         //try { pubYear   = o.getString(JSON_KEY_PUBYEAR); if (pubYear.equalsIgnoreCase("0")) pubYear = ""; } catch (Exception e) { }
         //try { pubDate   = new SimpleDateFormat(DATE_FORMAT_JSON).parse(o.getString(JSON_KEY_PUBDATE)); } catch (Exception e) { }
-        try { id        = o.getString(Key.ID); } catch (Exception e) { }//o.getString(JSON_KEY_ID); } catch (Exception e) { }
+        //try { id        = o.getString(Key.ID); } catch (Exception e) { }//o.getString(JSON_KEY_ID); } catch (Exception e) { }
         try { type      = Type.forString(o.getString(Key.TYPE)); } catch (Exception e) { }
         //try { type      = o.getString(Key.TYPE); } catch (Exception e) { }
         try { language  = o.getString(Key.LANGUAGE); } catch (Exception e) { }
@@ -1185,14 +1186,6 @@ public class Publication extends APIEntry implements APIEntryInterface {
     public String getPubDateAsYear() { try { return new SimpleDateFormat(labels.getString(Labels.PUB_REF_DATE_FORMAT_YEARONLY_0), displayLocale).format(pubDate); } catch (Exception e) { return ""; } }
     
     /**
-     * Gets the unique ID for this publication.
-     * 
-     * @return The unique ID for this publication, or an empty string if none.
-     */
-    @Override
-    public String getId() { return id; }
-    
-    /**
      * Gets the type for this publication.
      * 
      * @return The type for this publication, or an empty string if none.
@@ -1276,7 +1269,9 @@ public class Publication extends APIEntry implements APIEntryInterface {
     /**
      * Gets the topics for this publication, if any, as HTML code.
      * 
+     * @param filterUrl The base URL.
      * @param separator The character to use for separate the topics. Use null for none.
+     * @param locale The preferred language.
      * @return The topics for this publication, or an empty string if none;
      */
     public String getTopicsHtml(String filterUrl, String separator, Locale locale) {
@@ -1518,6 +1513,13 @@ public class Publication extends APIEntry implements APIEntryInterface {
     public String getDOI() { return doi; }
     
     /**
+     * Gets the parent publication, if any.
+     * 
+     * @return The parent publication, or <code>null</code> if none.
+     */
+    public Publication getParent() { return parent; }
+    
+    /**
      * Gets the URL for this publication's parent.
      * 
      * @return The URL for this publication's parent, or an empty string if none.
@@ -1740,7 +1742,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
     }
     
     /**
-     * Gets HTML for this publication, intended for listings etc.
+     * Gets a "standard" HTML code for this publication, intended for listings.
      * 
      * @param attrClass Extra classes to apply. Provide empty string or <code>null</code> if no additional class should be applied.
      * @param asListItem If <code>true</code>, a <code>li</code> element is used as wrapper. Otherwise, a <code>span</code> is used.
@@ -1808,6 +1810,116 @@ public class Publication extends APIEntry implements APIEntryInterface {
     }
     
     /**
+     * Gets a string of the last names of the given contributors, possibly
+     * truncated.
+     * <p>
+     * Max. 3 names are included. If there are more names, the first name and 
+     * "et al." is used.
+     * <p>
+     * Helper method for {@link #toHtmlShort()}.
+     * 
+     * @param contribs The contributors - typically authors or editors.
+     * @param suffixSingular Optional singular suffix, e.g. "(ed.)". Can be <code>null</code>.
+     * @param suffixPlural Optional singular suffix, e.g. "(eds.)". Can be <code>null</code>.
+     * @return A string of the last names of the given contributors, possibly truncated.
+     */
+    public static String getContributorsShort(List<PublicationContributor> contribs, String suffixSingular, String suffixPlural) {
+        String s = "";
+        if (contribs != null && !contribs.isEmpty()) {
+
+            boolean trimmed = false;
+            int numContribs = contribs.size();
+            String suffix = numContribs > 1 ? suffixPlural : suffixSingular;
+            if (numContribs > 3) {
+                contribs = contribs.subList(0, 1);
+                trimmed = true;
+                numContribs = contribs.size();
+            }
+
+            Iterator<PublicationContributor> iContribs = contribs.iterator();
+            int contribNo = 0;
+            while (iContribs.hasNext()) {
+                PublicationContributor contrib = iContribs.next();
+                s += contrib.getLastName();
+                if (numContribs == 1 && trimmed) {
+                    s += " et al.";
+                } else if (iContribs.hasNext()) { 
+                    s += ++contribNo == (numContribs-1) ? " & " : ", ";
+                }
+            }
+            if (suffix != null) {
+                s += " " + suffix;
+            }
+        }
+        return s;
+    }
+    
+    /**
+     * Gets the html for a standardized short-form cite string, linked and 
+     * wrapped in a list element.
+     * <p>
+     * This is the new short form, used in SERPs, implemented near the end of 
+     * 2016.
+     *
+     * @return The html for a standardized short-form cite string.
+     * @see #getContributorsShort(java.util.List, java.lang.String, java.lang.String) 
+     */
+    public String toHtmlShort() {
+        String s = "";
+        List<PublicationContributor> auth = getPeopleByRole(Publication.Val.ROLE_AUTHOR);
+                
+        String peopleStr = auth.isEmpty() ?
+                getContributorsShort(
+                        getPeopleByRole(Publication.Val.ROLE_EDITOR), 
+                        "(".concat(labels.getString(Labels.PUB_REF_EDITOR_0)).concat(")"),
+                        "(".concat(labels.getString(Labels.PUB_REF_EDITORS_0)).concat(")")
+                        ) 
+                        :
+                        getContributorsShort(auth, null, null);
+
+        // Must html-escape - there will be ampersands here
+        peopleStr = CmsStringUtil.escapeHtml(peopleStr);
+
+        String pubType = getType().toString();
+        try { 
+            pubType = labels.getString(Labels.PUB_TYPE_PREFIX_0
+                    .concat((isPartContribution() && !pubType.startsWith("in-") ? "in-" : "").concat(getType().toString())));
+        } catch (Exception e) {
+            // Log this?
+            // ERROR translating publication type '" + pubType + "': " + e.getMessage()
+        }
+
+        String publishedIn = "";
+        if (hasParent() || !getJournalName().isEmpty()) {
+            if (hasParent()) {
+                publishedIn = parent.getTitle();
+            } else {
+                publishedIn = getJournalName();
+            }
+
+        }
+
+        s += "<li class=\"serp-item\">"
+                        + "<a class=\"serp-item__title\" href=\"" 
+                            + URL_PUBLINK_BASE + getId()
+                        + "\">"
+                            + "<h4>" + getTitle() + "</h4>"
+                        + "</a>"
+                        + "<span class=\"serp-item__meta\">"
+                            + "<span class=\"tag\">" + pubType + "</span>" 
+                            + " " + peopleStr
+                            + " " + getPubYear()
+                            + (publishedIn.isEmpty() ? 
+                                "" : 
+                                " &ndash; <em>".concat(publishedIn).concat("</em>")
+                                )
+                        + "</span>"
+                    + "</li>";
+
+        return s;
+    }
+    
+    /**
      * Gets the string representation for this publication.
      * 
      * @return The string representation for this publication.
@@ -1845,9 +1957,11 @@ public class Publication extends APIEntry implements APIEntryInterface {
                     s += " " + pubYear + "."; // Ignore date, use year
             }
             
-            if (!this.isState(Val.STATE_PUBLISHED)) {
-                s += " <em>(" + labels.getString(Labels.PUB_STATE_PREFIX_0.concat(getState())) + ")</em>";
-            }
+            try { 
+                if (!getState().isEmpty() && !this.isState(Val.STATE_PUBLISHED)) {
+                    s += " <em>(" + labels.getString(Labels.PUB_STATE_PREFIX_0.concat(getState())) + ")</em>";
+                }
+            } catch (NullPointerException npe) {}
             
             s += " <a href=\"" + URL_PUBLINK_BASE + id + "\">" + title + "</a>" + (endsWithStopChar(title) ? "" : ".") + " ";
             
@@ -1980,7 +2094,7 @@ public class Publication extends APIEntry implements APIEntryInterface {
             }
             
             // Translation credit
-            if (!translators.isEmpty()) {
+            if (translators != null && !translators.isEmpty()) {
                 s+= " (";
                 //if (language != null && !language.isEmpty()) {
                     try {
@@ -2201,10 +2315,4 @@ public class Publication extends APIEntry implements APIEntryInterface {
         return s;
     }
     //*/
-    
-    /**
-     * @see APIEntryInterface#getJSON()
-     */
-    @Override
-    public JSONObject getJSON() { return this.o; }
 }

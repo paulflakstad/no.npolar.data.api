@@ -29,7 +29,7 @@ public class Person extends APIEntry/* implements APIEntryInterface*/ {
     /**
      * System keys / field names.
      */
-    public class Key extends APIEntry.Key {
+    public static class Key extends APIEntry.Key {
         public static final String UUID          = "uuid";
         public static final String JOB_TITLE     = "jobtitle";
         public static final String JOB_TITLES    = "job_titles";
@@ -61,7 +61,7 @@ public class Person extends APIEntry/* implements APIEntryInterface*/ {
     /**
      * Pre-defined system values.
      */
-    public class Val extends APIEntry.Val {
+    public static class Val extends APIEntry.Val {
         public static final String EVENT_TYPE_QUIT = "quit";
         public static final String LANG_EN = "en";
         public static final String LANG_NO = "no";

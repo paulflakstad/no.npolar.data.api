@@ -42,10 +42,10 @@ public class PublicationService extends APIService {
      * @param loc The locale to use when generating strings for screen view. If null, the default locale is used.
      */
     public PublicationService(Locale loc) {
-        //super(); redundant -> this is equivalent to not calling superclass
-        displayLocale = loc;
+        super(loc);
+        /*displayLocale = loc;
         if (displayLocale == null)
-            displayLocale = new Locale(DEFAULT_LOCALE_NAME);
+            displayLocale = new Locale(DEFAULT_LOCALE_NAME);*/
         labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
         initPresetParameters();
@@ -110,7 +110,11 @@ public class PublicationService extends APIService {
      * @deprecated Use {@link #getPublications()} instead.
      */
     public GroupedCollection<Publication> getPublications(Map<String, String[]> params) 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         
         addParameters(params);
         return getPublications();
@@ -130,7 +134,11 @@ public class PublicationService extends APIService {
      * @throws InstantiationException
      */
     public GroupedCollection<Publication> getPublications() 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         
         //ensureInstantiatedQueryParameters();
         //queryParams.putAll(params);
@@ -172,17 +180,17 @@ public class PublicationService extends APIService {
         GroupedCollection<Publication> gc = new GroupedCollection<Publication>();
         gc.setOrder(order);
         
-        JSONArray publicationEntries = doQuery(getParameters()).getEntries();
+        doQuery();
         
-        if (publicationEntries != null) {
-            for (int i = 0; i < publicationEntries.length(); i++) {
-                Publication p = new Publication(publicationEntries.getJSONObject(i), displayLocale);
+        if (entries != null) {
+            for (int i = 0; i < entries.length(); i++) {
+                Publication p = new Publication(entries.getJSONObject(i), displayLocale);
                 // Set specific sub-type if possible
                 if (p.isType(Publication.Type.BOOK) && !(p.hasParent() || p.isPartContribution())) {
-                    p = new Book(publicationEntries.getJSONObject(i), displayLocale);
+                    p = new Book(entries.getJSONObject(i), displayLocale);
                     //System.out.println("Book: " + p.getTitle() + " " + p.getId());
                 } else if (p.isPartContribution()) {
-                    p = new Chapter(publicationEntries.getJSONObject(i), displayLocale);
+                    p = new Chapter(entries.getJSONObject(i), displayLocale);
                     //System.out.println("Chapter: " + p.getTitle() + " " + p.getId());
                 }
                 /*try {*/
@@ -215,7 +223,11 @@ public class PublicationService extends APIService {
      * @throws InstantiationException 
      */
     public List<Publication> getPublicationList() 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         
         return getPublicationList(null);
         //ensureInstantiatedQueryParameters();
@@ -235,7 +247,11 @@ public class PublicationService extends APIService {
      * @throws InstantiationException 
      */
     public List<Publication> getPublicationList(Map<String, String[]> params) 
-            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+            throws java.io.UnsupportedEncodingException, 
+            MalformedURLException, 
+            IOException, 
+            JSONException, 
+            InstantiationException {
         
         List<Publication> list = new ArrayList<Publication>();
         
@@ -245,17 +261,17 @@ public class PublicationService extends APIService {
         //ensureInstantiatedQueryParameters();
         //queryParams.putAll(params);
         
-        JSONArray publicationEntries = doQuery(getParameters()).getEntries();
+        doQuery();
         
-        if (publicationEntries != null) {
-            for (int i = 0; i < publicationEntries.length(); i++) {
+        if (entries != null) {
+            for (int i = 0; i < entries.length(); i++) {
                 /*try {*/
-                Publication p = new Publication(publicationEntries.getJSONObject(i), displayLocale);
+                Publication p = new Publication(entries.getJSONObject(i), displayLocale);
                 // Set specific sub-type if possible
                 if (p.isType(Publication.Type.BOOK) && !(p.hasParent() || p.isPartContribution())) {
-                    p = new Book(publicationEntries.getJSONObject(i), displayLocale);
+                    p = new Book(entries.getJSONObject(i), displayLocale);
                 } else if (p.isPartContribution()) {
-                    p = new Chapter(publicationEntries.getJSONObject(i), displayLocale);
+                    p = new Chapter(entries.getJSONObject(i), displayLocale);
                 }
                 
                 list.add(p);
@@ -317,7 +333,7 @@ public class PublicationService extends APIService {
         }*/
         try {
             
-            Publication p = new Publication(this.doRead(id), displayLocale);
+            Publication p = new Publication(doRead(id), displayLocale);
             // Set specific sub-type if possible
             if (p.isType(Publication.Type.BOOK) && !(p.hasParent() || p.isPartContribution())) {
                 p = new Book(p.getJSON(), displayLocale);
