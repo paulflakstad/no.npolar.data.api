@@ -18,6 +18,7 @@ import no.npolar.data.api.TimeSeriesCollection;
 import no.npolar.data.api.TimeSeriesDataPoint;
 import no.npolar.data.api.TimeSeriesTimestamp;
 import no.npolar.data.api.Labels;
+import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONObject;
 import org.opencms.json.JSONException;
 import org.apache.commons.logging.Log;
@@ -26,11 +27,16 @@ import org.opencms.json.JSONArray;
 import org.opencms.util.CmsStringUtil;
 
 /**
- * Adds support for generating Highcharts {@link http://highcharts.com} charts.
+ * Adds support for generating {@link http://highcharts.com Highcharts charts}.
  * <p>
- * The chart is generated from a {@link MOSJParameter} (which has 
- * related time series), possibly with custom settings that may be global or 
- * specific to individual time series.
+ * Each chart's job is to present 1-N time series, both as a visualization (a 
+ * Highcharts chart), and as text (a table).
+ * <p>
+ * Custom chart settings may exist, both globally (i.e. affecting all time 
+ * series and/or the chart itself) and/or specific to individual time series.
+ * <p>
+ * An earlier version relied heavily on the {@link MOSJParameter} class. This 
+ * dependency was later relocated to the {@link TimeSeriesCollection} class.
  * <p>
  * For more info, please refer to the general  
  * {@link http://api.highcharts.com/highcharts Highcharts documentation}.
@@ -39,11 +45,17 @@ import org.opencms.util.CmsStringUtil;
  */
 public class HighchartsChart {
     /** The MOSJ parameter that is the basis for this chart. */
-    private MOSJParameter mosjParameter = null;
+    //private MOSJParameter mosjParameter = null;
+    /** The set of time series that go into this chart. */
+    private TimeSeriesCollection timeSeriesColl = null;
     /** Override settings - global and/or specific to individual time series. */
     private JSONObject overrides = null;
     /** The preferred language. */
     private Locale displayLocale = null;
+    //** The chart title, typically the time series collection's title, or a manually set one. */
+    //private String title = null;
+    /** The chart ID, typically the MOSJ parameter's ID, or a manually set one. */
+    private String id = null;
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(HighchartsChart.class);
     
@@ -129,11 +141,65 @@ public class HighchartsChart {
      * 
      * @param mp The MOSJ parameter. Mandatory (not <code>null</code>).
      * @param overrides The overrides. Can be <code>null</code>.
+     * @deprecated The concept of MOSJ parameters is obsolete. Consider using one of the alternative constructors.
      */
     public HighchartsChart(MOSJParameter mp, JSONObject overrides) {
-        this.mosjParameter = mp;
+        //this.mosjParameter = mp;
+        id = mp.getId();
         this.overrides = overrides;
         this.displayLocale = mp.getDisplayLocale();
+        
+        // Note: The overrides must be set prior to ordering time series
+        this.timeSeriesColl = resolveTimeSeriesOrdering( mp.getTimeSeriesCollection() );
+    }
+    
+    /**
+     * Creates a new chart instance using the given details.
+     * <p> 
+     * If there is no need to set the chart ID explicitly, you can provide 
+     * <code>null</code> to auto-generate an ID based on the title of the given 
+     * time series collection.
+     * 
+     * @param id The chart ID. Provide <code>null</code> to generate an ID.
+     * @param tsc The time series for this chart.
+     * @param overrides The overrides / custom settings. Can be <code>null</code>.
+     */
+    public HighchartsChart(String id, TimeSeriesCollection tsc, JSONObject overrides) {
+        this.id = id;
+        this.overrides = overrides;
+        displayLocale = tsc.getDisplayLocale();
+        
+        // Note: Ordering time series should always be done *after* having set
+        // the overrides / custom settings.
+        timeSeriesColl = resolveTimeSeriesOrdering(tsc);
+        if (id == null || id.isEmpty()) {
+            this.id = APIUtil.toURLFriendlyForm(tsc.getTitle()).replace(".", "-");
+        }
+    }
+    
+    /**
+     * Creates a new chart instance with the given overrides / custom settings, 
+     * and with an auto-generated ID, based on the title of the given time 
+     * series collection.
+     * 
+     * @param tsc The time series for this chart.
+     * @param overrides The overrides / custom settings. Can be <code>null</code>.
+     * @see #HighchartsChart(java.lang.String, no.npolar.data.api.TimeSeriesCollection, org.opencms.json.JSONObject) 
+     */
+    public HighchartsChart(TimeSeriesCollection tsc, JSONObject overrides) {
+        this(null, tsc, overrides);
+    }
+    
+    /**
+     * Creates a new chart instance without any overrides / custom settings, and
+     * with an auto-generated ID, based on the title of the given time series 
+     * collection.
+     * 
+     * @param tsc The time series for this chart.
+     * @see #HighchartsChart(java.lang.String, no.npolar.data.api.TimeSeriesCollection, org.opencms.json.JSONObject) 
+     */
+    public HighchartsChart(TimeSeriesCollection tsc) {
+        this(null, tsc, null);
     }
     
     /**
@@ -265,10 +331,10 @@ public class HighchartsChart {
             
             // Get the time series collection via the MOSJ parameter, and make 
             // sure any custom defined order is applied.
-            TimeSeriesCollection timeSeriesCollection = resolveTimeSeriesOrdering(mosjParameter.getTimeSeriesCollection());
+            //TimeSeriesCollection timeSeriesCollection = resolveTimeSeriesOrdering(timeSeriesColl);
             
             
-            List<TimeSeriesDataUnit> units = timeSeriesCollection.getUnits();
+            List<TimeSeriesDataUnit> units = timeSeriesColl.getUnits();
             //System.out.println("units: " + units);
             Iterator<TimeSeriesDataUnit> iUnits = units.iterator();
             
@@ -276,11 +342,11 @@ public class HighchartsChart {
             boolean xAxisEnforceEqualSteps = false;
             try { xAxisEnforceEqualSteps = Boolean.valueOf(overrides.getString(OVERRIDE_KEY_X_AXIS_ENFORCE_EQUAL_STEPS)); } catch(Exception ee) {}
             if (xAxisEnforceEqualSteps) {
-                timeSeriesCollection = fillTimeMarkerGaps(timeSeriesCollection);
+                timeSeriesColl = fillTimeMarkerGaps(timeSeriesColl);
             }
             
             String type = "zoomType: 'x'";
-            int step = timeSeriesCollection.getTimeMarkersCount() / 8;
+            int step = timeSeriesColl.getTimeMarkersCount() / 8;
             if (this.containsDateSeries()) {
                 step = 0;
             }
@@ -326,8 +392,8 @@ public class HighchartsChart {
             //}
             s += "}, ";
             
-            s += "\ntitle: { text: '" + mosjParameter.getTitle().replaceAll("'", "\\\\'") + "' }, ";
-            s += "\nurl: '" + mosjParameter.getURL(new MOSJService(displayLocale, true)) + "', ";
+            s += "\ntitle: { text: '" + timeSeriesColl.getTitle().replaceAll("'", "\\\\'") + "' }, ";
+            s += "\nurl: '" + timeSeriesColl.getURL() + "', ";
             
             //if (hideMarkers || timeSeriesCollection.getTimeSeries().size() == 1 || stacking != null) {
                 String plotOptionsSeries = "";
@@ -345,7 +411,7 @@ public class HighchartsChart {
                             plotOptionsSeries += "\nlegendItemClick: function(e) { ";
                                                     
                                 // Make the function that shows/hides the error bars when clicking on the dummy series name in the legend
-                                if (timeSeriesCollection.hasErrorBarSeries()) {
+                                if (timeSeriesColl.hasErrorBarSeries()) {
                                     plotOptionsSeries += "e.preventDefault();";
                                     plotOptionsSeries += "\nif(this.options.connectTo) { // Error bar series"
                                                             + "\nvar parentSeries = this.chart.get(this.options.connectTo);"
@@ -362,7 +428,7 @@ public class HighchartsChart {
                                                         + "\n}";
                                 }
                                 // If there is only a single time series AND it's not an error bar series, make in unhideable
-                                else if (timeSeriesCollection.getTimeSeries().size() == 1) {
+                                else if (timeSeriesColl.getTimeSeries().size() == 1) {
                                     plotOptionsSeries += "\nreturn false;";
                                 }
                                                     
@@ -411,7 +477,7 @@ public class HighchartsChart {
                     if (useCategory) {
                         // ToDo: Default should be datetime, not categories
                         // .... or SHOULD IT..? See http://stackoverflow.com/questions/23816474/highcharts-xaxis-yearly-data
-                        s += "\ncategories: [" + makeCategoriesString(timeSeriesCollection) + "], ";
+                        s += "\ncategories: [" + makeCategoriesString(timeSeriesColl) + "], ";
                     } else {
                         s += "\ntype: 'datetime', ";
                     }
@@ -440,7 +506,7 @@ public class HighchartsChart {
                         boolean positiveValuesOnly = true; // Flag: Non-negative values only?
                         double largestValue = Double.MAX_VALUE; // The maximum value
                         
-                        List<TimeSeries> axisSeriesList = timeSeriesCollection.getTimeSeriesWithUnit(unit); // Get the time series for this axis
+                        List<TimeSeries> axisSeriesList = timeSeriesColl.getTimeSeriesWithUnit(unit); // Get the time series for this axis
                         Iterator<TimeSeries> iAxisSeries = axisSeriesList.iterator();
                         while (iAxisSeries.hasNext()) {
                             TimeSeries axisSeries = iAxisSeries.next();
@@ -527,7 +593,7 @@ public class HighchartsChart {
             
             // The actual data
             s += "\nseries: [ ";
-                s += getSeriesDetails(timeSeriesCollection, overrides);
+                s += getSeriesDetails(timeSeriesColl, overrides);
             s += " ]";
             
             s += "\n}";
@@ -569,10 +635,10 @@ public class HighchartsChart {
      * @return True if this chart has at least one time series with 'date' accuracy level.
      */
     public boolean containsDateSeries() {
-        if (mosjParameter.hasAccuracyCompatibleTimeSeries()) {
-            return mosjParameter.getTimeSeries().get(0).getDateTimeAccuracy() > TimeSeriesTimestamp.TYPE_YEAR;
+        if (timeSeriesColl.hasAccuracyCompatibleTimeSeries()) {
+            return timeSeriesColl.getTimeSeries().get(0).getDateTimeAccuracy() > TimeSeriesTimestamp.TYPE_YEAR;
         } else {
-            Iterator<TimeSeries> i = mosjParameter.getTimeSeries().iterator();
+            Iterator<TimeSeries> i = timeSeriesColl.getTimeSeries().iterator();
             while (i.hasNext()) {
                 if (i.next().getDateTimeAccuracy() > TimeSeriesTimestamp.TYPE_YEAR) {
                     return true;
@@ -1052,25 +1118,39 @@ public class HighchartsChart {
      */
     public String getHtmlTable() {
         String s = "";
-        if (!mosjParameter.hasAccuracyCompatibleTimeSeries()) {
+        if (!timeSeriesColl.hasAccuracyCompatibleTimeSeries()) {
             s += "\n<!-- Error: Parameter has multiple time series, with incompatible datetime accuracy levels. Table will probably not be Highcharts-munchable. -->\n";
         }
         
-        s += "<table id=\"" + mosjParameter.getId() + "-data\" class=\"wcag-off-screen\">\n";
-        s += "<caption>" + mosjParameter.getTitle() + "</caption>\n";
+        s += "<table id=\"" + getId() + "-data\" class=\"wcag-off-screen\">\n";
+        s += "<caption>" + timeSeriesColl.getTitle() + "</caption>\n";
         
         try {
-            s += getHtmlTableRows( this.mosjParameter.getTimeSeriesCollection() );
+            s += getHtmlTableRows( timeSeriesColl );
         } catch (Exception e) {
             //e.printStackTrace();
             if (LOG.isErrorEnabled()) {
-                LOG.error("Creating Highcharts-munchable table from MOSJ parameter '" + mosjParameter.getId() + "' failed.", e);
+                LOG.error("Creating Highcharts-munchable table from time series collection '" + timeSeriesColl.getURL() + "' failed.", e);
             }
         }
         
         s += "</table>";
         return s;
     }
+    
+    /**
+     * Gets the ID for this chart.
+     * <p>
+     * The ID was set during creation of this instance, and is either
+     * <ol>
+     * <li>a manually constructed one</li>
+     * <li>a generated one (based on a time series collection's title)</li>
+     * <li>a clone of the MOSJ parameter's ID</li>
+     * </ol>
+     * 
+     * @return The ID for this chart.
+     */
+    public String getId() { return id; }
     
     /**
      * Translates the given time series collection to table rows containing the

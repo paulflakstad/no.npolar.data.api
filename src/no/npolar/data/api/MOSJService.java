@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+//import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -13,11 +13,13 @@ import java.util.ResourceBundle;
 //import no.npolar.data.api.Labels;
 //import no.npolar.data.api.TimeSeries;
 import no.npolar.data.api.mosj.MOSJParameter;
+import no.npolar.data.api.util.APIUtil;
 import org.opencms.json.JSONArray;
 import org.opencms.json.JSONException;
 //import org.opencms.json.JSONObject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.opencms.json.JSONObject;
 
 /**
  * Provides an interface to read MOSJ-specific data from the Norwegian Polar 
@@ -162,12 +164,97 @@ public class MOSJService extends APIService {
      * @return The {@link MOSJParameter} identified by the given ID, or null if no such entry exists.
      * @see APIService#doRead(java.lang.String, java.lang.String) 
      */
+    @Override
     public MOSJParameter get(String id) {
         try  {
             return new MOSJParameter(this.doRead(id, this.getParameterBaseURL()), displayLocale);
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Could not read MOSJ parameter with ID "+id, e);
+            }
+            return null;
+        }
+    }
+    
+    /**
+     * Gets a single MOSJ parameter that comprises any time series returned by
+     * the service as a result of a time series query using the given keywords.
+     * 
+     * @param keywords The keywords to use when querying for time series.
+     * @param title The parameter title.
+     * @param id The parameter ID.
+     * @see MOSJParameter#MOSJParameter(java.lang.String, java.lang.String, org.opencms.json.JSONObject, java.util.Locale) 
+     * @return  A MOSJ parameter that comprises any time series identified by the given keywords.
+     */
+    public MOSJParameter get(String keywords, String title, String id) {
+        JSONObject tsQueryResult = APIUtil.queryService(
+                this.getTimeSeriesBaseURL() 
+                + "?" + modFilter("keywords.@value") + "=" + keywords 
+                + "&" + Param.FORMAT + "=" + ParamVal.FORMAT_JSON
+        );
+        
+        try {
+            return new MOSJParameter(title, id, tsQueryResult.getJSONObject(Key.FEED), displayLocale);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Could not create MOSJ parameter with ID '" + id + "' based on keywords string '" + keywords + "'.", e);
+            }
+            return null;
+        }
+    }
+    
+    /**
+     * Creates a collection of time series, based on the given details, and with
+     * no collection URL.
+     * 
+     * @param timeSeriesIds A list of {@link TimeSeries time series} IDs.
+     * @param title The collection title. This is the chart / MOSJ parameter title.
+     * @return A collection of time series.
+     */
+    public TimeSeriesCollection createTimeSeriesCollection(List<String> timeSeriesIds, String title) {
+        return createTimeSeriesCollection(timeSeriesIds, title, null);
+    }
+    
+    /**
+     * Creates a collection of time series, based on the given details.
+     * 
+     * @param timeSeriesIds A list of {@link TimeSeries time series} IDs.
+     * @param title The collection title. This is the chart / MOSJ parameter title.
+     * @param url The URL for the collection, typically a Data Centre query-for-time-series URI.
+     * @return A collection of time series.
+     */
+    public TimeSeriesCollection createTimeSeriesCollection(List<String> timeSeriesIds, String title, String url) {
+        if (timeSeriesIds == null) {
+            return null;
+        }
+        
+        List<TimeSeries> tss = new ArrayList<TimeSeries>(timeSeriesIds.size());
+        try {
+            for (String id : timeSeriesIds) {
+                try {
+                    tss.add(this.getTimeSeries(id));
+                } catch (Exception e) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Unable to add time series with ID '" + id + "' to collection.", e);
+                    }
+                }
+            }
+            
+            if (url == null || url.isEmpty()) {
+                url = getTimeSeriesBaseURL() 
+                        + "?q=" 
+                        + "&" + Param.FORMAT + "=" + ParamVal.FORMAT_JSON
+                        + "&" + Param.RESULTS_LIMIT + "=" + timeSeriesIds.size()
+                        + "&" + Param.FACETS + "=" + ParamVal.FACETS_NONE
+                        + "&" + modFilter(TimeSeries.Key.SYSTEMS) + "=" + TimeSeries.Val.ORG_MOSJ_GENERIC
+                        + "&" + modFilter(TimeSeries.Key.ID) + "=" + combine(Delimiter.OR, timeSeriesIds.toArray(new String[timeSeriesIds.size()]))
+                        ;
+            }
+
+            return new TimeSeriesCollection(displayLocale, tss, title, url);
+        } catch (Exception e) {
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error creating time series collection defined at '" + url + "'.", e);
             }
             return null;
         }
@@ -237,7 +324,11 @@ public class MOSJService extends APIService {
         return new TimeSeries( this.doRead(id, this.getTimeSeriesBaseURL()), displayLocale);
         
     }
-    
+    /*
+    public List<TimeSeries> queryTimeSeries(String queryUrl) {
+        
+    }
+    */
     /**
      * @see APIService#getDefaultParameters()
      */
