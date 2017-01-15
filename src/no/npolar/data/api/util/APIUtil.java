@@ -122,6 +122,7 @@ public class APIUtil {
      */
     public static JSONObject queryService(String url) {
         try {
+            //System.out.println("Querying API @ " + url);
             JSONObject serviceResponseObject = new JSONObject(httpResponseAsString(url));
             return serviceResponseObject;
         } catch (java.io.FileNotFoundException missingFileException) {
