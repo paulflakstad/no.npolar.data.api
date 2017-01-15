@@ -614,6 +614,49 @@ public class TimeSeriesCollection {
     }
     
     /**
+     * Gets the author string, compiled from the time series in this collection. 
+     * 
+     * @return The author string.
+     * @see #getAuthors() 
+     */
+    public String getAuthorsStr() {
+        String s = "";
+        List<String> a = getAuthors();
+        for (int i = 0; i < a.size(); i++) {
+            if (i > 0) {
+                // Not first author: add delimiter char
+                if (i+2 == a.size()) {
+                    s += " & ";
+                } else {
+                    s += ", ";
+                }
+            }
+            // add name
+            s += a.get(i);
+        }
+        return s;
+    }
+    
+    /**
+     * Gets a list of authors, compiled from the time series in this collection. 
+     * 
+     * @return A list of authors (without duplicates).
+     * @see #getAuthorsStr() 
+     */
+    public List<String> getAuthors() {
+        List<String> a = new ArrayList<String>(1);
+        for (TimeSeries ts : getTimeSeries()) {
+            List<String> tsAuths = ts.getAuthors();
+            for (String tsAuth : tsAuths) {
+                if (!a.contains(tsAuth)) {
+                    a.add(tsAuth);
+                }
+            }
+        }
+        return a;
+    }
+    
+    /**
      * Sets the time series and makes sure all changes are propagated.
      * <p>
      * This method is called by the constructor and by any method(s) that 
