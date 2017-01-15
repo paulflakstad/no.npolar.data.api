@@ -832,13 +832,20 @@ public class APIUtil {
         // periods (e.g. if the given string was "Kit M. Kovacs")
         s = s.replaceAll("\\.\\s", " ");
         // Remove trailing period (e.g. if the given string was "Kit M.")
-        s = s.replaceAll("\\.$", "");
+        s = s.replaceAll("\\.$", "");        
         
+        // Replace spaces, commas and various dashes with a dot.
         regex = "(\\s|-|–|—|,)";
         s = s.replaceAll(regex, ".");
         
-        regex = "('|`|’|´)";
-        s = s.replaceAll(regex, "");
+        //regex = "('|`|’|´)";
+        //s = s.replaceAll(regex, "");
+        
+        // Clean up consecutive dots
+        s = s.replaceAll("\\.\\.", ".");
+        
+        // Finally, strip anything that's NOT a-z, 0-9 or a dot
+        s = s.replaceAll("[^a-z0-9\\.]", "");
         
         return s;
     }
