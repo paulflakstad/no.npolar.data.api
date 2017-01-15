@@ -35,7 +35,7 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
-public class TimeSeries extends APIEntry/*implements APIEntryInterface*/ {
+public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*APIEntryInterface*/ {
     // Date format parts
     //public static final String DATE_FORMAT_UNIX_YEAR = "%Y";
     //public static final String DATE_FORMAT_UNIX_MONTH = "%m";
@@ -1256,6 +1256,70 @@ public class TimeSeries extends APIEntry/*implements APIEntryInterface*/ {
             return 3;
         else
             return 1;
+    }
+    
+    /**
+     * Compares this time series to the given one.
+     * <p> 
+     * If they are not equal, a test is done to compare the first timestamp of 
+     * each time series. If this test is not zero, we return that value. 
+     * Otherwise, we return the result of comparing (as strings) the hash codes.
+     * 
+     * @param that The time series to compare to this instance.
+     * @return Anything other than zero indicates a difference. 
+     */
+    @Override 
+    public int compareTo(TimeSeries that) {
+        if (this.equals(that)) {
+            return 0;
+        }
+        
+        try {
+            int tsRes = this.getTimestamps().get(0).compareTo(
+                    that.getTimestamps().get(0)
+            );
+            if (tsRes != 0) {
+                return tsRes;
+            }
+            return String.valueOf(this.hashCode()).compareTo(
+                    String.valueOf(that.hashCode())
+            );
+            
+        } catch (Exception e) {}
+        
+        return 1; // Just something non-zero
+    }
+    
+    /**
+     * Gets the hash code.
+     * <p>
+     * The hash code is based only on the ID string, because it should be unique
+     * for all time series entries.
+     * 
+     * @return The hash code for this time series.
+     */
+    @Override
+    public int hashCode() {
+        return this.id.hashCode();
+    }
+    
+    /**
+     * If the given object is a time series and not this instance, the return 
+     * value is the result of an ID comparison.
+     * 
+     * @param obj The (time series) object to compare with.
+     * @return <code>true</code> if the given object is this instance or equivalent to it, <code>false</code> otherwise.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof TimeSeries)) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        
+        return this.hashCode() == ((TimeSeries)obj).hashCode();
     }
     
     /**

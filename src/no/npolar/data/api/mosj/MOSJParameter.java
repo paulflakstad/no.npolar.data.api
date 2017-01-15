@@ -11,7 +11,6 @@ import no.npolar.data.api.APIServiceInterface;
 import no.npolar.data.api.MOSJService;
 import no.npolar.data.api.TimeSeries;
 import no.npolar.data.api.TimeSeriesCollection;
-import no.npolar.data.api.TimeSeriesTimestamp;
 import no.npolar.data.api.util.APIUtil;
 import no.npolar.data.api.Labels;
 import org.opencms.json.JSONArray;
@@ -20,18 +19,25 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Represents a MOSJ parameter, which is basically a wrapper for time series 
- * data.
+ * Represents a MOSJ parameter, which is basically a wrapper for 0-N time series 
+ * and their data.
  * <p>
- * This is the main class for interacting with the MOSJ API.
+ * This was previously the main class for MOSJ interaction with the Data Centre, 
+ * but that changed with the (currently planned) removal of the parameter layer 
+ * from the Data Centre, and concentrating on time series only.
+ * <p>
+ * The new main class is {@link TimeSeriesCollection}.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
+ * @deprecated Kept only for backwards compatibility. Most core functions just relays equivalent functions in {@link TimeSeriesCollection}.
  */
 public class MOSJParameter extends APIEntry implements APIEntryInterface {
+    /** A manually defined title. */
+    private String customTitle = null;
     /** This parameter's ID, as read from the API. */
-    private String id = null;
+    /*private String id = null;*/
     /** The complete parameter data, as read from the API. */
-    private JSONObject apiStructure = null;
+    /*private JSONObject apiStructure = null;*/
     /** List of related time series. */
     protected List<TimeSeries> relatedTimeSeries = null;
     //protected List<MOSJTimeSeries> relatedTimeSeries = null;
@@ -40,7 +46,7 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
     protected TimeSeriesCollection tsc = null;
     
     /** Preferred locale to use when getting language-specific data. */
-    protected Locale displayLocale = null;
+    /*protected Locale displayLocale = null;*/
     /** Localized strings. */
     protected ResourceBundle labels = null;
     /** Default locale string. */
@@ -52,6 +58,7 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
         public static final String TITLE = "title";
         //public static final String ID = "id";
         public static final String RELATED_TIME_SERIES = "timeseries";
+        public static final String RELATED_TIME_SERIES_EMBEDDED = "entries";
     }
     
     // Data Centre keywords
@@ -77,16 +84,41 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
      * @throws InstantiationException If anything goes wrong when reading the 'id' property from the JSON object.
      */
     public MOSJParameter(JSONObject o, Locale displayLocale) throws InstantiationException {
-        this.displayLocale = displayLocale;
-        this.relatedTimeSeries = new ArrayList<TimeSeries>();
-        apiStructure = o;
+        super(o, displayLocale);
+        //this.displayLocale = displayLocale;
+        this.relatedTimeSeries = new ArrayList<TimeSeries>(2);
+        
+        /*this.o = o;
         try {
             id = o.getString(Key.ID);
         } catch (Exception e) {
             throw new InstantiationException("Error attempting to create MOSJ parameter instance from JSON object: " + e.getMessage());
-        }
+        }*/
+        
         this.labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         
+        resolveTimeSeries();
+    }
+    
+    /**
+     * Constructs a parameter instance that is not tied to any parameter entry 
+     * in the Data Centre, but instead will be based on the given time series
+     * query result. 
+     * <p>
+     * The time series query result should contain 0-N time series objects in 
+     * its entries array.
+     * 
+     * @param title The parameter title.
+     * @param id The parameter ID (can be anything).
+     * @param timeSeriesQueryResult The query result, should include 0-N time series objects in its entries array.
+     * @param displayLocale The preferred language.
+     */
+    public MOSJParameter(String title, String id, JSONObject timeSeriesQueryResult, Locale displayLocale) {
+        super(timeSeriesQueryResult, displayLocale);
+        this.customTitle = title;
+        this.relatedTimeSeries = new ArrayList<TimeSeries>(2);
+        this.id = id;
+        this.labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
         resolveTimeSeries();
     }
     
@@ -119,9 +151,10 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
      */
     private MOSJParameter resolveTimeSeries() {
         this.relatedTimeSeries.clear();
-        if (apiStructure.has(Key.RELATED_TIME_SERIES)) {
+        
+        if (o.has(Key.RELATED_TIME_SERIES)) {
             try {   
-                JSONArray relatedTimeSeriesArr = this.apiStructure.getJSONArray(Key.RELATED_TIME_SERIES); // Each array entry is a URLs to a related time series
+                JSONArray relatedTimeSeriesArr = o.getJSONArray(Key.RELATED_TIME_SERIES); // Each array entry is a URLs to a related time series
                 for (int i = 0; i < relatedTimeSeriesArr.length(); i++) {
                     try {
                         String relatedTimeSeriesUrl = APIUtil.toApiUrl(relatedTimeSeriesArr.getString(i));
@@ -149,6 +182,21 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
             } catch (Exception e) {
                 // Parameter has no related time series
             }
+        } else if (o.has(Key.RELATED_TIME_SERIES_EMBEDDED)) {
+            try {
+                // Each array entry is an embedded, complete time series
+                JSONArray relatedTimeSeriesArr = o.getJSONArray(Key.RELATED_TIME_SERIES_EMBEDDED); 
+                for (int i = 0; i < relatedTimeSeriesArr.length(); i++) {
+                    TimeSeries ts = new TimeSeries(relatedTimeSeriesArr.getJSONObject(i), displayLocale);
+                    this.addTimeSeries(ts);
+                    System.out.println("Added time series " + ts.getTitle() + ".");
+                }
+            } catch (Exception e) {
+                // No time series? Error?
+                System.out.println("ERROR: Unable to add time series: " + e.getMessage());
+            }
+        } else {
+            System.out.println("No time series added.");
         }
         return this;
     }
@@ -176,10 +224,15 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
      * @return The parameter's title, localized (if possible) according to the given locale.
      */
     public String getTitle(Locale locale) {
+        // If a custom title was passed to the constructor, return that title
+        if (customTitle != null) {
+            return customTitle;
+        }
+        
         String title = null;
         
-        try { 
-            JSONArray titles = apiStructure.getJSONArray(Key.TITLES);
+        try {
+            JSONArray titles = o.getJSONArray(Key.TITLES);
             title = APIUtil.getStringByLocale(titles, Key.TITLE, locale); // Get title in preferred language
             /*
             for (int i = 0; i < titles.length(); i++) {
@@ -335,6 +388,8 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
      * @return All time series data as CSV content.
      */
     public String getAsCSV() {
+        return getTimeSeriesCollection().getAsCSV();
+        /*
         String s = "";
         try {
             s += getCSVRows();
@@ -345,15 +400,16 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
             }
         }
         return s;
+        */
     }
     
     
-    /**
+    /* MOVED TO TimeSeriesCollection
      * Translates the given time series collection to CSV rows containing the
      * data.
      * 
      * @return CSV rows containing the data in the given time series collection.
-     */
+     *
     protected String getCSVRows() {
         String s = "";
         try {
@@ -396,7 +452,7 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
             }
         }
         return s;
-    }
+    }*/
     
     /**
      * Gets an HTML table with all time series data.
@@ -405,7 +461,7 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
      * @see #getAsTable(java.lang.String) 
      */
     public String getAsTable() {
-        return getAsTable(null);
+        return getTimeSeriesCollection().getAsTable();
     }
     
     /**
@@ -415,6 +471,8 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
      * @return An HTML table with all time series data.
      */
     public String getAsTable(String tableClass) {
+        return getTimeSeriesCollection().getAsTable(this.getId(), tableClass);
+        /*
         String s = "";
         if (!this.hasAccuracyCompatibleTimeSeries()) {
             s += "\n<!-- Warning: Parameter has multiple time series, with differences in units and/or timestamp accuracies. Table will probably not be Highcharts-munchable. -->\n";
@@ -435,20 +493,22 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
         
         s += "</table>";
         return s;
+        */
     }
     
-    /**
+    /*
+     * MOVED TO TimeSeriesCollection
      * Translates the given time series collection to table rows containing the
      * data.
      * 
      * @return HTML table rows containing the data in the given time series collection.
-     */
+     *
     protected String getTableRows() {
         String s = "";
         try {
             TimeSeriesCollection tsc = this.getTimeSeriesCollection();
             if (tsc == null)
-                tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries);
+                tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries, this.getTitle(), this.getURL(new MOSJService(displayLocale, true)));
             
             List<TimeSeries> timeSeriesList = tsc.getTimeSeries();
             if (timeSeriesList != null && !timeSeriesList.isEmpty()) {
@@ -487,7 +547,7 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
             }
         }
         return s;
-    }
+    }*/
     
     /**
      * Use {@link MOSJParameter#getChartConfigurationString(org.opencms.json.JSONObject) }
@@ -631,7 +691,7 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
         if (this.tsc == null) {
             try {
                 long a = System.currentTimeMillis();
-                tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries, this.getTitle());
+                tsc = new TimeSeriesCollection(displayLocale, relatedTimeSeries, this.getTitle(), this.getURL(new MOSJService(displayLocale, true)));
                 long b = System.currentTimeMillis();
                 //System.out.println("Creating time series collection ... done (" + (b-a) + "ms).");
                 //return tsc;
@@ -655,20 +715,16 @@ public class MOSJParameter extends APIEntry implements APIEntryInterface {
         return this.relatedTimeSeries;
     }
     
-    /**
-     * @return The ID, as read from the API.
-     */
+    /*
     @Override
     public String getId() { return this.id; }
-    
-    /**
-     * @see APIEntryInterface#getJSON() 
-     */
+    */
+    /*
     @Override
     public JSONObject getJSON() { return apiStructure; }
+    */
     
-    /**
-     * @return The configured preferred locale to use when getting language-specific data.
-     */
+    /*
     public Locale getDisplayLocale() { return this.displayLocale; }
+    */
 }

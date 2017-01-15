@@ -41,6 +41,8 @@ public abstract class APIEntry implements APIEntryInterface {
         public static final String FALSE_GENERIC = "false";
         /** The generic pre-defined organisation name for the Norwegian Polar Institute. */
         public static final String ORG_NPI_GENERIC = "npolar.no";
+        /** The generic pre-defined organisation name for MOSJ. */
+        public static final String ORG_MOSJ_GENERIC = "mosj.no";
     }
     
     /**

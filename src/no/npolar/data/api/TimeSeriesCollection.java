@@ -8,6 +8,7 @@ import java.util.Comparator;
 //import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.ResourceBundle;
 //import java.util.Map;
 //import java.util.TreeMap;
 import java.util.TreeSet;
@@ -38,14 +39,29 @@ public class TimeSeriesCollection {
     //private TreeMap<TimeSeriesTimestamp, TimeSeriesDataPoint[]> dataSet = null;
     //private TreeMap<String, TimeSeriesDataPoint[]> dataSet = null;
     //private TreeMap<TimeSeriesTimestamp, TimeSeries[]> allSeriesByTime = null;
-    /** Holds all time markers (timestamps). */
+    /**
+     * Holds all time markers (timestamps).
+     * <p>
+     * The TreeSet type ensures natural ordering and no duplicates.
+     */
     private TreeSet<TimeSeriesTimestamp> allTimestamps = null;
     //public static final Comparator<TimeSeries> SORT_BIGGEST_FIRST = null;
     
     /** Preferred locale to use when getting language-specific data. */
     private Locale displayLocale = null;
-    /** The title/name of this collection. For MOSJ, this would be the parameter title. */
+    /**
+     * The title/name of this collection.
+     * <p>
+     * For MOSJ, this would be the title of the chart / "MOSJ parameter". 
+     */
     private String title = null;
+    /** 
+     * The URL that points to this collection's Data Centre entry/entries.
+     * <p>
+     * For MOSJ, typically a query-for-time-series URL, or a URL to a parameter
+     * entry, e.g.: .../indicator/parameter/PARAM_ENTRY_ID
+     */
+    private String url = null;
     /** Holds all various units used in the data set within this time series collection. */
     private List<TimeSeriesDataUnit> units = null;
     //** Holds the number of time markers. */
@@ -54,10 +70,9 @@ public class TimeSeriesCollection {
     private boolean hasErrorBarSeries = false;
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(TimeSeriesCollection.class);
-    
-    
-    
-            
+    /** Localized strings. */
+    protected ResourceBundle labels = null;
+                
     /**
      * Creates a new time series collection, which holds the given time series.
      * 
@@ -65,10 +80,11 @@ public class TimeSeriesCollection {
      * @param tss The list of time series.
      * @throws JSONException 
      */
-    public TimeSeriesCollection(Locale displayLocale, List<TimeSeries> tss) throws JSONException {
+    /*public TimeSeriesCollection(Locale displayLocale, List<TimeSeries> tss) throws JSONException {
         this.displayLocale = displayLocale;
         this.setTimeSeries(tss);
-    }
+    }*/
+    
     /**
      * Creates a new time series collection, which holds the given time series.
      * 
@@ -77,14 +93,32 @@ public class TimeSeriesCollection {
      * @param title The title for this collection. (For MOSJ, this would be the MOSJ parameter's title.)
      * @throws JSONException 
      */
-    public TimeSeriesCollection(Locale displayLocale, List<TimeSeries> tss, String title) throws JSONException {
+    /*public TimeSeriesCollection(Locale displayLocale, List<TimeSeries> tss, String title) throws JSONException {
         this(displayLocale, tss);
         this.title = title;
-    }
+    }*/
+    
     /**
-     * Sets the time series in this collection to the given list of time series.
-     * <p>
-     * All existing time series are cleared in the process.
+     * Creates a new time series collection, holding the given time series.
+     * 
+     * @param displayLocale The preferred locale for language-specific data.
+     * @param tss The list of time series.
+     * @param title The title for this collection. (In MOSJ, this would be the chart/"parameter" title.)
+     * @param url The URL corresponding to the this collection. (Typically points to a time series query, or a MOSJ Parameter entry.)
+     * @throws JSONException 
+     */
+    public TimeSeriesCollection(Locale displayLocale, List<TimeSeries> tss, String title, String url) throws JSONException {
+        //this(displayLocale, tss);
+        this.displayLocale = displayLocale;
+        this.setTimeSeries(tss);
+        this.title = title;
+        this.url = url;
+        this.labels = ResourceBundle.getBundle(Labels.getBundleName(), displayLocale);
+    }
+    
+    /**
+     * Clears all existing time series in this collection, then adds all the
+     * given ones.
      * 
      * @param tss The time series that this collection should contain.
      * @return This instance, updated.
@@ -110,17 +144,57 @@ public class TimeSeriesCollection {
             allTimestamps.addAll(timeSeries.getTimestamps());
             
             // Add the unit to the list of units, if not already added
-            if (!units.contains(timeSeries.getUnit()))
-                units.add(timeSeries.getUnit());
+            addUnit(timeSeries.getUnit());
             
             if (timeSeries.isErrorBarSeries()) {
                 this.hasErrorBarSeries = true;
             }
         }
-        //System.out.println("Collated " + allTimestamps.size() + "*" + timeSeriesList.size() + "=" + (allTimestamps.size() * timeSeriesList.size()) + " data points total.");
+        //System.out.println("Collated " 
+        // + allTimestamps.size() + "*" + timeSeriesList.size() + "=" 
+        // + (allTimestamps.size() * timeSeriesList.size()) 
+        // + " data points total.");
         
         return this;
     }
+    
+    /**
+     * Adds a single time series to this collection.
+     * <p>
+     * If it already exists in the collection, it is not added.
+     * 
+     * @param timeSeries The time series to add.
+     * @return This instance, updated.
+     */
+    public TimeSeriesCollection addTimeSeries(TimeSeries timeSeries) {
+        if (!timeSeriesList.contains(timeSeries)) {
+            timeSeriesList.add(timeSeries);
+            allTimestamps.addAll(timeSeries.getTimestamps());
+            addUnit(timeSeries.getUnit());
+            if (timeSeries.isErrorBarSeries()) {
+                hasErrorBarSeries = true;
+            }
+        }
+        return this;
+    }
+    
+    /**
+     * Adds the given unit to the list of (unique) units used by the time series 
+     * in this collection, if necessary.
+     * <p>
+     * If the given unit already exists in the list of unique units, nothing is
+     * done.
+     * 
+     * @param unit The unit to add.
+     * @return This instance, updated.
+     */
+    private TimeSeriesCollection addUnit(TimeSeriesDataUnit unit) {
+        if (!units.contains(unit)) {
+            units.add(unit);
+        }
+        return this;
+    }
+    
     /**
      * Sorts / re-orders the series in this collection.
      * 
@@ -151,6 +225,190 @@ public class TimeSeriesCollection {
      * @return The title of this collection.
      */
     public String getTitle() { return this.title; }
+    
+    /**
+     * Gets the URL for this collection.
+     * <p>
+     * In MOSJ, this would normally be a Data Centre URL pointing either to 
+     * <p>
+     * <ol>
+     * <li>a time series query, that returns all the time series in this 
+     * collection</li>
+     * <li>a single MOSJ parameter entry, with the time series in this 
+     * collection defined as its "related time series"</li>
+     * </ol>
+     * 
+     * @return The URL related to this collection.
+     */
+    public String getURL() { return this.url; }
+    
+    /**
+     * Gets the configured preferred locale.
+     * 
+     * @return The preferred locale.
+     */
+    public Locale getDisplayLocale() { return this.displayLocale; }
+    
+    /**
+     * Exports all time series data in this collection to a comma-separated 
+     * format, which can then be used to form the content of a (download) file.
+     * 
+     * @return All time series data as CSV content.
+     */
+    public String getAsCSV() {
+        String s = "";
+        try {
+            s += getCSVRows();
+        } catch (Exception e) {
+            //e.printStackTrace();
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unable to create CSV content from time series collection at " + getURL(), e);
+            }
+        }
+        return s;
+    }
+    
+    /**
+     * Translates the given time series collection to CSV rows containing the
+     * data.
+     * 
+     * @return CSV rows containing the data in the given time series collection.
+     */
+    protected String getCSVRows() {
+        String s = "";
+        try {
+            if (timeSeriesList != null && !timeSeriesList.isEmpty()) {           
+                // heading
+                s += labels.getString(Labels.TIME_SERIES_TITLE_0) + ";" + labels.getString(Labels.TIME_SERIES_UNIT_0) + ";";
+                
+                // The columns, based on timestamps (i.e. years)
+                Iterator<TimeSeriesTimestamp> iTimeMarkers = getTimeMarkerIterator();
+                while (iTimeMarkers.hasNext()) {
+                    s += "" + iTimeMarkers.next();
+                    s += iTimeMarkers.hasNext() ? ";" : "\n";
+                }
+                
+                
+                if (!timeSeriesList.isEmpty()) {
+                    Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
+                    while (iTimeSeries.hasNext()) {
+                        TimeSeries ts = iTimeSeries.next();
+                        //s += "<!-- time series: " + getTitle() + " - " + getId() + " -->\n";
+                        s += ts.getDataPointsAsCSVRow(this);
+                    }
+                } else {
+                    // No time series data
+                }
+            } else {
+                // No time series data
+            }
+        } catch (Exception e) {
+            //s += "<!-- Error: " + e.getMessage() + " -->\n";
+            //e.printStackTrace();
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error creating html table for time series collection '" + this.getTitle() + "'.", e);
+            }
+        }
+        return s;
+    }
+    
+    /**
+     * Gets an HTML table with all time series data.
+     * 
+     * @return An HTML table with all time series data.
+     * @see #getAsTable(java.lang.String) 
+     */
+    public String getAsTable() {
+        return getAsTable("", null);
+    }
+    
+    /**
+     * Gets an HTML table with all time series data.
+     * 
+     * @param tableClass A class name to append to the table.
+     * @param tableId A table ID to append to the table.
+     * @return An HTML table with all time series data.
+     */
+    public String getAsTable(String tableId, String tableClass) {
+        String s = "";
+        if (!this.hasAccuracyCompatibleTimeSeries()) {
+            s += "\n<!-- Warning: Multiple time series with differences in units and/or timestamp accuracies. Table will probably not be Highcharts-munchable. -->\n";
+        }
+        
+        s += "<table"
+                + (tableId != null && !tableId.isEmpty() ? " id=\"" + tableId + "\"" : "")
+                + " class=\"parameter-data-table" + (tableClass != null && !tableClass.isEmpty() ? " ".concat(tableClass) : "") + "\""
+                + ">";
+        s += "\n<caption>" + getTitle() + "</caption>\n";
+        
+        try {
+            s += getTableRows();
+        } catch (Exception e) {
+            s += "\n<!-- Error creating table: " + e.getMessage() + " -->\n";
+            //e.printStackTrace();
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Unable to create table from time series collection at " + getURL() + ".", e);
+            }
+        }
+        
+        s += "</table>";
+        return s;
+    }
+    
+    /**
+     * Translates the given time series collection to table rows containing the
+     * data.
+     * 
+     * @return HTML table rows containing the data in the given time series collection.
+     */
+    protected String getTableRows() {
+        String s = "";
+        try {
+            if (timeSeriesList != null && !timeSeriesList.isEmpty()) {
+                s += "<thead>\n<tr>"
+                        + "<th scope=\"col\">&nbsp;</th>"
+                        + "<th scope=\"col\">" 
+                            + labels.getString(Labels.TIME_SERIES_UNIT_0) 
+                        + "</th>";
+                
+                // The columns, based on timestamps (i.e. years)
+                Iterator<TimeSeriesTimestamp> iTimeMarkers = getTimeMarkerIterator();
+                while (iTimeMarkers.hasNext()) {
+                    // The span is vital for Highcharts (but the class name is 
+                    // arbitrary), if it is to use this table as a base for 
+                    // building a chart
+                    s += "<th scope=\"col\">"
+                            + "<span class=\"hs-time-marker\">" 
+                                + iTimeMarkers.next() 
+                            + "</span>"
+                        + "</th>";
+                }
+                s += "</tr>\n</thead>\n";
+                
+                s += "<tbody>\n";
+                
+                if (!timeSeriesList.isEmpty()) {
+                    Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
+                    while (iTimeSeries.hasNext()) {
+                        TimeSeries ts = iTimeSeries.next();
+                        //s += "<!-- time series: " + ts.getTitle() + " - " + ts.getId() + " -->\n";
+                        s += ts.getDataPointsAsTableRow(this);
+                    }
+                } else {
+                    s += "<!-- No time series data! -->\n";
+                }
+                s += "</tbody>\n";
+            } else {
+                s += "<!-- No time series data! -->";
+            }
+        } catch (Exception e) {
+            s += "<!-- Error: " + e.getMessage() + " -->\n";
+            if (LOG.isErrorEnabled()) {
+                LOG.error("Error creating html table for time series collection described at " + getURL() + ".", e);
+            }
+        }
+        return s;
+    }
     
     /**
      * Gets the title of a time series in this collection, with the collection 
@@ -229,6 +487,29 @@ public class TimeSeriesCollection {
     }
     
     /**
+     * Checks if all the time series in this collection are "accuracy 
+     * compatible", that is, if they use the same timestamp format.
+     * 
+     * @return <code>true</code> if all the time series in this collection are "accuracy compatible", <code>false</code> otherwise.
+     */
+    public boolean hasAccuracyCompatibleTimeSeries() {
+        if (timeSeriesList == null || timeSeriesList.isEmpty()) {
+            return true;
+        }
+        
+        int testAccuracy = timeSeriesList.get(0).getDateTimeAccuracy();
+        Iterator<TimeSeries> i = timeSeriesList.iterator();
+        while (i.hasNext()) {
+            TimeSeries ts = i.next();
+            if (ts.getDateTimeAccuracy() != testAccuracy) {
+                return false;
+            }
+            //testAccuracy = ts.getDateTimeAccuracy();
+        }
+        return true;
+    }
+    
+    /**
      * Gets the "raw" data set underlying the time series in this collection.
      * <p>
      * Each key string in the returned map is a time marker (e.g. a year) and 
@@ -281,7 +562,7 @@ public class TimeSeriesCollection {
             //System.out.println("Added " + timestamp + " to time series collection (" + allTimestamps.size() + " timestamps total now)");
         }catch (Exception e) {
             if (LOG.isErrorEnabled()) {
-                LOG.error("Unable to add empty data point to collection '" + this.getTitle() + "'.", e);
+                LOG.error("Failed to add empty data point at timestamp '" + timestamp + "' in collection '" + getTitle() + "'.", e);
             }
         }
         return this;
@@ -299,7 +580,7 @@ public class TimeSeriesCollection {
             //return this.getDataSet().keySet().iterator();
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
-                LOG.error("Attempting to get time marker iterator for '" + this.getTitle() + "' failed.", e);
+                LOG.error("Attempting to get time marker iterator for collection '" + getTitle() + "' failed.", e);
             }
             return null;
         }
