@@ -101,6 +101,10 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_Y_AXIS_MIN = "minValue";
     /** Override key: Y-axis "allow decimals" flag. {@link http://api.highcharts.com/highcharts#yAxis.allowDecimals } */
     public static final String OVERRIDE_KEY_Y_AXIS_INTEGERS_ONLY = "integerValues";
+    /** Override key: The credit text. */
+    public static final String OVERRIDE_KEY_CREDIT_TEXT = "creditText";
+    /** Override key: The credit link URI. */
+    public static final String OVERRIDE_KEY_CREDIT_URI = "creditUri";
     //** Override key: Manual y-axis placement. */
     //public static final String OVERRIDE_KEY_Y_AXIS = "yAxis";
     /** The default series type name ("line"). */
@@ -372,6 +376,9 @@ public class HighchartsChart {
             s += "{ ";
             // Chart type
             s += "\nchart: { ";
+            if (overrides.has(OVERRIDE_KEY_CREDIT_TEXT)) {
+                s += "\nspacingBottom: 50,"; // Allow some air between legend and credit
+            }
             s += type;
             // Swap grouping and series names? 
             // Important: The js method toggleHighChartsGrouping(jQuery) MUST be available
@@ -461,8 +468,15 @@ public class HighchartsChart {
             }*/
             
             // Credits
+            // See http://jsfiddle.net/gh/get/jquery/3.1.1/highcharts/highcharts/tree/master/samples/highcharts/credits/href/
             s += "\ncredits: { ";
-                s += "\nenabled: false";
+                if (overrides.has(OVERRIDE_KEY_CREDIT_TEXT) && overrides.has(OVERRIDE_KEY_CREDIT_URI)) {
+                    s += "\ntext: '" + overrides.getString(OVERRIDE_KEY_CREDIT_TEXT) + "',";
+                    s += "\nhref: '" + overrides.getString(OVERRIDE_KEY_CREDIT_URI) + "',";
+                    s += "\nstyle : { 'color':'#555', 'fontSize':'0.6rem' }";
+                } else {
+                    s += "\nenabled: false";
+                }
             s += "\n}, ";
                     
             

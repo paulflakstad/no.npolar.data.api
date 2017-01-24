@@ -1,9 +1,10 @@
 package no.npolar.data.api;
 
-import java.text.SimpleDateFormat;
+//import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
+//import java.util.Arrays;
+//import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -118,24 +119,100 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     //** The format to use when rendering timestamps. */
     //private SimpleDateFormat timestampFormat = null;
     
+    /**
+     * Keys (names) for entry values (fields).
+     */
+    public static class Key extends APIEntry.Key {
+        /** API key: Titles */
+        public static final String TITLES = "titles";
+        /** API key: Title. */
+        public static final String TITLE = "title";
+        //public static final String TITLE = "text";
+        /** API key: Title -> Label. */
+        public static final String TITLE_LABEL = "label";
+        /** API key: ID. */
+        public static final String ID = "id";
+        //public static final String DATA_POINTS = "points";
+        /** API key: Data points. */
+        public static final String DATA_POINTS = "data";
+        /** API key: Data point -> Timestamp. */
+        public static final String POINT_WHEN = "when";
+        /** API key: Data point -> Main value. */
+        public static final String POINT_VAL = "value";
+        /** API key: Data point -> High value. */
+        public static final String POINT_HIGH = "high";
+        /** API key: Data point -> Low value. */
+        public static final String POINT_LOW = "low";
+        /** API key: Data point -> Maximum value. */
+        public static final String POINT_MAX = "max";
+        /** API key: Data point -> Minimum value. */
+        public static final String POINT_MIN = "min";
+        /** API key: Units. */
+        public static final String UNITS = "units";
+        /** API key: Unit. */
+        public static final String UNIT = "unit";
+        /** API key: Unit -> Symbol. */
+        public static final String UNIT_SYMBOL = "symbol";
+        /** API key: Labels. */
+        public static final String LABELS = "labels";
+        /** API key: Labels -> Label. */
+        public static final String LABELS_LABEL = "label";
+        /** API key: Labels -> Label for */
+        public static final String LABELS_LABEL_FOR = "variable";
+        /** API key: Labels -> Label language. */
+        public static final String LABELS_LABEL_LANGUAGE = "lang";
+        /** API key: Variables. */
+        public static final String VARIABLES = "variables";
+        /** API key: Variables -> Name. */
+        public static final String VARIABLES_NAME = "name";
+        /** API key: Variables -> Labels. */
+        public static final String VARIABLES_LABELS = "labels";
+        /** API key: Variables -> Label. */
+        public static final String VARIABLES_LABEL = "label";
+        /** API key: Variables -> Units. */
+        public static final String VARIABLES_UNITS = "units";
+        /** API key: Array of localized names (generic). */
+        public static final String NAMES_LOCALIZED = "names";
+        /** API key: A localized value. */
+        public static final String VALUE_LOCALIZED = "@value";
+        /** API key: A localized value's language code. */
+        public static final String VALUE_LOCALIZED_LANG = "@language";
+        /** API key: Authors (array of objects). */
+        public static final String AUTHORS = "authors";
+        /** API key: Authors -> Names (array of localized names). */
+        public static final String AUTHORS_NAMES = NAMES_LOCALIZED;
+        /** API key: Authors -> Names -> Name (localized). */
+        public static final String AUTHORS_NAMES_NAME = VALUE_LOCALIZED;
+        /** API key: Authors -> Names -> Language of the localized name. */
+        public static final String AUTHORS_NAMES_LANGUAGE = VALUE_LOCALIZED_LANG;
+    }
+    
     // Data access keys (used to extract stuff from the JSON object returned by the API)
     /** API key: Titles */
-    public static final String API_KEY_TITLES = "titles";
+    //public static final String API_KEY_TITLES = "titles";
     /** API key: Title. */
-    public static final String API_KEY_TITLE = "title";
+    //public static final String API_KEY_TITLE = "title";
     //public static final String API_KEY_TITLE = "text";
     /** API key: Title -> Label. */
-    public static final String API_KEY_TITLE_LABEL = "label";
-    /** API key: ID. */
-    public static final String API_KEY_ID = "id";
-    //public static final String API_KEY_DATA_POINTS = "points";
-    /** API key: Data points. */
-    public static final String API_KEY_DATA_POINTS = "data";
-    /** API key: Data point -> Timestamp. */
-    public static final String API_KEY_POINT_WHEN = "when";
+    //public static final String API_KEY_TITLE_LABEL = "label";
+    /**
+     * API key: ID.
+     * @deprecated Use {@link Key#ID} instead.
+     */
+    public static final String API_KEY_ID = Key.ID;
+    /**
+     * API key: Data points.
+     * @deprecated Use {@link Key#DATA_POINTS} instead.
+     */
+    public static final String API_KEY_DATA_POINTS = Key.DATA_POINTS;
     /**
      * API key: Data point -> Timestamp.
-     * @deprecated Use {@link API_KEY_POINT_WHEN} instead.
+     * @deprecated Use {@link Key#POINT_WHEN} instead.
+     */
+    public static final String API_KEY_POINT_WHEN = Key.POINT_WHEN;
+    /**
+     * API key: Data point -> Timestamp.
+     * @deprecated Use {@link Key#POINT_WHEN} instead.
      */
     public static final String API_KEY_POINT_TIMESTAMP = "datetime";
     /**
@@ -145,56 +222,114 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     public static final String API_KEY_POINT_TIMESTAMP_FORMAT = "datetime_format";
     /**
      * API key: Data point -> Timestamp.
-     * @deprecated Use {@link API_KEY_POINT_WHEN} instead.
+     * @deprecated Use {@link Key#POINT_WHEN} instead.
      */
     public static final String API_KEY_POINT_DATE = "date";
     /**
      * API key: Data point -> Year stamp.
-     * @deprecated Use {@link API_KEY_POINT_WHEN} instead.
+     * @deprecated Use {@link Key#POINT_WHEN} instead.
      */
     public static final String API_KEY_POINT_YEAR = "year";
-    /** API key: Data point -> Main value. */
-    public static final String API_KEY_POINT_VAL = "value";
-    /** API key: Data point -> High value. */
-    public static final String API_KEY_POINT_HIGH = "high";
-    /** API key: Data point -> Low value. */
-    public static final String API_KEY_POINT_LOW = "low";
-    /** API key: Data point -> Maximum value. */
-    public static final String API_KEY_POINT_MAX = "max";
-    /** API key: Data point -> Minimum value. */
-    public static final String API_KEY_POINT_MIN = "min";
-    /** API key: Units. */
-    public static final String API_KEY_UNITS = "units";
-    /** API key: Unit. */
-    public static final String API_KEY_UNIT = "unit";
-    /** API key: Unit -> Symbol. */
-    public static final String API_KEY_UNIT_SYMBOL = "symbol";
-    /** API key: Labels. */
-    public static final String API_KEY_LABELS = "labels";
-    /** API key: Labels -> Label. */
-    public static final String API_KEY_LABELS_LABEL = "label";
-    /** API key: Labels -> Label for */
-    public static final String API_KEY_LABELS_LABEL_FOR = "variable";
-    /** API key: Labels -> Label language. */
-    public static final String API_KEY_LABELS_LABEL_LANGUAGE = "lang";
-    /** API key: Variables. */
-    public static final String API_KEY_VARIABLES = "variables";
-    /** API key: Variables -> Name. */
-    public static final String API_KEY_VARIABLES_NAME = "name";
-    /** API key: Variables -> Labels. */
-    public static final String API_KEY_VARIABLES_LABELS = "labels";
-    /** API key: Variables -> Label. */
-    public static final String API_KEY_VARIABLES_LABEL = "label";
-    /** API key: Variables -> Units. */
-    public static final String API_KEY_VARIABLES_UNITS = "units";
+    /**
+     * API key: Data point -> Main value.
+     * @deprecated Use {@link Key#POINT_VAL} instead.
+     */
+    public static final String API_KEY_POINT_VAL = Key.POINT_VAL;
+    /**
+     * API key: Data point -> High value.
+     * @deprecated Use {@link Key#POINT_HIGH} instead.
+     */
+    public static final String API_KEY_POINT_HIGH = Key.POINT_HIGH;
+    /**
+     * API key: Data point -> Low value.
+     * @deprecated Use {@link Key#POINT_LOW} instead.
+     */
+    public static final String API_KEY_POINT_LOW = Key.POINT_LOW;
+    /**
+     * API key: Data point -> Maximum value.
+     * @deprecated Use {@link Key#POINT_MAX} instead.
+     */
+    public static final String API_KEY_POINT_MAX = Key.POINT_MAX;
+    /**
+     * API key: Data point -> Minimum value.
+     * @deprecated Use {@link Key#POINT_MIN} instead.
+     */
+    public static final String API_KEY_POINT_MIN = Key.POINT_MIN;
+    /**
+     * API key: Units.
+     * @deprecated Use {@link Key#UNITS} instead.
+     */
+    public static final String API_KEY_UNITS = Key.UNITS;
+    /**
+     * API key: Unit.
+     * @deprecated Use {@link Key#UNIT} instead.
+     */
+    public static final String API_KEY_UNIT = Key.UNIT;
+    /**
+     * API key: Unit -> Symbol.
+     * @deprecated Use {@link Key#UNIT_SYMBOL} instead.
+     */
+    public static final String API_KEY_UNIT_SYMBOL = Key.UNIT_SYMBOL;
+    /**
+     * API key: Labels.
+     * @deprecated Use {@link Key#LABELS} instead.
+     */
+    public static final String API_KEY_LABELS = Key.LABELS;
+    /**
+     * API key: Labels -> Label.
+     * @deprecated Use {@link Key#LABELS_LABEL} instead.
+     */
+    public static final String API_KEY_LABELS_LABEL = Key.LABELS_LABEL;
+    /**
+     * API key: Labels -> Label for
+     * @deprecated Use {@link Key#LABELS_LABEL_FOR} instead.
+     */
+    public static final String API_KEY_LABELS_LABEL_FOR = Key.LABELS_LABEL_FOR;
+    /**
+     * API key: Labels -> Label language.
+     * @deprecated Use {@link Key#LABELS_LABEL_LANGUAGE} instead.
+     */
+    public static final String API_KEY_LABELS_LABEL_LANGUAGE = Key.LABELS_LABEL_LANGUAGE;
+    /**
+     * API key: Variables.
+     * @deprecated Use {@link Key#VARIABLES} instead.
+     */
+    public static final String API_KEY_VARIABLES = Key.VARIABLES;
+    /**
+     * API key: Variables -> Name.
+     * @deprecated Use {@link Key#VARIABLES_NAME} instead.
+     */
+    public static final String API_KEY_VARIABLES_NAME = Key.VARIABLES_NAME;
+    /**
+     * API key: Variables -> Labels.
+     * @deprecated Use {@link Key#VARIABLES_LABELS} instead.
+     */
+    public static final String API_KEY_VARIABLES_LABELS = Key.VARIABLES_LABELS;
+    /**
+     * API key: Variables -> Label.
+     * @deprecated Use {@link Key#VARIABLES_LABEL} instead. 
+     */    
+    public static final String API_KEY_VARIABLES_LABEL = Key.VARIABLES_LABEL;
+    /** 
+     * API key: Variables -> Units.
+     * @deprecated Use {@link Key#VARIABLES_UNITS} instead.
+     */
+    public static final String API_KEY_VARIABLES_UNITS = Key.VARIABLES_UNITS;
+    
+    public static final String DEFAULT_AUTHOR_NAME = "[Unknown author]".toUpperCase();
+    
+    /**
+     * Holds "authors" - needed for citation.
+     */
+    private List<String> authors = new ArrayList(1);
     
     /** Mapping of partial keys (like "low") to their complete counterparts, used to identify default labels.  */
     public static final Map<String, String> DEFAULT_LABEL_KEYS = new HashMap<String, String>()
         {{
-            put(API_KEY_POINT_HIGH, Labels.TIME_SERIES_POINT_VALUE_HIGH_0);
-            put(API_KEY_POINT_LOW, Labels.TIME_SERIES_POINT_VALUE_LOW_0);
-            put(API_KEY_POINT_MAX, Labels.TIME_SERIES_POINT_VALUE_MAX_0);
-            put(API_KEY_POINT_MIN, Labels.TIME_SERIES_POINT_VALUE_MIN_0); 
+            put(Key.POINT_HIGH, Labels.TIME_SERIES_POINT_VALUE_HIGH_0);
+            put(Key.POINT_LOW, Labels.TIME_SERIES_POINT_VALUE_LOW_0);
+            put(Key.POINT_MAX, Labels.TIME_SERIES_POINT_VALUE_MAX_0);
+            put(Key.POINT_MIN, Labels.TIME_SERIES_POINT_VALUE_MIN_0); 
         }};
     
     /** Compares time series by their order index, intended for sorting by order index ascending. */
@@ -229,13 +364,14 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
             throw new InstantiationException("Error attempting to create timeseries instance from JSON object: ID was null.");
         }
         try {
-            //id = apiStructure.getString(API_KEY_ID);
-            //try { dateTimeAccuracy = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
+            //id = apiStructure.getString(Key.ID);
+            //try { dateTimeAccuracy = apiStructure.getString(Key.POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
             // Update settings
             setUnit();
             //setTimestampFormat();
             // Set data points
             initDataPoints();
+            setAuthors();
         } catch (Exception e) {
             throw new InstantiationException("Error attempting to create timeseries instance from JSON object: " + e.getMessage());
         }
@@ -273,12 +409,12 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
             String unitLong = "";
             
             // Value unit/symbol (e.g. "mm") should be allowed missing (= indicates absolute number of something)
-            try { unitShort = o.getJSONObject(API_KEY_UNIT).getString(API_KEY_UNIT_SYMBOL); } catch (Exception e) {}
+            try { unitShort = o.getJSONObject(Key.UNIT).getString(Key.UNIT_SYMBOL); } catch (Exception e) {}
             // Value description/label (e.g. "Precipitation") should always be present ...
-            try { unitLong = getLabelFor(API_KEY_POINT_VAL); } catch (Exception e) { }
+            try { unitLong = getLabelFor(Key.POINT_VAL); } catch (Exception e) { }
                         
             // ... so log a warning if it's missing
-            if (unitLong == null || unitLong.equals(API_KEY_POINT_VAL)) {
+            if (unitLong == null || unitLong.equals(Key.POINT_VAL)) {
                 unitLong = "";
                 if (LOG.isWarnEnabled()) {
                     LOG.warn("Value label missing on time series " + this.getId() + ".");
@@ -289,10 +425,10 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
             
             
             
-            //JSONObject unitVariableObj = getVariablesFor(API_KEY_POINT_VAL);
+            //JSONObject unitVariableObj = getVariablesFor(Key.POINT_VAL);
             
-            //String valueUnit = unitVariableObj.getString(API_KEY_UNITS);
-            //String valueLabel = APIUtil.getStringByLocale(unitVariableObj.getJSONArray(API_KEY_VARIABLES_LABELS), API_KEY_VARIABLES_LABEL, displayLocale);
+            //String valueUnit = unitVariableObj.getString(Key.UNITS);
+            //String valueLabel = APIUtil.getStringByLocale(unitVariableObj.getJSONArray(Key.VARIABLES_LABELS), Key.VARIABLES_LABEL, displayLocale);
             //System.out.println("Setting unit (locale is " + displayLocale.getLanguage() + "): " + valueUnit + " / " + valueLabel);
             //this.unit = new TimeSeriesDataUnit(valueUnit, valueLabel);
         } catch (Exception e) {
@@ -305,7 +441,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         // Old version:
         /*
         try {
-            this.unit = new TimeSeriesDataUnit(apiStructure.getString(API_KEY_UNIT), APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_UNITS), API_KEY_UNIT, displayLocale));
+            this.unit = new TimeSeriesDataUnit(apiStructure.getString(Key.UNIT), APIUtil.getStringByLocale(apiStructure.getJSONArray(Key.UNITS), Key.UNIT, displayLocale));
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error setting unit for time series '" + this.getID() + "'.", e);
@@ -313,6 +449,122 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         }
         return this;
         */
+    }
+    
+    /**
+     * Sets the author(s) of this time series.
+     * <p>
+     * Author names are extracted from the JSON fetched from the Data Centre. 
+     * They are localized to currently configured preferred locale, if possible.
+     */
+    private void setAuthors() {
+        try {
+            if (o.has(Key.AUTHORS)) {
+                JSONArray authArr = o.getJSONArray(Key.AUTHORS);
+                for (int i = 0; i < authArr.length(); i++) {
+                    try {
+                        JSONObject authObj = authArr.getJSONObject(i);
+                        String authName = getLocalizedValue(
+                                authObj.getJSONArray(Key.AUTHORS_NAMES)
+                        );
+                        if (authName == null) {
+                            authName = DEFAULT_AUTHOR_NAME;
+                        }
+                        addAuthor(authName);
+                    } catch (Exception e) {
+                        // Author object in array, but something went wrong
+                        addAuthor(DEFAULT_AUTHOR_NAME);
+                    }
+                }
+            }
+        } catch (Exception e) {
+           // Freak error, log it
+           if (LOG.isErrorEnabled()) {
+               LOG.error("Error extracting author(s) for time series with ID " + getId() + ".", e);
+           }
+        }
+    }
+    
+    /**
+     * Tries to get a localized value that matches the currently set preferred 
+     * locale.
+     * <p>
+     * If there is no direct match, the first encountered value is returned. If 
+     * there is nothing in the array, <code>null</code> is returned.
+     * 
+     * @param localizedNames The array of localized values and their language codes.
+     * @return The localized value that matches the current locale, or the closest alternative.
+     */
+    private String getLocalizedValue(JSONArray localizedValues) {
+        String authName = null;
+        try {
+            // First, set a fallback value (the first name in the array)
+            authName = localizedValues.getJSONObject(0).getString(Key.VALUE_LOCALIZED);
+            for (int i = 0; i < localizedValues.length(); i++) {
+                String langCode = localizedValues.getJSONObject(i).getString(Key.VALUE_LOCALIZED_LANG);
+                if (APIUtil.matchLanguage(langCode, displayLocale)) {
+                    authName = localizedValues.getJSONObject(i).getString(Key.VALUE_LOCALIZED);
+                    break;
+                }
+            }
+        } catch (Exception e) {}
+        return authName;
+    }
+    
+    /**
+     * Adds the given author to the list of authors, if necessary.
+     * <p>
+     * If the author already exists in the list, nothing is done.
+     * 
+     * @param author The author to add.
+     */
+    private void addAuthor(String author) {
+        if (!authors.contains(author)) {
+            authors.add(author);
+        }
+    }
+    
+    /**
+     * Gets the authors, comma-separated.
+     * 
+     * @return The authors, comma-separated.
+     */
+    public String getAuthorsString() {
+        String s = "";
+        
+        for (int i = 0; i < authors.size(); i++) {
+            // Alt 1: Comma
+            if (i > 0) {
+                s += ", ";
+            }
+            /*
+            // Alt. 2: Ampersand before last author, comma elsewhere
+            if (i > 0) {
+                if (i+1 == authors.size()) {
+                    // current author is last
+                    s += " & ";
+                } else {
+                    // at least 1 more author after this one
+                    s += ", ";
+                }
+            }
+            //*/
+            s += authors.get(i);
+        }
+        return s;
+    }
+    
+    /**
+     * Gets the list of authors. 
+     * <p>
+     * If possible, each author's name will be localized according to the 
+     * currently set preferred language. (An "author" of a time series is 
+     * typically the name of the institution that owns the data.)
+     * 
+     * @return The list of authors.
+     */
+    public List<String> getAuthors() {
+        return authors;
     }
     
     /**
@@ -520,13 +772,13 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     }
     
     /*private JSONObject getVariablesFor(String variableName) {
-        if (!apiStructure.has(API_KEY_VARIABLES) || variableName == null)
+        if (!apiStructure.has(Key.VARIABLES) || variableName == null)
             return null;
         try {
-            JSONArray variablesArr = apiStructure.getJSONArray(API_KEY_VARIABLES);
+            JSONArray variablesArr = apiStructure.getJSONArray(Key.VARIABLES);
             for (int i = 0; i < variablesArr.length(); i++) {
                 JSONObject variablesObj = variablesArr.getJSONObject(i);
-                if (variablesObj.getString(API_KEY_VARIABLES_NAME).equals(variableName)) {
+                if (variablesObj.getString(Key.VARIABLES_NAME).equals(variableName)) {
                     return variablesObj;
                 }
             }
@@ -546,16 +798,16 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * @return the label for the given variable, or itself, if no label could be resolved.
      */
     private String getLabelFor(String variableName) {
-        if (variableName == null || !(o.has(API_KEY_LABELS) || DEFAULT_LABEL_KEYS.containsKey(variableName))) {
+        if (variableName == null || !(o.has(Key.LABELS) || DEFAULT_LABEL_KEYS.containsKey(variableName))) {
             return variableName;
         }
         try {
-            JSONArray labelsArr = o.getJSONArray(API_KEY_LABELS);
+            JSONArray labelsArr = o.getJSONArray(Key.LABELS);
             for (int i = 0; i < labelsArr.length(); i++) {
                 JSONObject labelObj = labelsArr.getJSONObject(i);
-                if (labelObj.getString(API_KEY_LABELS_LABEL_FOR).equals(variableName)) {
-                    if (APIUtil.matchLanguage(labelObj.getString(API_KEY_LABELS_LABEL_LANGUAGE), displayLocale))
-                        return labelObj.getString(API_KEY_LABELS_LABEL);
+                if (labelObj.getString(Key.LABELS_LABEL_FOR).equals(variableName)) {
+                    if (APIUtil.matchLanguage(labelObj.getString(Key.LABELS_LABEL_LANGUAGE), displayLocale))
+                        return labelObj.getString(Key.LABELS_LABEL);
                 }
             }
         } catch (Exception e) {
@@ -586,7 +838,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     public String getTitle(Locale loc) {
         
         try {
-            return APIUtil.getStringByLocale(o.getJSONArray(API_KEY_TITLES), API_KEY_TITLE, loc);
+            return APIUtil.getStringByLocale(o.getJSONArray(Key.TITLES), Key.TITLE, loc);
         } catch (JSONException e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error reading title of time series '" + this.getId() + "'.", e);
@@ -612,8 +864,8 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      */
     public String getLabel(Locale loc) {
         try {
-            //System.out.println("TS label is " + APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_TITLES), API_KEY_TITLE_LABEL, loc));
-            return APIUtil.getStringByLocale(o.getJSONArray(API_KEY_TITLES), API_KEY_TITLE_LABEL, loc);
+            //System.out.println("TS label is " + APIUtil.getStringByLocale(apiStructure.getJSONArray(Key.TITLES), Key.TITLE_LABEL, loc));
+            return APIUtil.getStringByLocale(o.getJSONArray(Key.TITLES), Key.TITLE_LABEL, loc);
         } catch (Exception e) {
             return getTitle(loc);
         }
@@ -691,19 +943,19 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     }
     /*
     public String getUnit() throws JSONException {
-        return apiStructure.getString(API_KEY_UNIT);
+        return apiStructure.getString(Key.UNIT);
     }
     public String getUnitVerbose() throws JSONException {
         return getUnitVerbose(displayLocale);
     }
     public String getUnitVerbose(Locale loc) throws JSONException {
-        return APIUtil.getStringByLocale(apiStructure.getJSONArray(API_KEY_UNITS), API_KEY_UNIT, loc);
+        return APIUtil.getStringByLocale(apiStructure.getJSONArray(Key.UNITS), Key.UNIT, loc);
     }
     */
     
     /**
      * Initializes the data points, based on the contents of the backing JSON's 
-     * {@link #API_KEY_DATA_POINTS} array.
+     * {@link Key#DATA_POINTS} array.
      * <p>
      * This method is called by the constructor.
      * 
@@ -711,7 +963,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * @throws JSONException 
      */
     private TimeSeries initDataPoints() throws JSONException {
-        JSONArray dataPointsJSONArr = o.getJSONArray(API_KEY_DATA_POINTS);
+        JSONArray dataPointsJSONArr = o.getJSONArray(Key.DATA_POINTS);
         //if (dataPointsJSONArr.length() > 0) {
             //dataPoints = new ArrayList<TimeSeriesDataPoint>();
             //dataPoints = new TreeSet<TimeSeriesDataPoint>(TimeSeriesDataPoint.COMPARE_TIMESTAMP);
@@ -731,7 +983,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                     Double value = null;
                     //String timestamp = null;
                     //int year = Integer.MIN_VALUE;
-                    try { value = dataPointJSON.getDouble(API_KEY_POINT_VAL); } catch (Exception ee) {  }
+                    try { value = dataPointJSON.getDouble(Key.POINT_VAL); } catch (Exception ee) {  }
                     
                     // Data point had no value -> disregard, continue to next
                     if (value == null) {
@@ -744,40 +996,40 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                     //  - a date timestamp (string)
                     //  - just the year (int)
                     try {
-                        if (dataPointJSON.has(API_KEY_POINT_WHEN)) {
-                            //System.out.println("Found time marker " + API_KEY_POINT_WHEN);
+                        if (dataPointJSON.has(Key.POINT_WHEN)) {
+                            //System.out.println("Found time marker " + Key.POINT_WHEN);
                             if (this.timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN || this.timestampsType == TimeSeriesTimestamp.TYPE_LITERAL) {
                                 // Timestamp type unknown: Rely on sniffing the type
                                 //System.out.println("Time marker type unknown, sniffing...");
-                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_WHEN));
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(Key.POINT_WHEN));
                             } else {
                                 // Timestamp type known: Create it specifically
-                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_WHEN), this.timestampsType);
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(Key.POINT_WHEN), this.timestampsType);
                             }
                         } else {
-                            throw new InstantiationException("Missing required field '" + API_KEY_POINT_WHEN + "'.");
+                            throw new InstantiationException("Missing required field '" + Key.POINT_WHEN + "'.");
                         }
                         
-                        /*else if (dataPointJSON.has(API_KEY_POINT_YEAR)) {
-                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getInt(API_KEY_POINT_YEAR));
+                        /*else if (dataPointJSON.has(Key.POINT_YEAR)) {
+                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getInt(Key.POINT_YEAR));
                         }*/
                         
-                        /*if (dataPointJSON.has(API_KEY_POINT_TIMESTAMP)) {
-                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_TIMESTAMP));
-                        } else if (dataPointJSON.has(API_KEY_POINT_DATE)) {
-                            //System.out.println("Found " + API_KEY_POINT_DATE);
+                        /*if (dataPointJSON.has(Key.POINT_TIMESTAMP)) {
+                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(Key.POINT_TIMESTAMP));
+                        } else if (dataPointJSON.has(Key.POINT_DATE)) {
+                            //System.out.println("Found " + Key.POINT_DATE);
                             if (this.timestampsType == TimeSeriesTimestamp.TYPE_UNKNOWN) {
                                 // Timestamp type unknown: Rely on sniffing the type
-                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_DATE));
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(Key.POINT_DATE));
                             } else {
                                 // Timestamp type known: Create it specifically
-                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(API_KEY_POINT_DATE), this.timestampsType);
+                                timestamp = new TimeSeriesTimestamp(dataPointJSON.getString(Key.POINT_DATE), this.timestampsType);
                             }
                             //this.dateTimeAccuracy = DATE_FORMAT_UNIX_DATE;
                             //this.setTimestampFormat(); // Because the datetime accuracy changed
                             //System.out.println("Crated timestamp: " + timestamp);
                         } else {
-                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getInt(API_KEY_POINT_YEAR));
+                            timestamp = new TimeSeriesTimestamp(dataPointJSON.getInt(Key.POINT_YEAR));
                         }*/
                     } catch (Exception e) {
                         LOG.error("Cannot create timestamp for data point in time series " + this.getId() + ": " + e.getMessage());
@@ -793,11 +1045,11 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                         }
                     }
                     /*try { 
-                        if (dataPointJSON.has(API_KEY_POINT_TIMESTAMP)) {
-                            timestamp = dataPointJSON.getString(API_KEY_POINT_TIMESTAMP);
-                        } else if (dataPointJSON.has(API_KEY_POINT_DATE)) {
-                            //System.out.println("Found " + API_KEY_POINT_DATE);
-                            timestamp = dataPointJSON.getString(API_KEY_POINT_DATE) + "T12:00:00Z";
+                        if (dataPointJSON.has(Key.POINT_TIMESTAMP)) {
+                            timestamp = dataPointJSON.getString(Key.POINT_TIMESTAMP);
+                        } else if (dataPointJSON.has(Key.POINT_DATE)) {
+                            //System.out.println("Found " + Key.POINT_DATE);
+                            timestamp = dataPointJSON.getString(Key.POINT_DATE) + "T12:00:00Z";
                             this.dateTimeAccuracy = DATE_FORMAT_UNIX_DATE;
                             this.setTimestampFormat(); // Because the datetime accuracy changed
                             //System.out.println("Crated timestamp: " + timestamp);
@@ -805,7 +1057,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                     } catch (Exception ee) {
                         try {
                             // Probably temporary
-                            int year = dataPointJSON.getInt(API_KEY_POINT_YEAR); 
+                            int year = dataPointJSON.getInt(Key.POINT_YEAR); 
                             timestamp = "" + year + "-01-01T12:00:00Z";
                             this.dateTimeAccuracy = DATE_FORMAT_UNIX_YEAR;
                             this.setTimestampFormat(); // Because the datetime accuracy changed
@@ -814,7 +1066,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                     }
                     */
                     
-                    //try { timestampFormat = apiStructure.getString(API_KEY_POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
+                    //try { timestampFormat = apiStructure.getString(Key.POINT_TIMESTAMP_FORMAT); } catch (Exception ee) {}
                     TimeSeriesDataPoint dp = new TimeSeriesDataPoint(
                                         value, 
                                         timestamp, 
@@ -830,29 +1082,29 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                     
                     // ToDo: This time series should keep track of whether high/low/max/min values exist, not the data point
                     // (is this already handled by the isErrorBarSeries() method???)
-                    if (dataPointJSON.has(API_KEY_POINT_HIGH)) {
-                        dp.setHigh(dataPointJSON.getDouble(API_KEY_POINT_HIGH));
+                    if (dataPointJSON.has(Key.POINT_HIGH)) {
+                        dp.setHigh(dataPointJSON.getDouble(Key.POINT_HIGH));
                         //this.hasHigh = true;
                         //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_HIGH));
                     } else if (this.hasHigh) {
                         // Log this
                     }
-                    if (dataPointJSON.has(API_KEY_POINT_LOW)) {
-                        dp.setLow(dataPointJSON.getDouble(API_KEY_POINT_LOW));
+                    if (dataPointJSON.has(Key.POINT_LOW)) {
+                        dp.setLow(dataPointJSON.getDouble(Key.POINT_LOW));
                         //this.hasLow = true;
                         //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_LOW));
                     } else if (this.hasLow) {
                         // Log this
                     }
-                    if (dataPointJSON.has(API_KEY_POINT_MAX)) {
-                        dp.setMax(dataPointJSON.getDouble(API_KEY_POINT_MAX));
+                    if (dataPointJSON.has(Key.POINT_MAX)) {
+                        dp.setMax(dataPointJSON.getDouble(Key.POINT_MAX));
                         //this.hasMax = true;
                         //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MAX));
                     } else if (this.hasMax) {
                         // Log this
                     }
-                    if (dataPointJSON.has(API_KEY_POINT_MIN)) {
-                        dp.setMin(dataPointJSON.getDouble(API_KEY_POINT_MIN));
+                    if (dataPointJSON.has(Key.POINT_MIN)) {
+                        dp.setMin(dataPointJSON.getDouble(Key.POINT_MIN));
                         //this.hasMin = true;
                         //updateExtremeValues(dp.get(TimeSeriesDataPoint.VALUE_MIN));
                     } else if (this.hasMin) {
@@ -888,8 +1140,9 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * Adds a data point to this series.
      * 
      * @param dp The data point to add.
+     * @return This instance, updated.
      */
-    public synchronized void addDataPoint(TimeSeriesDataPoint dp) {
+    private synchronized TimeSeries addDataPoint(TimeSeriesDataPoint dp) {
         // Update flags to "true" if necessary - but never to false
         if (dp.hasHigh()) {
             this.hasHigh = true;
@@ -910,6 +1163,23 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         timestamps.add(dp.getTimestamp());
         // Update extreme values of this series
         updateExtremeValues(dp);
+        return this;
+    }
+    
+    /**
+     * Adds a data point to this series, and optionally sorts the list of all
+     * data points (chronologically) afterwards.
+     * 
+     * @param dp The data point to add.
+     * @param sortAfter If <code>true</code>, the data points list is sorted after insertion.
+     * @return This instance, updated.
+     */
+    public synchronized TimeSeries addDataPoint(TimeSeriesDataPoint dp, boolean sortAfter) {
+        addDataPoint(dp);
+        if (sortAfter) {
+            Collections.sort(dataPoints, TimeSeriesDataPoint.COMPARE_TIMESTAMP);
+        }
+        return this;
     }
     
     /**
@@ -952,7 +1222,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     /**    
      * Returns the number of data points in this series.
      * <p>
-     * Normally, this is the size of the {@link #API_KEY_DATA_POINTS} array of 
+     * Normally, this is the size of the {@link Key#DATA_POINTS} array of 
      * the backing JSON.
      * 
      * @return The number of data points in this series.
@@ -1033,6 +1303,11 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         //*/
     }
     
+    /**
+     * Gets all the data points in this time series.
+     * 
+     * @return All the data points in this time series, or an empty list if none.
+     */
     public List<TimeSeriesDataPoint> getDataPoints() {
         return dataPoints;
     }
@@ -1045,7 +1320,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * Gets the API key for a value field, based on the given value identifier.
      * <p>
      * If there is no specific match for the value identifier, the default 
-     * {@link #API_KEY_POINT_VAL} is returned.
+     * {@link Key#POINT_VAL} is returned.
      * 
      * @param valueIdentifier The value identifier, one of the VALUE_XXX constants of {@link TimeSeriesDataPoint}.
      * @return The API key that corresponds to the given value identifier.
@@ -1053,17 +1328,17 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     public String getValueAPIKey(int valueIdentifier) {
         switch (valueIdentifier) {
             case TimeSeriesDataPoint.VALUE_MAIN:
-                return API_KEY_POINT_VAL;
+                return Key.POINT_VAL;
             case TimeSeriesDataPoint.VALUE_LOW:
-                return API_KEY_POINT_LOW;
+                return Key.POINT_LOW;
             case TimeSeriesDataPoint.VALUE_HIGH:
-                return API_KEY_POINT_HIGH;
+                return Key.POINT_HIGH;
             case TimeSeriesDataPoint.VALUE_MIN:
-                return API_KEY_POINT_MIN;
+                return Key.POINT_MIN;
             case TimeSeriesDataPoint.VALUE_MAX:
-                return API_KEY_POINT_MAX;
+                return Key.POINT_MAX;
             default:
-                return API_KEY_POINT_VAL;
+                return Key.POINT_VAL;
         }
     }
     
@@ -1102,8 +1377,23 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                 for (int i = 0; i < getValuesPerDataPoint(); i++) { // Must use getValuesPerDataPoint because dataPoint might be null
                     if (rows.get(i).isEmpty()) {
                         //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
-                        String rowStart = "<tr><th scope=\"row\"><span class=\"tr-time-series-title\">" + this.getLabel(displayLocale) + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "") + "</span></th>";
-                        rowStart += "<td><span class=\"tr-time-series-unit\">" + this.getUnit().getShortForm() + "</span></td>";
+                        String rowStart = "<tr>"
+                                + "<th scope=\"row\">"
+                                + "<span class=\"tr-time-series-title\">" 
+                                    + getLabel() 
+                                    + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "") 
+                                + "</span>"
+                                + "</th>";
+                        rowStart += "<td>"
+                                + "<span class=\"tr-time-series-unit\">" 
+                                    + getUnit().getShortForm() 
+                                + "</span>"
+                                + "</td>";
+                        rowStart += "<td>"
+                                + "<span class=\"tr-time-series-data-supplier\">" 
+                                    + getAuthorsString()
+                                + "</span>"
+                                + "</td>";
                         rows.set(i, rowStart);
                     }
                     rows.set(i, rows.get(i) + "<td>" + (dataPoint == null ? "" : dataPoint.get(i, "#.####")) + "</td>" + (iTimeMarker.hasNext() ? "" : "</tr>\n"));
@@ -1140,15 +1430,93 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
             return s;
         
         try {
-            ArrayList<String> rows = new ArrayList<String>();
-            for (int i = 0; i < getValuesPerDataPoint(); i++) {
+            int numRows = getValuesPerDataPoint();
+            
+            ArrayList<String> rows = new ArrayList<String>(numRows);
+            for (int i = 0; i < numRows; i++) {
                 rows.add("");
             }
             
             //s += "<!-- Total rows: " + rows.size() + ", this.getUnit().getShortForm()=" + this.getUnit().getShortForm() + " -->\n";
 
+            // New, tweaked routine: 
+            // Instead of calling getDataPointForTimeMarker(...), we traverse
+            // the time markers AND the data points in this time series,
+            // and spit out empty values for any time marker that is not used in 
+            // this series.
+            // This tweak should mean an improvement from O(n^2) to O(n)
+            // (The biggest collection tested went from ~2300ms to ~1800ms)
+            // 
+            // NOTE: This routine does require that all the time markers in this 
+            // series are already sorted in chronologial order! (They should 
+            // always be.)
+            
             Iterator<TimeSeriesTimestamp> iTimeMarker = tsc.getTimeMarkerIterator();
-
+            List<TimeSeriesDataPoint> dps = getDataPoints();
+            
+            // Get a reference to the first data point in this series
+            int dataPointIndex = 0;
+            TimeSeriesDataPoint dataPoint = dps.get(dataPointIndex);
+            
+            // Use the time markers in the COLLECTION as the "outer steps" 
+            // (This particular series' time markers may be a subset of those)
+            while (iTimeMarker.hasNext()) {
+                TimeSeriesTimestamp timeMarker = iTimeMarker.next();
+                boolean timeMarkerMatchesDataPoint = false;
+                
+                // Process the 1-5 values in the data point. Each value will
+                // have 1 row.
+                // For example:
+                // Value (high);mg;2;3;5;4
+                //        Value;mg;1;2;4;3
+                //  Value (low);mg;0;1;3;2
+                for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
+                    String rowContent = rows.get(rowIndex);
+                    // If this row is empty, we add the first "cells", that is: 
+                    //  - the short-form label
+                    //  - the unit
+                    if (rowContent.isEmpty()) {
+                        //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
+                        rowContent += APIUtil.escapeCSV(
+                                this.getLabel(displayLocale) 
+                                + (rowIndex > 0 
+                                        ? 
+                                        " (".concat(getLabelFor(getValueAPIKey(rowIndex))).concat(")") 
+                                        : 
+                                        "")
+                        ) + ";";
+                        rowContent += APIUtil.escapeCSV(this.getUnit().getShortForm()) + ";";
+                        rowContent += APIUtil.escapeCSV(this.getAuthorsString()) + ";";
+                    }
+                    
+                    if (dataPoint == null || dataPoint.getTimestamp() == null) {
+                        rowContent += "";
+                    } else {
+                        if (dataPoint.getTimestamp().equals(timeMarker)) {
+                            rowContent += dataPoint.get(rowIndex, "#.####");
+                            timeMarkerMatchesDataPoint = true;
+                        } else {
+                            rowContent += "";
+                        }
+                    }
+                    
+                    rows.set(rowIndex, rowContent.concat(iTimeMarker.hasNext() ? ";" : "\n"));
+                }
+                
+                if (timeMarkerMatchesDataPoint) {
+                    try {
+                        // Move on to the next data point
+                        dataPoint = dps.get(++dataPointIndex);
+                    } catch (Exception e) {
+                        // = Index out of bounds = No more data points
+                    }
+                }
+            }
+            
+            /*
+            // Original, sub-optimal routine
+            Iterator<TimeSeriesTimestamp> iTimeMarker = tsc.getTimeMarkerIterator();
+            
             while (iTimeMarker.hasNext()) {
                 TimeSeriesTimestamp timeMarker = iTimeMarker.next();
                 
@@ -1156,7 +1524,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                 
                 TimeSeriesDataPoint dataPoint = getDataPointForTimeMarker(timeMarker);
                 
-                for (int i = 0; i < getValuesPerDataPoint(); i++) { // Must use getValuesPerDataPoint because dataPoint might be null
+                for (int i = 0; i < numRows; i++) { // Must use getValuesPerDataPoint because dataPoint might be null
                     if (rows.get(i).isEmpty()) {
                         //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
                         String rowStart = APIUtil.escapeCSV(this.getLabel(displayLocale) + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "")) + ";";
@@ -1167,6 +1535,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                 }
                 
             }
+            //*/
             if (!rows.isEmpty()) {
                 Iterator<String> iRows = rows.iterator();
                 while (iRows.hasNext()) {
@@ -1178,6 +1547,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         } catch (Exception e) {
             //s += "<!-- Error creating CSV row(s) for time series " + this.getId() + ": " + e.getMessage() + " -->\n"; 
         }
+        
         return s;
     }
     
