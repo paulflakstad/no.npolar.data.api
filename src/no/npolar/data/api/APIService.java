@@ -434,6 +434,39 @@ public abstract class APIService implements APIServiceInterface {
     }
     
     /**
+     * Performs a query request, using the given URL, which should be a Data 
+     * Centre query-type URL.
+     * <p>
+     * The query results are stored, and any entries are available via 
+     * {@link #getEntries()} after this method has completed.
+     * 
+     * @param npdcUrl The URL, which should be a Data Centre query-type URL.
+     * @return This instance, updated.
+     * @throws java.io.UnsupportedEncodingException
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException
+     * @throws InstantiationException 
+     */
+    public APIServiceInterface doQuery(String npdcUrl) 
+            throws java.io.UnsupportedEncodingException, MalformedURLException, IOException, JSONException, InstantiationException {
+        
+        Map<String, String> paramsA = APIUtil.getParametersInQueryString(npdcUrl);
+        Map<String, String[]> paramsB = new HashMap<String, String[]>(paramsA.size());
+        
+        for (String key : paramsA.keySet()) {
+            paramsB.put(key, new String[] { paramsA.get(key) });
+        }
+        
+        addParameters(paramsB);
+        serviceUrl = npdcUrl;
+        
+        makeRequest();
+        
+        return this;
+    }
+    
+    /**
      * Queries the service using the given parameters.
      * <p>
      * The query results are stored, and any entries are available via 
@@ -465,20 +498,48 @@ public abstract class APIService implements APIServiceInterface {
         
         serviceUrl = getServiceBaseURL().concat("?").concat( prepareParameters() );
         
-        //System.out.println("doQuery using " + getParameterString(params) );
+        makeRequest();
+        
+        return this;
+    }
+    /**
+     * Requests the URL currently defined in {@link #serviceUrl}, and stores the 
+     * response (or rather, its <code>feed</code> object) before passing it to
+     * {@link #parseResults(org.opencms.json.JSONObject)}.
+     * <p>
+     * 
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException 
+     */
+    private void makeRequest() 
+            throws MalformedURLException, IOException, JSONException {
+        //System.out.println("makeRequest using " + serviceUrl );
         // We're expecting a response in JSON format
         String jsonFeed = APIUtil.httpResponseAsString(serviceUrl);
         JSONObject json = new JSONObject(jsonFeed).getJSONObject(Key.FEED);
-        
+        parseResults(json);
+    }
+    
+    /**
+     * Parses the given feed, which is expected to represent a query response 
+     * from the Data Centre.
+     * 
+     * @param feed The feed to parse, expected to be the object with key {@link Key.FEED} in a Data Centre query response.
+     * @throws MalformedURLException
+     * @throws IOException
+     * @throws JSONException 
+     */
+    private void parseResults(JSONObject feed) throws JSONException {
         try { 
-            JSONObject opensearch = json.getJSONObject(Key.OPENSEARCH);
+            JSONObject opensearch = feed.getJSONObject(Key.OPENSEARCH);
             try { totalResults = opensearch.getInt(Key.OPENSEARCH_TOTAL_RESULTS); } catch (Exception innerE) { totalResults = -1; }
             try { itemsPerPage = opensearch.getInt(Key.OPENSEARCH_ITEMS_PER_PAGE); } catch (Exception innerE) { itemsPerPage = -1; }
             try { startIndex = opensearch.getInt(Key.OPENSEARCH_START_INDEX); } catch (Exception innerE) { startIndex = -1; }
         } catch (Exception e) { }
         
         try {
-            JSONObject list = json.getJSONObject(Key.LIST);
+            JSONObject list = feed.getJSONObject(Key.LIST);
             try { self = list.getString(Key.LIST_SELF); } catch (Exception innerE) { self = null; }
             try { indexNoFirstPageItem = list.getInt(Key.LIST_FIRST); } catch (Exception innerE) { indexNoFirstPageItem = -1; }
             try { indexNoLastPageItem = list.getInt(Key.LIST_LAST); } catch (Exception innerE) { indexNoLastPageItem = -1; }
@@ -487,19 +548,19 @@ public abstract class APIService implements APIServiceInterface {
         } catch (Exception e) { }
         
         try { 
-            JSONObject search = json.getJSONObject(Key.SEARCH);
+            JSONObject search = feed.getJSONObject(Key.SEARCH);
             try { querySearchTime = search.getInt(Key.SEARCH_QUERY_TIME); } catch (Exception innerE) { querySearchTime = -1; }
             try { query = search.getString(Key.SEARCH_QUERY); } catch (Exception innerE) { query = null; }
         } catch (Exception e) { }
         
-        try { entries = json.getJSONArray(Key.ENTRIES); } catch (Exception e) { entries = null; }
+        try { entries = feed.getJSONArray(Key.ENTRIES); } catch (Exception e) { entries = null; }
         
         //
         // Facets
         //
         filterSets = new SearchFilterSets();
         try {
-            JSONArray facets = json.getJSONArray(Key.FACETS);
+            JSONArray facets = feed.getJSONArray(Key.FACETS);
             //System.out.println("Found " + facets.length() + " facets.");
             for (int i = 0; i < facets.length(); i++) {
                 try { 
@@ -540,7 +601,7 @@ public abstract class APIService implements APIServiceInterface {
         // Facets
         filterSets = new HashMap<String, List<SearchFilter>>();
         try {
-            JSONArray facets = json.getJSONArray("facets");
+            JSONArray facets = feed.getJSONArray("facets");
             //System.out.println("Found " + facets.length() + " facets.");
             for (int i = 0; i < facets.length(); i++) {
                 try { 
@@ -573,7 +634,6 @@ public abstract class APIService implements APIServiceInterface {
             }
         } catch (Exception e) { }
         //*/
-        return this;
     }
     
     /**
