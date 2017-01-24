@@ -2,6 +2,7 @@ package no.npolar.data.api;
 
 //import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 //import java.util.Arrays;
 //import java.util.Collection;
 import java.util.Comparator;
@@ -532,11 +533,23 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         String s = "";
         
         for (int i = 0; i < authors.size(); i++) {
-            if (i == 0) {
-                s += authors.get(i);
-            } else if (i+1 < authors.size()) { // has next
+            // Alt 1: Comma
+            if (i > 0) {
                 s += ", ";
             }
+            /*
+            // Alt. 2: Ampersand before last author, comma elsewhere
+            if (i > 0) {
+                if (i+1 == authors.size()) {
+                    // current author is last
+                    s += " & ";
+                } else {
+                    // at least 1 more author after this one
+                    s += ", ";
+                }
+            }
+            //*/
+            s += authors.get(i);
         }
         return s;
     }
@@ -1127,8 +1140,9 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * Adds a data point to this series.
      * 
      * @param dp The data point to add.
+     * @return This instance, updated.
      */
-    public synchronized void addDataPoint(TimeSeriesDataPoint dp) {
+    private synchronized TimeSeries addDataPoint(TimeSeriesDataPoint dp) {
         // Update flags to "true" if necessary - but never to false
         if (dp.hasHigh()) {
             this.hasHigh = true;
@@ -1149,6 +1163,23 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         timestamps.add(dp.getTimestamp());
         // Update extreme values of this series
         updateExtremeValues(dp);
+        return this;
+    }
+    
+    /**
+     * Adds a data point to this series, and optionally sorts the list of all
+     * data points (chronologically) afterwards.
+     * 
+     * @param dp The data point to add.
+     * @param sortAfter If <code>true</code>, the data points list is sorted after insertion.
+     * @return This instance, updated.
+     */
+    public synchronized TimeSeries addDataPoint(TimeSeriesDataPoint dp, boolean sortAfter) {
+        addDataPoint(dp);
+        if (sortAfter) {
+            Collections.sort(dataPoints, TimeSeriesDataPoint.COMPARE_TIMESTAMP);
+        }
+        return this;
     }
     
     /**
@@ -1272,6 +1303,11 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         //*/
     }
     
+    /**
+     * Gets all the data points in this time series.
+     * 
+     * @return All the data points in this time series, or an empty list if none.
+     */
     public List<TimeSeriesDataPoint> getDataPoints() {
         return dataPoints;
     }
@@ -1341,8 +1377,23 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                 for (int i = 0; i < getValuesPerDataPoint(); i++) { // Must use getValuesPerDataPoint because dataPoint might be null
                     if (rows.get(i).isEmpty()) {
                         //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
-                        String rowStart = "<tr><th scope=\"row\"><span class=\"tr-time-series-title\">" + this.getLabel(displayLocale) + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "") + "</span></th>";
-                        rowStart += "<td><span class=\"tr-time-series-unit\">" + this.getUnit().getShortForm() + "</span></td>";
+                        String rowStart = "<tr>"
+                                + "<th scope=\"row\">"
+                                + "<span class=\"tr-time-series-title\">" 
+                                    + getLabel() 
+                                    + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "") 
+                                + "</span>"
+                                + "</th>";
+                        rowStart += "<td>"
+                                + "<span class=\"tr-time-series-unit\">" 
+                                    + getUnit().getShortForm() 
+                                + "</span>"
+                                + "</td>";
+                        rowStart += "<td>"
+                                + "<span class=\"tr-time-series-data-supplier\">" 
+                                    + getAuthorsString()
+                                + "</span>"
+                                + "</td>";
                         rows.set(i, rowStart);
                     }
                     rows.set(i, rows.get(i) + "<td>" + (dataPoint == null ? "" : dataPoint.get(i, "#.####")) + "</td>" + (iTimeMarker.hasNext() ? "" : "</tr>\n"));
@@ -1379,15 +1430,93 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
             return s;
         
         try {
-            ArrayList<String> rows = new ArrayList<String>();
-            for (int i = 0; i < getValuesPerDataPoint(); i++) {
+            int numRows = getValuesPerDataPoint();
+            
+            ArrayList<String> rows = new ArrayList<String>(numRows);
+            for (int i = 0; i < numRows; i++) {
                 rows.add("");
             }
             
             //s += "<!-- Total rows: " + rows.size() + ", this.getUnit().getShortForm()=" + this.getUnit().getShortForm() + " -->\n";
 
+            // New, tweaked routine: 
+            // Instead of calling getDataPointForTimeMarker(...), we traverse
+            // the time markers AND the data points in this time series,
+            // and spit out empty values for any time marker that is not used in 
+            // this series.
+            // This tweak should mean an improvement from O(n^2) to O(n)
+            // (The biggest collection tested went from ~2300ms to ~1800ms)
+            // 
+            // NOTE: This routine does require that all the time markers in this 
+            // series are already sorted in chronologial order! (They should 
+            // always be.)
+            
             Iterator<TimeSeriesTimestamp> iTimeMarker = tsc.getTimeMarkerIterator();
-
+            List<TimeSeriesDataPoint> dps = getDataPoints();
+            
+            // Get a reference to the first data point in this series
+            int dataPointIndex = 0;
+            TimeSeriesDataPoint dataPoint = dps.get(dataPointIndex);
+            
+            // Use the time markers in the COLLECTION as the "outer steps" 
+            // (This particular series' time markers may be a subset of those)
+            while (iTimeMarker.hasNext()) {
+                TimeSeriesTimestamp timeMarker = iTimeMarker.next();
+                boolean timeMarkerMatchesDataPoint = false;
+                
+                // Process the 1-5 values in the data point. Each value will
+                // have 1 row.
+                // For example:
+                // Value (high);mg;2;3;5;4
+                //        Value;mg;1;2;4;3
+                //  Value (low);mg;0;1;3;2
+                for (int rowIndex = 0; rowIndex < numRows; rowIndex++) {
+                    String rowContent = rows.get(rowIndex);
+                    // If this row is empty, we add the first "cells", that is: 
+                    //  - the short-form label
+                    //  - the unit
+                    if (rowContent.isEmpty()) {
+                        //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
+                        rowContent += APIUtil.escapeCSV(
+                                this.getLabel(displayLocale) 
+                                + (rowIndex > 0 
+                                        ? 
+                                        " (".concat(getLabelFor(getValueAPIKey(rowIndex))).concat(")") 
+                                        : 
+                                        "")
+                        ) + ";";
+                        rowContent += APIUtil.escapeCSV(this.getUnit().getShortForm()) + ";";
+                        rowContent += APIUtil.escapeCSV(this.getAuthorsString()) + ";";
+                    }
+                    
+                    if (dataPoint == null || dataPoint.getTimestamp() == null) {
+                        rowContent += "";
+                    } else {
+                        if (dataPoint.getTimestamp().equals(timeMarker)) {
+                            rowContent += dataPoint.get(rowIndex, "#.####");
+                            timeMarkerMatchesDataPoint = true;
+                        } else {
+                            rowContent += "";
+                        }
+                    }
+                    
+                    rows.set(rowIndex, rowContent.concat(iTimeMarker.hasNext() ? ";" : "\n"));
+                }
+                
+                if (timeMarkerMatchesDataPoint) {
+                    try {
+                        // Move on to the next data point
+                        dataPoint = dps.get(++dataPointIndex);
+                    } catch (Exception e) {
+                        // = Index out of bounds = No more data points
+                    }
+                }
+            }
+            
+            /*
+            // Original, sub-optimal routine
+            Iterator<TimeSeriesTimestamp> iTimeMarker = tsc.getTimeMarkerIterator();
+            
             while (iTimeMarker.hasNext()) {
                 TimeSeriesTimestamp timeMarker = iTimeMarker.next();
                 
@@ -1395,7 +1524,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                 
                 TimeSeriesDataPoint dataPoint = getDataPointForTimeMarker(timeMarker);
                 
-                for (int i = 0; i < getValuesPerDataPoint(); i++) { // Must use getValuesPerDataPoint because dataPoint might be null
+                for (int i = 0; i < numRows; i++) { // Must use getValuesPerDataPoint because dataPoint might be null
                     if (rows.get(i).isEmpty()) {
                         //s += "<!-- label appendix is " + getLabelFor(getValueAPIKey(i)) + " -->\n";
                         String rowStart = APIUtil.escapeCSV(this.getLabel(displayLocale) + (i > 0 ? " (".concat(getLabelFor(getValueAPIKey(i))).concat(")") : "")) + ";";
@@ -1406,6 +1535,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
                 }
                 
             }
+            //*/
             if (!rows.isEmpty()) {
                 Iterator<String> iRows = rows.iterator();
                 while (iRows.hasNext()) {
@@ -1417,6 +1547,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         } catch (Exception e) {
             //s += "<!-- Error creating CSV row(s) for time series " + this.getId() + ": " + e.getMessage() + " -->\n"; 
         }
+        
         return s;
     }
     

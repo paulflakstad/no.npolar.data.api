@@ -19,6 +19,7 @@ public class Labels {
     
     public static final String TIME_SERIES_PREFIX_0 = "timeseries.";
     public static final String TIME_SERIES_UNIT_0 = TIME_SERIES_PREFIX_0 + "unit";
+    public static final String TIME_SERIES_DATA_SUPPLIER_0 = TIME_SERIES_PREFIX_0 + "data-supplier";
     public static final String TIME_SERIES_TITLE_0 = TIME_SERIES_PREFIX_0 + "title";
     
     public static final String TIME_SERIES_POINT_PREFIX_0 = TIME_SERIES_PREFIX_0 + "point.";
