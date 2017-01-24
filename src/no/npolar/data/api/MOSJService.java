@@ -230,6 +230,7 @@ public class MOSJService extends APIService {
         
         List<TimeSeries> tss = new ArrayList<TimeSeries>(timeSeriesIds.size());
         try {
+            /*
             for (String id : timeSeriesIds) {
                 try {
                     tss.add(this.getTimeSeries(id));
@@ -239,7 +240,11 @@ public class MOSJService extends APIService {
                     }
                 }
             }
+            //*/
             
+            // Create the URL that describes this time series collection: This
+            // will typically be a query that says "list the time series with 
+            // these IDs"
             if (url == null || url.isEmpty()) {
                 url = getTimeSeriesBaseURL() 
                         + "?q=" 
@@ -250,8 +255,36 @@ public class MOSJService extends APIService {
                         + "&" + modFilter(TimeSeries.Key.ID) + "=" + combine(Delimiter.OR, timeSeriesIds.toArray(new String[timeSeriesIds.size()]))
                         ;
             }
+            
+            try {
+                doQuery(url);
+                /*
+                JSONObject feed = APIUtil.queryService(url).getJSONObject(Key.FEED);
+                entries = feed.getJSONArray(Key.ENTRIES);
+                //*/
+                for (int i = 0; i < entries.length(); i++) {
+                    // Add the time series – after having set its order index.
+                    // This enables the time series collection we ultimately
+                    // will create to maintain the same order as in the given 
+                    // list of time series IDs.
+                    // (Omitting this step => The order will be defined in the
+                    // Data Centre's response.)
+                    TimeSeries ts = new TimeSeries(entries.getJSONObject(i), displayLocale);
+                    ts.setOrderIndex(timeSeriesIds.indexOf(ts.getId()) + 1);
+                    tss.add(ts);
+                }
+                
+                
+            } catch (Exception ee) {
+                if (LOG.isErrorEnabled()) {
+                    LOG.error("Error creating time series instance(s) fetched via '" + url + "'.", ee);
+                }
+            }
 
-            return new TimeSeriesCollection(displayLocale, tss, title, url);
+            TimeSeriesCollection tsc = new TimeSeriesCollection(displayLocale, tss, title, url);
+            tsc.sortTimeSeries(TimeSeries.ORDER_INDEX_COMPARATOR);
+            return tsc;
+            
         } catch (Exception e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error creating time series collection defined at '" + url + "'.", e);
