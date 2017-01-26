@@ -866,8 +866,8 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      */
     public String getLabel(Locale loc) {
         try {
-            //System.out.println("TS label is " + APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE), loc));
-            return APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE), loc);
+            //System.out.println("TS label is " + APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE_LABEL), loc));
+            return APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE_LABEL), loc);
         } catch (Exception e) {
             return getTitle(loc);
         }
