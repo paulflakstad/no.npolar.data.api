@@ -126,8 +126,8 @@ public class TimeSeriesCollection {
     private TimeSeriesCollection setTimeSeries(List<TimeSeries> tss) {
         // Clear all lists
         allTimestamps = new TreeSet<TimeSeriesTimestamp>();
-        timeSeriesList = new ArrayList<TimeSeries>();
-        units = new ArrayList<TimeSeriesDataUnit>();
+        timeSeriesList = new ArrayList<TimeSeries>(tss.size());
+        units = new ArrayList<TimeSeriesDataUnit>(2);
         //units = new TreeSet<TimeSeriesDataUnit>();
         
         // Add the given time series
@@ -258,7 +258,10 @@ public class TimeSeriesCollection {
     public String getAsCSV() {
         String s = "";
         try {
+            //long a = System.currentTimeMillis();
             s += getCSVRows();
+            //long b = System.currentTimeMillis();
+            //System.out.println("CSV export took " + (b-a) + "ms.");
         } catch (Exception e) {
             //e.printStackTrace();
             if (LOG.isErrorEnabled()) {
@@ -277,9 +280,12 @@ public class TimeSeriesCollection {
     protected String getCSVRows() {
         String s = "";
         try {
-            if (timeSeriesList != null && !timeSeriesList.isEmpty()) {           
+            if (timeSeriesList != null && !timeSeriesList.isEmpty()) {
                 // heading
-                s += labels.getString(Labels.TIME_SERIES_TITLE_0) + ";" + labels.getString(Labels.TIME_SERIES_UNIT_0) + ";";
+                s += labels.getString(Labels.TIME_SERIES_TITLE_0) + ";" 
+                        + labels.getString(Labels.TIME_SERIES_UNIT_0) + ";"
+                        + labels.getString(Labels.TIME_SERIES_DATA_SUPPLIER_0) + ";"
+                        ;
                 
                 // The columns, based on timestamps (i.e. years)
                 Iterator<TimeSeriesTimestamp> iTimeMarkers = getTimeMarkerIterator();
@@ -289,15 +295,8 @@ public class TimeSeriesCollection {
                 }
                 
                 
-                if (!timeSeriesList.isEmpty()) {
-                    Iterator<TimeSeries> iTimeSeries = timeSeriesList.iterator();
-                    while (iTimeSeries.hasNext()) {
-                        TimeSeries ts = iTimeSeries.next();
-                        //s += "<!-- time series: " + getTitle() + " - " + getId() + " -->\n";
-                        s += ts.getDataPointsAsCSVRow(this);
-                    }
-                } else {
-                    // No time series data
+                for (TimeSeries ts : timeSeriesList) {
+                    s += ts.getDataPointsAsCSVRow(this);
                 }
             } else {
                 // No time series data
@@ -306,7 +305,7 @@ public class TimeSeriesCollection {
             //s += "<!-- Error: " + e.getMessage() + " -->\n";
             //e.printStackTrace();
             if (LOG.isErrorEnabled()) {
-                LOG.error("Error creating html table for time series collection '" + this.getTitle() + "'.", e);
+                LOG.error("Error creating CSV of time series collection '" + this.getTitle() + "'.", e);
             }
         }
         return s;
@@ -369,6 +368,9 @@ public class TimeSeriesCollection {
                         + "<th scope=\"col\">&nbsp;</th>"
                         + "<th scope=\"col\">" 
                             + labels.getString(Labels.TIME_SERIES_UNIT_0) 
+                        + "</th>"
+                        + "<th scope=\"col\">" 
+                            + labels.getString(Labels.TIME_SERIES_DATA_SUPPLIER_0) 
                         + "</th>";
                 
                 // The columns, based on timestamps (i.e. years)
@@ -569,6 +571,15 @@ public class TimeSeriesCollection {
     }
     
     /**
+     * Gets the time markers in this collection, as a natively sorted set.
+     *
+     * @return The time markers in this collection.
+     */
+    public TreeSet<TimeSeriesTimestamp> getTimeMarkers() {
+        return allTimestamps;
+    }
+    
+    /**
      * Gets an iterator for the time markers in this collection.
      * 
      * @return An iterator for the time markers in this collection.
@@ -611,6 +622,49 @@ public class TimeSeriesCollection {
             dataPoints[i] = iTimeSeries.next().getDataPointForTimeMarker(timeMarker);
         }
         return dataPoints;
+    }
+    
+    /**
+     * Gets the author string, compiled from the time series in this collection. 
+     * 
+     * @return The author string.
+     * @see #getAuthors() 
+     */
+    public String getAuthorsStr() {
+        String s = "";
+        List<String> a = getAuthors();
+        for (int i = 0; i < a.size(); i++) {
+            if (i > 0) {
+                // Not first author: add delimiter char
+                if (i+2 == a.size()) {
+                    s += " & ";
+                } else {
+                    s += ", ";
+                }
+            }
+            // add name
+            s += a.get(i);
+        }
+        return s;
+    }
+    
+    /**
+     * Gets a list of authors, compiled from the time series in this collection. 
+     * 
+     * @return A list of authors (without duplicates).
+     * @see #getAuthorsStr() 
+     */
+    public List<String> getAuthors() {
+        List<String> a = new ArrayList<String>(1);
+        for (TimeSeries ts : getTimeSeries()) {
+            List<String> tsAuths = ts.getAuthors();
+            for (String tsAuth : tsAuths) {
+                if (!a.contains(tsAuth)) {
+                    a.add(tsAuth);
+                }
+            }
+        }
+        return a;
     }
     
     /**
