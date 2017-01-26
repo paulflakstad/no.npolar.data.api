@@ -838,7 +838,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     public String getTitle(Locale loc) {
         
         try {
-            return APIUtil.getStringByLocale(o.getJSONArray(Key.TITLES), Key.TITLE, loc);
+            return APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE), loc);
         } catch (JSONException e) {
             if (LOG.isErrorEnabled()) {
                 LOG.error("Error reading title of time series '" + this.getId() + "'.", e);
@@ -853,10 +853,12 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * <p>
      * The label is the "short version" of the title, e.g. if the full title is
      * "PCB-level in polar bear blood", the label might be "PCB".
-     * <p>The labels are typically used to differentiate and identify different 
+     * <p>
+     * The labels are typically used to differentiate and identify different 
      * time series that appear within the same collection. (For example in a 
      * table or in a chart.)
-     * <p>If no label is defined, this method will return the full title, by 
+     * <p>
+     * If no label is defined, this method will return the full title, by 
      * calling ({@link #getTitle(java.util.Locale)}).
      * 
      * @param loc Should identify the preferred language.
@@ -864,8 +866,8 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      */
     public String getLabel(Locale loc) {
         try {
-            //System.out.println("TS label is " + APIUtil.getStringByLocale(apiStructure.getJSONArray(Key.TITLES), Key.TITLE_LABEL, loc));
-            return APIUtil.getStringByLocale(o.getJSONArray(Key.TITLES), Key.TITLE_LABEL, loc);
+            //System.out.println("TS label is " + APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE), loc));
+            return APIUtil.getStringByLocale(o.getJSONObject(Key.TITLE), loc);
         } catch (Exception e) {
             return getTitle(loc);
         }

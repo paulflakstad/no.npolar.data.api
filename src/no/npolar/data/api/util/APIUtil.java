@@ -679,18 +679,30 @@ public class APIUtil {
     }
     
     /**
-     * Simplified filter for returning the property identified by the given
-     * name, as read from the first object in the given array that also has a 
-     * matching {@link LANG_GENERIC} property.
+     * Tries to extract a localized string from the given array of localization 
+     * objects, by matching an object's defined language with the given locale.
      * <p>
-     * Array iteration starts at index 0.
+     * Starting at the first object in the array, the language code defined in 
+     * the object's {@link LANG_GENERIC} property is evaluated against the 
+     * language code of the given locale. If they match, the string value of the 
+     * property identified by the given name is returned.
+     * <p>
+     * If the given array is <code>null</code> or empty, or no match is found, 
+     * <code>null</code> is returned.
+     * <p>
+     * Example array (of localized objects):
+     * [
+     *  { "title" : "My title", "lang" : "en" }, 
+     *  { "title" : "En tittel", "lang" : "nb" }
+     * ]
      * 
-     * @param jarr An array of all objects to evaluate. Each object must be a {@link JSONObject}.
-     * @param name The name of the object's string property that we want the value of.
-     * @param locale Identifies the language to match against.
+     * @param jarr An array of all the "localization objects" to evaluate. Each object must be a {@link JSONObject}.
+     * @param name The name of the object's (string) property that we want the value of, e.g. "title".
+     * @param locale Identifies the language to match against, e.g. "en".
      * @return The string value read from the named property of the first object that matched the given language, or <code>null</code> if none.
      * @throws JSONException In case anything goes wrong in the JSON parsing.
      * @see no.npolar.data.api.APIEntry.Key#LANG_GENERIC
+     * @see #matchLanguage(java.lang.String, java.util.Locale) 
      */
     public static String getStringByLocale(JSONArray jarr, String name, Locale locale) throws JSONException {
         if (jarr == null || jarr.length() < 1)
@@ -710,7 +722,42 @@ public class APIUtil {
         return null; // No match
     }
     
-    
+    /**
+     * Tries to extract a localized string from the given localizations object, 
+     * by matching the defined language with the given locale.
+     * <p>
+     * Starting at the object's first property, its name (= language code) is 
+     * evaluated against the language code of the given locale. If they match, 
+     * the string value of that property is returned.
+     * <p>
+     * If the given object has nothing that matches that language, the object's 
+     * first localized string is returned.
+     * <p>
+     * If the object is empty, <code>null</code> is returned.
+     * <p>
+     * Example object: <code>{ "en" : "In English", "no" : "På norsk" }</code>
+     * 
+     * @param localizations An object containing 1-n localized strings, each one using the language code as the key.
+     * @param locale Identifies the language to match against.
+     * @return A closest-match localized string, as fetched from the given object, by matching object keys with the given language.
+     * @throws JSONException In case anything goes wrong in the JSON parsing.
+     * @see #matchLanguage(java.lang.String, java.util.Locale) 
+     * @see no.npolar.data.api.APIEntry.Key#LANG_GENERIC
+     */
+    public static String getStringByLocale(JSONObject localizations, Locale locale) throws JSONException {
+        if (localizations == null || localizations.length() == 0) {
+            return null;
+        }
+        Iterator<String> langs = localizations.keys();
+        while (langs.hasNext()) {
+            String lang = langs.next();
+            if (matchLanguage(lang, locale)) {
+                return localizations.getString(lang);
+            }
+        }
+        // fallback: return first localized string in object
+        return localizations.getString(localizations.keys().next());
+    }
     
     /**
      * Gets the string values of the named property, as read from each object in 
