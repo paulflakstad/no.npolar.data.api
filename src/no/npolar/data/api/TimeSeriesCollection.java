@@ -632,7 +632,7 @@ public class TimeSeriesCollection {
      */
     public String getAuthorsStr() {
         String s = "";
-        List<String> a = getAuthors();
+        List<Contributor> a = getAuthors();
         for (int i = 0; i < a.size(); i++) {
             if (i > 0) {
                 // Not first author: add delimiter char
@@ -654,12 +654,13 @@ public class TimeSeriesCollection {
      * @return A list of authors (without duplicates).
      * @see #getAuthorsStr() 
      */
-    public List<String> getAuthors() {
-        List<String> a = new ArrayList<String>(1);
+    public List<Contributor> getAuthors() {
+        List<Contributor> a = new ArrayList<Contributor>(1);
         for (TimeSeries ts : getTimeSeries()) {
-            List<String> tsAuths = ts.getAuthors();
-            for (String tsAuth : tsAuths) {
+            List<Contributor> tsAuths = ts.getAuthors();
+            for (Contributor tsAuth : tsAuths) {
                 if (!a.contains(tsAuth)) {
+                    //System.out.println("Adding new author " + tsAuth);
                     a.add(tsAuth);
                 }
             }

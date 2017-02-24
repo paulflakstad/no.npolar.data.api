@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * Represents a time series, which is in essence a collection (list) of data 
- * points.
+ * points, plus metadata like keywords, attribution info, etc.
  * <p>
  * Data points are stored internally as {@link TimeSeriesDataPoint} instances. 
  * <p>
@@ -130,8 +130,8 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         //public static final String TITLE = "text";
         /** API key: Title -> Label. */
         public static final String TITLE_LABEL = "label";
-        /** API key: ID. */
-        public static final String ID = "id";
+        //** API key: ID. */
+        //public static final String ID = "id";
         //public static final String DATA_POINTS = "points";
         /** API key: Data points. */
         public static final String DATA_POINTS = "data";
@@ -177,14 +177,95 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         public static final String VALUE_LOCALIZED = "@value";
         /** API key: A localized value's language code. */
         public static final String VALUE_LOCALIZED_LANG = "@language";
-        /** API key: Authors (array of objects). */
+        /** API key: The ID of a related object (like an author). */
+        public static final String VALUE_ID = "@id";
+        /** API key: Authors (array of author objects). */
         public static final String AUTHORS = "authors";
-        /** API key: Authors -> Names (array of localized names). */
-        public static final String AUTHORS_NAMES = NAMES_LOCALIZED;
-        /** API key: Authors -> Names -> Name (localized). */
-        public static final String AUTHORS_NAMES_NAME = VALUE_LOCALIZED;
-        /** API key: Authors -> Names -> Language of the localized name. */
-        public static final String AUTHORS_NAMES_LANGUAGE = VALUE_LOCALIZED_LANG;
+        /** API key: Authors -> (author) -> ID. */
+        public static final String AUTHOR_ID = VALUE_ID;
+        /** API key: Authors -> (author) -> Names (array of localized names). */
+        public static final String AUTHOR_NAMES = NAMES_LOCALIZED;
+        /** API key: Authors -> (author) -> Names -> Localized name. */
+        public static final String AUTHOR_NAMES_NAME = VALUE_LOCALIZED;
+        /** API key: Authors -> (author) -> Names -> Language of the localized name. */
+        public static final String AUTHOR_NAMES_LANGUAGE = VALUE_LOCALIZED_LANG;
+    }
+    
+    /**
+     * Reads and processes the authors array, creating a list of contributors.
+     */
+    private class AuthorsReader {
+        
+        /**
+         * Adds all authors present in the given array to this time series.
+         * 
+         * @param authorsArr The authors array.
+         */
+        public void read(JSONArray authorsArr) {
+        //public List<Contributor> read(JSONArray authors) {
+            //List<Contributor> authList = new ArrayList<Contributor>(1);
+            for (int i = 0; i < authorsArr.length(); i++) {
+                try {
+                    //authList.add(
+                    addAuthor(
+                            getContributor( authorsArr.getJSONObject(i) )
+                    );
+                } catch (Exception e) {
+                    // Shouldn't happen - log it...?
+                }
+            }
+            //return authList;
+        }
+        
+        /**
+         * Creates a {@link Contributor} based on the given author info.
+         * 
+         * @param authorInfo The author info.
+         * @return A Contributor instance created based on the given author info.
+         */
+        private Contributor getContributor(JSONObject authorInfo) {
+            String authorName = null;
+            String authorId = null;
+            
+            if (authorInfo.has(Key.AUTHOR_NAMES)) {
+                try {
+                    authorName = getLocalizedValue(
+                            authorInfo.getJSONArray(Key.AUTHOR_NAMES)
+                    );
+                } catch (Exception e) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Error creating time series author: Author info threw error.", e);
+                    }
+                }
+            } 
+            
+            if (authorInfo.has(Key.AUTHOR_ID) || authorName == null) {
+                if (authorInfo.has(Key.AUTHOR_ID)) {
+                    try {
+                        authorId = authorInfo.getString(Key.AUTHOR_ID);
+                        // ToDo (maybe): Resolve name based on ID? E.g.: 
+                        // id="npolar.no" => name="Norwegian Polar Institute"
+                    } catch(Exception e) {
+                        if (LOG.isErrorEnabled()) {
+                            LOG.error("Time series author ID was not of required type (string).", e);
+                        }
+                    }
+                } else {
+                    // = no ID, and "name" is null
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Time series author was missing both name and ID.");
+                    }
+                }
+            }
+            
+            if (authorName == null) {
+                authorName = authorId != null ? 
+                        authorId.concat(" ").concat(AUTHOR_NAME_UNKNOWN) 
+                        : AUTHOR_UNKNOWN;
+            }
+            
+            return new Contributor(authorId, authorName);
+        }
     }
     
     // Data access keys (used to extract stuff from the JSON object returned by the API)
@@ -316,12 +397,14 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      */
     public static final String API_KEY_VARIABLES_UNITS = Key.VARIABLES_UNITS;
     
-    public static final String DEFAULT_AUTHOR_NAME = "[Unknown author]".toUpperCase();
+    //public static final String DEFAULT_AUTHOR_NAME = AUTHOR_UNKNOWN;
+    public static final String AUTHOR_UNKNOWN = "[Unknown author]".toUpperCase();
+    public static final String AUTHOR_NAME_UNKNOWN = "[Unknown name]".toUpperCase();
     
     /**
      * Holds "authors" - needed for citation.
      */
-    private List<String> authors = new ArrayList(1);
+    private List<Contributor> authors = new ArrayList<Contributor>(1);
     
     /** Mapping of partial keys (like "low") to their complete counterparts, used to identify default labels.  */
     public static final Map<String, String> DEFAULT_LABEL_KEYS = new HashMap<String, String>()
@@ -459,24 +542,9 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      */
     private void setAuthors() {
         try {
-            if (o.has(Key.AUTHORS)) {
-                JSONArray authArr = o.getJSONArray(Key.AUTHORS);
-                for (int i = 0; i < authArr.length(); i++) {
-                    try {
-                        JSONObject authObj = authArr.getJSONObject(i);
-                        String authName = getLocalizedValue(
-                                authObj.getJSONArray(Key.AUTHORS_NAMES)
-                        );
-                        if (authName == null) {
-                            authName = DEFAULT_AUTHOR_NAME;
-                        }
-                        addAuthor(authName);
-                    } catch (Exception e) {
-                        // Author object in array, but something went wrong
-                        addAuthor(DEFAULT_AUTHOR_NAME);
-                    }
-                }
-            }
+            //authors = new AuthorsReader().read(o.getJSONArray(Key.AUTHORS));
+            new AuthorsReader().read(o.getJSONArray(Key.AUTHORS));
+            
         } catch (Exception e) {
            // Freak error, log it
            if (LOG.isErrorEnabled()) {
@@ -518,7 +586,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * 
      * @param author The author to add.
      */
-    private void addAuthor(String author) {
+    private void addAuthor(Contributor author) {
         if (!authors.contains(author)) {
             authors.add(author);
         }
@@ -563,7 +631,7 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * 
      * @return The list of authors.
      */
-    public List<String> getAuthors() {
+    public List<Contributor> getAuthors() {
         return authors;
     }
     
