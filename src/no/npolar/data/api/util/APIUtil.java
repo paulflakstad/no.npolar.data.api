@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 import no.npolar.data.api.APIEntry;
 import no.npolar.data.api.APIEntry.TimestampPattern;
 import no.npolar.data.api.APIService;
@@ -24,6 +25,7 @@ import org.markdown4j.Markdown4jProcessor;
 import org.opencms.json.JSONException;
 import org.opencms.json.JSONObject;
 import static no.npolar.data.api.APIEntry.Key.LANG_GENERIC;
+import no.npolar.data.api.Labels;
 
 /**
  * Norwegian Polar Institute Data Centre API utilities.
@@ -33,6 +35,37 @@ import static no.npolar.data.api.APIEntry.Key.LANG_GENERIC;
 public class APIUtil {
     /** The logger. */
     private static final Log LOG = LogFactory.getLog(no.npolar.data.api.util.APIUtil.class);
+    
+    /** 
+     * Regular expression pattern for matching anything that strongly resembles 
+     * anything that should be interpreted as "Norwegian Polar Institute", 
+     * somewhere in the test string.
+     * <p>
+     * Intended usage: <code>yourString.matches(REGEX_PATTERN_NPI)</code>
+     * <p>
+     * For example, the following test strings will match:
+     * <ul>
+     *  <li>NPI</li>
+     *  <li>NP</li>
+     *  <li>AWI, NPI</li>
+     *  <li>AWI;NPI;NASA</li>
+     *  <li>Norwegian Polar Institute</li>
+     *  <li>Norwegian Polar Institute and NASA</li>
+     * </ul>
+     * 
+     * @see #isNPIContributor() 
+     */
+    public static final String REGEX_PATTERN_NPI =
+            // Start at the beginning, and use case-insensitive matching
+            "^(?i)"
+            // Require that the "interesting bit" is preceded by a delimiter 
+            // character, if it's not at the start of the string
+            + "(.*(,|;|\\s))?"
+            // The interesting bit
+            + "(NP(I)?|Norsk Polar(\\s)?institutt|Norwegian Polar Institute)"
+            // Require that the "interesting bit" is at the end, or directly 
+            // followed by a delimiter character
+            + "($|(,|;|\\s).*)";
     
     /**
      * Requests the given URL and returns the response as a String.
