@@ -718,7 +718,7 @@ public class HighchartsChart {
                         try { hideMarkers = !Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_HIDE_MARKERS_BOOL)); } catch(Exception ee) {}
                     }
                     if (tsCustomization.has(OVERRIDE_KEY_ERROR_TOGGLER)) { 
-                        try { errorBarsAlwaysOn = Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_ERROR_TOGGLER));} catch(Exception ee) {}
+                        try { errorBarsAlwaysOn = !Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_ERROR_TOGGLER));} catch(Exception ee) {}
                     }
                     if (tsCustomization.has(OVERRIDE_KEY_OFF_BY_DEFAULT)) { 
                         try { 
