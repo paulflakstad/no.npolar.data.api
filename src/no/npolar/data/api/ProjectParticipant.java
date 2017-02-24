@@ -4,14 +4,16 @@ import no.npolar.data.api.util.Mapper;
 import org.opencms.jsp.CmsJspActionElement;
 
 /**
- * Represents a single project participant (either regular or leader).
+ * Represents a single project participant (either "regular" or leader).
+ * <p>
+ * ToDo: Check if this class is able to extend {@link Contributor}.
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
 public class ProjectParticipant {
-    private String fName = null;
-    private String lName = null;
-    private String org = null;
+    private String firstName = null;
+    private String lastName = null;
+    private String organisation = null;
     private String uri = null;
     private String orgSymbol = null;
 
@@ -23,51 +25,71 @@ public class ProjectParticipant {
     /**
      * Creates a new instance with the given name.
      * 
-     * @param fName The first (given) name.
-     * @param lName The last (family) name.
+     * @param firstName The first (given) name.
+     * @param lastName The last (family) name.
      */
-    public ProjectParticipant(String fName, String lName) {
-        this.fName = fName;
-        this.lName = lName;
+    public ProjectParticipant(String firstName, String lastName) {
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
+    
     /**
      * Sets the organization.
      * 
-     * @param org The organization.
+     * @param organisation The organization.
      */
-    public void setOrganization(String org) { this.org = org; }
+    public void setOrganization(String organisation) { this.organisation = organisation; }
+    
     /**
      * Sets the institution symbol.
      * 
      * @param instSymbol The institution symbol.
      */
     public void setInstitutionSymbol(String instSymbol) { this.orgSymbol = instSymbol; }
+    
     /**
      * Sets the URI.
      * 
      * @param uri The URI.
      */
     public void setUri(String uri) { this.uri = uri; }
+    
     /**
      * @return the name.
      */
-    public String getName() { return fName + " " + lName; }
+    public String getName() { return firstName + " " + lastName; }
+    
     /**
      * @return the first (given) name.
      */
-    public String getFirstName() { return fName; }
+    public String getFirstName() { return firstName; }
+    
     /**
      * @return the last (family) name
      */
-    public String getLastName() { return lName; }
+    public String getLastName() { return lastName; }
+    
     /**
      * @return the organization.
      */
-    public String getInstitution() { return org; }
+    public String getInstitution() { return organisation; }
+    
     /**
      * @return the URI.
      */
     public String getUri() { return uri; }
+    
+    /**
+     * Returns a string representation of this instance, without using any 
+     * mapper.
+     * 
+     * @see #toString(no.npolar.data.api.util.Mapper) 
+     * @return This instance, as a string in HTML format.
+     */
+    @Override
+    public String toString() {
+        return toString(new Mapper());
+    }
 
     /**
      * Returns a string representation of this instance.
@@ -79,10 +101,13 @@ public class ProjectParticipant {
      * @return This instance, as a string in HTML format.
      */
     public String toString(Mapper m) {
+        if (m == null) {
+            m = new Mapper();
+        }
         String s = getName();
         //if (inst != null && !inst.isEmpty())
         //    s += " [" + inst + "]";
-        if (org != null && !org.isEmpty()) {
+        if (organisation != null && !organisation.isEmpty()) {
             //s += "<sup style=\"vertical-align:top; position:relative; top:-3px;\">" + symbolMappings.get(inst) + "</sup>";
             //s += "<sup style=\"vertical-align:top; position:relative; top:2px; cursor:pointer;\">" 
             s += "<sup style=\"position:relative; top:2px; cursor:pointer;\" class=\"project-participant-note\">" 
@@ -111,8 +136,8 @@ public class ProjectParticipant {
      */
     public String toString(CmsJspActionElement cms) {
         String s = getName();
-        if (org != null && !org.isEmpty())
-            s += " [" + org + "]";
+        if (organisation != null && !organisation.isEmpty())
+            s += " [" + organisation + "]";
         if (uri != null && !uri.isEmpty())
             s = "<a href=\"" + (cms != null ? cms.link(uri) : uri) + "\">" + s + "</a>";
 
