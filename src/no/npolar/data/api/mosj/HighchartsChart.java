@@ -83,6 +83,8 @@ public class HighchartsChart {
     public static final String OVERRIDE_KEY_STACKING = "stacking";
     /** Override key: Series error setting. {@link http://highcharts.uservoice.com/forums/55896-highcharts-javascript-api/suggestions/4321475-add-an-ability-to-show-error-bar-in-legend } */
     public static final String OVERRIDE_KEY_ERROR_TOGGLER = "errorToggler";
+    /** Override key: Series "off by default" flag. {@link http://api.highcharts.com/highcharts/plotOptions.series.visible} */
+    public static final String OVERRIDE_KEY_OFF_BY_DEFAULT = "offByDefault";
     /** Override key: Series "trend line" flag. */
     public static final String OVERRIDE_KEY_TREND_LINE = "trendLine";
     /** Override key: The "dash style" value. {@link http://www.highcharts.com/docs/chart-concepts/series#12} */
@@ -718,6 +720,11 @@ public class HighchartsChart {
                     if (tsCustomization.has(OVERRIDE_KEY_ERROR_TOGGLER)) { 
                         try { errorBarsAlwaysOn = Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_ERROR_TOGGLER));} catch(Exception ee) {}
                     }
+                    if (tsCustomization.has(OVERRIDE_KEY_OFF_BY_DEFAULT)) { 
+                        try { 
+                            timeSeries.setChartOffByDefault(Boolean.valueOf(tsCustomization.getString(OVERRIDE_KEY_OFF_BY_DEFAULT)));
+                        } catch(Exception ee) {}
+                    }
                     if (tsCustomization.has(OVERRIDE_KEY_DASH_STYLE)) {
                         try { dashStyle = tsCustomization.getString(OVERRIDE_KEY_DASH_STYLE); } catch (Exception ee) {}
                     }
@@ -787,6 +794,9 @@ public class HighchartsChart {
                     s += "\nid: '" + timeSeries.getId() + "',";
                     s += "\nurl: '" + timeSeries.getURL(new MOSJService(displayLocale, true)) + "',";
                     s += "\nyAxis: " + yAxis + ",";
+                    if (timeSeries.isChartOffByDefault()) {
+                        s += "\nvisible: false,";
+                    }
                     if (timeSeries.isTrendLine() || timeSeries.isChartConnectNulls()) {
                         s += "\nconnectNulls: true,";
                     }

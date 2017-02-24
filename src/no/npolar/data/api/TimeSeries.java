@@ -111,6 +111,8 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
     protected String chartColor = null;
     /** Chart setting: Series type. */
     protected String chartSeriesType = null;
+    /** Chart setting: Off by default. */
+    protected boolean chartOffByDefault = false;
     
     /** The number of actual data points in this series. */
     private int numDataPoints = 0;
@@ -704,6 +706,20 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
         return this;
     }
     
+    /**
+     * Enables or disables "off (hidden) by default" - that is, sets whether or 
+     * not to show this series in the chart when it's initially loaded.
+     * 
+     * @param connectNulls Provide true if this series should be off by default.
+     * @return This time series, updated.
+     * @see HighchartsChart#OVERRIDE_KEY_OFF_BY_DEFAULT
+     * @see {http://api.highcharts.com/highcharts/plotOptions.series.visible}
+     */
+    public TimeSeries setChartOffByDefault(boolean offByDefault) {
+        this.chartOffByDefault = offByDefault;
+        return this;
+    }
+    
     /**    
      * Sets the color for this time series.
      * 
@@ -799,6 +815,11 @@ public class TimeSeries extends APIEntry implements Comparable<TimeSeries> /*API
      * @return The "connect nulls" chart setting for this time series.
      */
     public boolean isChartConnectNulls() { return this.chartConnectNulls; }
+    
+    /**
+     * @return The "off by default" chart setting for this time series.
+     */
+    public boolean isChartOffByDefault() { return this.chartOffByDefault; }
     
     /**
      * @return The chart series color for this time series.
