@@ -33,6 +33,9 @@ import org.apache.commons.logging.LogFactory;
  * <p>
  * Example time series (randomly chosen): 
  * http://apptest.data.npolar.no:9000/monitoring/timeseries/e5b14b14-2143-539a-a03d-cd5c10fb80a3
+ * <p>
+ * ToDo: Refactor all the chart stuff, put it in a separate (child) class in the
+ * no.npolar.data.api.mosj package. (Kill all chart dependencies in this class.)
  * 
  * @author Paul-Inge Flakstad, Norwegian Polar Institute
  */
